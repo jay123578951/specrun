@@ -22,9 +22,9 @@
 
 ### Agent 編排
 
-- **Coder**（Sonnet）— 自動載入 `vue` / `nuxt` / `antfu` skills，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices`
+- **Coder**（Sonnet）— `/code:feat` 與 `/code:fix` 共用同一套 skill 規範：必載 `vue` / `vue-best-practices` / `nuxt` / `antfu`，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices` / `vueuse-functions` / `pnpm` / `turborepo`。Tier 差異在流程而非風格寬鬆度
 - **Tester**（Sonnet）— 自動載入 `vitest` / `vue-testing-best-practices`，測試失敗會退回 Coder 修復（最多 3 輪）
-- **Reviewer**（Codex + Sonnet）— Codex 審程式品質與安全性，Sonnet 審 spec alignment，FAIL 時退回對應 agent
+- **Reviewer**（Codex + Sonnet）— Codex 審程式品質與安全性，Sonnet 審 spec alignment（改動觸及 `.vue` template/style 或純樣式檔時加載 `web-design-guidelines` 補 UI/a11y 檢查），FAIL 時退回對應 agent
 
 ### Spec 同步保證
 
