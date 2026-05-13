@@ -4,9 +4,9 @@
 
 ## 這是什麼
 
-`claude-sdd-kit` 把 Spec-Driven Development 的編排成本壓成一個指令。搭配 [Spectra](https://github.com/Fission-AI/Spectra) 管理變更規格，搭配 [Codex](https://github.com/openai/codex) 進行獨立 code review。
+`claude-sdd-kit` 把 Spec-Driven Development 的編排成本壓成一個指令。搭配 [Spectra](https://github.com/Fission-AI/Spectra) 管理變更規格，Reviewer 透過 Opus subagent 進行獨立 code review。
 
-手動跑 SDD 流程時要自己載 skills、切換 Coder / Tester / Reviewer 三種角色、把 design 與 tasks 貼進對話、最後還要確保 spec 跟 code 同步——這些都能編排，但每次手動拼裝太累。更重要的是 **reviewer 應該獨立**：讓 Codex 審查 Claude 寫出來的 code，避免自評自審讓品質失真。所以這個 plugin 把 agent 派發、skill 載入、跨模型 review 全包起來，並用**變更分級制度**避免小改動被完整 spec 流程綁住——改個 CSS 就用 `/code:fix`，做新功能才走 `/code:feat`。
+手動跑 SDD 流程時要自己載 skills、切換 Coder / Tester / Reviewer 三種角色、把 design 與 tasks 貼進對話、最後還要確保 spec 跟 code 同步——這些都能編排，但每次手動拼裝太累。更重要的是 **reviewer 應該獨立**：Coder / Tester 走主對話的 Sonnet，Reviewer 派發到 Opus subagent，靠跨層級（Sonnet → Opus）+ subagent context 隔離來避免自評自審讓品質失真。所以這個 plugin 把 agent 派發、skill 載入、跨層級 review 全包起來，並用**變更分級制度**避免小改動被完整 spec 流程綁住——改個 CSS 就用 `/code:fix`，做新功能才走 `/code:feat`。
 
 ## Features
 
@@ -16,7 +16,7 @@
 |------|----------|------|
 | `/code:feat <change-name>` | 新功能、大型重構、跨模組變更 | Coder → Tester → Reviewer，搭配 Spectra artifacts |
 | `/code:fix` | 跨檔案 bug fix、小型 UI 調整、composable 微調 | Coder + Tester，含 Spec 影響檢查 |
-| `/code:review [--staged \| --branch <ref> \| --change <name>]` | 獨立 code review | Codex + Sonnet 雙重審查 |
+| `/code:review [--staged \| --branch <ref> \| --change <name>]` | 獨立 code review | Opus subagent 獨立審查（與主對話 Sonnet 隔離） |
 
 > 微調（CSS、文字、單行 fix）建議直接在主對話改，不需走 plugin。完整分級判斷見 [`plugins/code/docs/ai-development-pipeline.md`](plugins/code/docs/ai-development-pipeline.md)。
 
@@ -24,7 +24,7 @@
 
 - **Coder**（Sonnet）— `/code:feat` 與 `/code:fix` 共用同一套 skill 規範：必載 `vue` / `vue-best-practices` / `nuxt` / `antfu`，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices` / `vueuse-functions` / `pnpm` / `turborepo`。Tier 差異在流程而非風格寬鬆度
 - **Tester**（Sonnet）— 自動載入 `vitest` / `vue-testing-best-practices`，測試失敗會退回 Coder 修復（最多 3 輪）
-- **Reviewer**（Codex + Sonnet）— Codex 審程式品質與安全性，Sonnet 審 spec alignment（改動觸及 `.vue` template/style 或純樣式檔時加載 `web-design-guidelines` 補 UI/a11y 檢查），FAIL 時退回對應 agent
+- **Reviewer**（Opus subagent）— Task tool 派發 Opus subagent 一次審完 code quality / 安全性 / 慣例 / spec alignment；改動觸及 `.vue` template/style 或純樣式檔時加載 `web-design-guidelines` 補 UI/a11y 檢查；安全敏感路徑或第 2 輪 retry 仍 FAIL 時自動升級為 adversarial prompt；FAIL 時退回對應 agent，WARNING re-check 降級為 Sonnet targeted check
 
 ### Spec 同步保證
 
@@ -39,7 +39,6 @@
 |------|------|
 | [Spectra CLI](https://github.com/Fission-AI/Spectra) | SDD 變更管理（`/code:feat` 必裝） |
 | [antfu/skills](https://github.com/antfu/skills) | 提供 `vue` / `nuxt` / `antfu` / `vitest` / `vue-testing-best-practices`（必裝） |
-| [openai/codex plugin](https://github.com/openai/codex) | Reviewer 走 Codex quota（`/code:feat`、`/code:review` 必裝） |
 
 ### 安裝本 plugin
 
