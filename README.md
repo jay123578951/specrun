@@ -14,9 +14,10 @@
 
 | 指令 | 適用情境 | 流程 |
 |------|----------|------|
-| `/code:feat <change-name>` | 新功能、大型重構、跨模組變更 | Coder → Tester → Reviewer，搭配 Spectra artifacts |
-| `/code:fix` | 跨檔案 bug fix、小型 UI 調整、composable 微調 | Coder + Tester，含 Spec 影響檢查 |
+| `/code:feat <change-name>` | 新功能、大型重構、跨模組變更 | Coder → Tester → Reviewer → 註解整理，搭配 Spectra artifacts |
+| `/code:fix` | 跨檔案 bug fix、小型 UI 調整、composable 微調 | Coder + Tester → 註解整理，含 Spec 影響檢查 |
 | `/code:review [--staged \| --branch <ref> \| --change <name>]` | 獨立 code review | Opus subagent 獨立審查（與主對話 Sonnet 隔離） |
+| `/code:comment [--staged \| --branch <ref> \| --whole-file]` | 開發收尾清理註解 | Sonnet subagent 清除過時/冗餘/思考流程註解，保留 why 與功能型指令（獨立模式預設只清 diff 鄰近，`--whole-file` 放寬到整檔） |
 
 > 微調（CSS、文字、單行 fix）建議直接在主對話改，不需走 plugin。完整分級判斷見 [`plugins/code/docs/ai-development-pipeline.md`](plugins/code/docs/ai-development-pipeline.md)。
 
@@ -25,6 +26,7 @@
 - **Coder**（Sonnet）— `/code:feat` 與 `/code:fix` 共用同一套 skill 規範：必載 `vue` / `vue-best-practices` / `nuxt` / `antfu`，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices` / `vueuse-functions` / `pnpm` / `turborepo`。Tier 差異在流程而非風格寬鬆度
 - **Tester**（Sonnet）— 自動載入 `vitest` / `vue-testing-best-practices`，測試失敗會退回 Coder 修復（最多 3 輪）
 - **Reviewer**（Opus subagent）— Task tool 派發 Opus subagent 一次審完 code quality / 安全性 / 慣例 / spec alignment；改動觸及 `.vue` template/style 或純樣式檔時加載 `web-design-guidelines` 補 UI/a11y 檢查；安全敏感路徑或第 2 輪 retry 仍 FAIL 時自動升級為 adversarial prompt；FAIL 時退回對應 agent，WARNING re-check 降級為 Sonnet targeted check
+- **註解整理**（Sonnet subagent）— 開發收尾 fresh-eyes 清除 AI 累積的過時/疊加/思考流程/冗餘註解，保留「為什麼」、JSDoc 與功能型指令註解（`eslint-disable`、`@ts-expect-error` 等）；依守則直接套用 Edit 後重跑 ESLint + 測試作安全網
 
 ### Spec 同步保證
 

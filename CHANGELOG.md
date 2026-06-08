@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0 — 2026-06-08
+
+新增 `code-comment` 註解整理 skill，並掛進 Tier 2 / Tier 3 Pipeline 的開發收尾。解決 AI 開發過程中不斷疊加註解、把思考流程寫進註解、註解過時沒跟上 code 的問題——收尾時以 fresh-eyes subagent 清除壞註解，只留說明「為什麼」與功能型指令的有效註解。
+
+### Added
+
+- 新增 `code-comment` skill（`plugins/code/skills/code-comment/SKILL.md`）與 `/code:comment` command。透過 Task tool 派發 **Sonnet 整理 Agent subagent**，與主對話隔離取得 fresh-eyes 視角（避免「剛寫完註解的人最難判斷哪些是廢話」的自評盲點）。
+- 整理判準（single source of truth）：清除過時/矛盾、疊加殘留、思考流程口吻、冗餘複述、註解掉的死碼、空泛 TODO；保留解釋「為什麼」、JSDoc/docstring、複雜演算法說明、授權標頭、具體 TODO/FIXME。原則「刪除是危險方向，拿不準就保留」；修正過時註解時明令「不可改寫成只複述 code 的 what-comment」。
+- 功能型指令註解保護清單涵蓋 linter/格式器（`eslint-disable`、`prettier-ignore`、`biome-ignore`、`stylelint-disable`）、TypeScript（`@ts-expect-error`/`@ts-ignore`/`@ts-nocheck`）、測試/coverage（`@vitest-environment`、`istanbul ignore`、`c8 ignore`）、bundler/編譯 pragma（`@__PURE__`、`@jsx`/`@jsxImportSource`、`@vite-ignore`、`webpackChunkName`、`@preserve`/`@license`）、框架（`v-html` 安全註記）——這些被誤刪一般測試不一定抓得到。
+- 與 `code-review`（report-only + STOP）不同，整理 Agent 依守則**直接套用 Edit** 並自跑 lint --fix；orchestrator 在整理後**重跑測試**作為安全網（誤刪功能型指令註解會在此暴露）。安全網指令依專案 package manager / scripts 偵測（優先 `pnpm lint` / `pnpm test`），不寫死 `npx`。
+- 掃描範圍分級：獨立模式預設只清 diff 改動區及其鄰近註解（避免誤傷他人 ownership 的舊碼），`--whole-file` 才放寬；Pipeline 模式因檔案是該 pipeline 自己寫的，允許整個 changed file。
+
+### Changed
+
+- `code-feat`（Tier 3）新增 Step 6.5「註解整理」：Reviewer PASS 後派發 Sonnet 整理 Agent，retry 全部 settle 後一次清最終狀態。Model 策略表、Phase 2 完成輸出、Guardrails 同步更新。
+- `code-fix`（Tier 2）新增 Step 4.5「註解整理」：Coder/Tester settle 後、Spec 影響檢查前執行。Model 策略表、完成輸出、Guardrails 同步更新。
+- `ai-development-pipeline.md` 新增「註解整理 Agent」章節，更新 Phase 2 Pipeline 圖、Model 分層策略表、Agent Knowledge Skills 載入表、Tier 2/3 流程圖。
+- README 指令表與 Agent 編排段補上 `/code:comment`。
+
 ## 0.4.0 — 2026-05-18
 
 Coder agent 改為條件式 model 選擇：預設維持 sonnet 以節省額度，僅在先驗上需要深度推理或 retry 卡關時升 opus。Pipeline 的 Tester + Opus Reviewer + retry 結構已能接住 sonnet 第一版的表層瑕疵，故不全面切換。
