@@ -10,8 +10,8 @@
   "plugins": [
     {
       "name": "code",
-      "description": "Tier 1/2/3 SDD pipeline — code-feat / code-fix / code-review / code-comment skills driven by OpenSpec change artifacts",
-      "version": "0.6.0",
+      "description": "Tier 1/2/3 SDD pipeline — code-feat / code-fix / code-review / code-comment + code-guidelines behavioral skill, driven by OpenSpec change artifacts",
+      "version": "0.7.0",
       "author": {
         "name": "jay123578951"
       },

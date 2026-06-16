@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.0 — 2026-06-16
+
+新增 `code-guidelines` 行為守則 skill，由 Coder 在動手前載入，針對 LLM 寫 code 的通病（亂假設、過度設計、亂改不該動的地方），從生成端先自我約束。原本這些性質只由 Reviewer 在事後攔截（過度抽象、只改必要），現在從生成端先自我約束——預防比 retry 便宜（少一輪 Opus review + 重跑測試）。skill 分類從「知識型 / 流程型」擴為加上「行為型」第三類。
+
+### Added
+
+- 新增 `plugins/code/skills/code-guidelines/SKILL.md`：定義 Coder 的四條行為守則——①自主判斷邊界（spec 沒寫死的技術細節自己決定、把假設寫進輸出摘要，只有觸及功能方向／缺人類資訊／不可逆操作才 STOP）、②最小可行實作、③外科手術式改動、④目標導向交付。
+
+### Changed
+
+- `code-feat`、`code-fix` 的 Coder 必載 skills 加入 `code-guidelines`（置於知識型 skill 之前，先讀再動手）；Step 4 / Step 2 的 Coder prompt 載入行同步更新，並在 Guardrails 補「含 retry 派發一律先載入行為守則」。
+- `ai-development-pipeline.md`：Coder skill 載入表、Coder Agent 段同步加入 `code-guidelines`；「知識型 vs 流程型分離」段擴為「知識型 vs 流程型 vs 行為型」三類，並說明 `code-guidelines`（生成端自律）與 `code-review`（審查端把關）為同源配對。
+- README 說明段與 Agent 編排段補述行為守則層；`plugin.json`、`marketplace.json` description 加註 `code-guidelines`。
+
+### Notes
+
+- 行為守則僅由 Coder 載入（唯一的 code 生成者）。Reviewer 已在審查端檢查同一組性質、Tester／註解整理各有專屬守則，故不重複載入以避免冗餘。
+- 第①條「自主判斷邊界」刻意偏向讓 AI 自主完成：技術細節自己拍板、把假設寫進摘要而非停下問人，僅在功能方向／缺人類資訊／不可逆操作時才中斷。
+
 ## 0.6.0 — 2026-06-12
 
 解除對 Spectra 的工具耦合，改為由 OpenSpec 變更 artifact 驅動。原本 skill 會直接呼叫 `spectra` CLI 並提示 `spectra:*` 指令，導致必須額外安裝 Spectra；實際上 pipeline 依賴的只是 `openspec/` 目錄與 artifact 格式（Spectra 底層就是 OpenSpec）。本次把前端工具綁定拿掉，讓 plugin 更單純、少裝一層。
