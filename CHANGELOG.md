@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.0 — 2026-06-23
+
+新增 `code-decisions` skill 與 `/code:decisions` 指令：在 `opsx:explore` 與 `opsx:propose` 之間補上「動手前決策收斂」閘門。explore 是發散探索、容易聊到「感覺完整」就進 propose，未定的小細節（邊界、空狀態、錯誤情境、需求衝突）便被包裝成看似完整的 spec，最後在 Coder／Reviewer／retry 階段才爆出來。本 skill 沿決策樹只挑「Coder 動手時必須有答案、但目前未定」的分支逐一收斂，把 `code-guidelines` 的「預防比 retry 便宜」思路延伸到設計端。
+
+### Added
+
+- 新增 `plugins/code/skills/code-decisions/SKILL.md`：判準驅動（決策樹 + 「多種合理實作 × 目前無明確答案」雙條件），清單僅作非窮舉引子避免侷限 AI；借 grilling 機制（一次只問一題、附建議答案、能查 codebase 就不問人、處理分支依賴），找不到未定分支即如實回報「無未定決策」不硬湊問題。職責單一：只收斂決策，不產 spec、不寫 code。
+- 新增 `plugins/code/commands/decisions.md`：`/code:decisions` 指令入口，frontmatter description 與 skill 對齊。
+
+### Changed
+
+- `ai-development-pipeline.md`：工具依賴表、Tier 3 流程總覽、Phase 1 流程圖與詳細步驟（新增「3. Decisions」、Propose 順延為第 4 步）、Skill 架構分類表均納入 `code-decisions`。
+- README：指令表新增 `/code:decisions` 列、最小範例插入該步驟、理念段補述其為「預防思路延伸到設計端」。
+- `plugin.json`、`marketplace.json` 的 plugin 版號升至 0.8.0，description 補上 `code-decisions`。
+
+### Notes
+
+- 判斷軸為「未定決策分支多寡」而非前端／後端：完整新功能、全新 UI 流程設計適用；既有功能調整、需求已明確、純樣式微調可跳過。
+- 定位為**可選**步驟，置於 explore 之後、propose 之前；不動既有 pipeline 行為（派發、retry、model 升級、Spec 同步規則皆不變）。
+- 新指令需重載 plugin（重新 install 或重啟 Claude Code）才會生效。
+
 ## 0.7.1 — 2026-06-23
 
 強化 `code-feat`、`code-fix` 的 skill description，讓「該用哪一個」的路由判斷隨 plugin 出貨、裝好即可靠運作，不依賴專案 CLAUDE.md 額外設定。Claude Code 安裝 plugin 後會自動以 skill 的 `name + description` 判斷適用情境——原描述只標 Tier 等級，缺鑑別條件與互相指路，AI 需靠語意猜測；本次補上判準，讓自動建議不靠運氣。
