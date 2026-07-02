@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.9.0 — 2026-07-02
+
+新增 `code-verify-flow` skill 與 `/code:verify-flow` 指令：在 Phase 2 尾端補上「操作流程驗證」閘門，作為 Phase 3 人工驗收的前置過濾器。過去自動化只有 vitest（驗零件邏輯，mock、靜態），驗不到「零件組起來真接上跑會不會斷」；這類低級問題（流程走不通、報錯、明顯崩版）一路留到人工驗收才被發現。本 skill 透過 claude-in-chrome 在真瀏覽器實際點擊走完 spec 設計的流程，擋掉這層，讓開發者專注在 AI 碰不了的判斷題（美感、資料合理性、體驗）。刻意採「北極星 + 邊界」而非機械檢查表——職責邊界訂死、方法與灰色地帶判斷留給模型，並設計為不綁專案可攜。
+
+### Added
+
+- 新增 `plugins/code/skills/code-verify-flow/SKILL.md`：可攜、不綁專案的操作流程驗證 skill。職責邊界為硬護欄（只驗 spec 明文寫的：流程走得完、無 console error/未預期 4xx-5xx/卡死、spec 點名元件的存在/可見/可互動、spec 明文位置的粗粒度判定；絕不碰美感/間距/差幾 px/資料合理性）；判準精神而非死步驟，方法自選；console warning 分級（error/exception/5xx→FAIL，warning→回報不 block）；verdict PASS/FAIL/BLOCKED，且 BLOCKED 須指明子原因。「spec」抽象為「驗收依據」，無正式 spec 時 fallback 到 task/PR 描述。
+- `code-verify-flow` 的環境韌性：開工 preflight 確認 claude-in-chrome 就緒，未就緒 → BLOCKED（子原因：工具未就緒）**優雅退化為跳過本關、退回純人工驗收**（非 FAIL、非靜默放行）；登入牆分三路處理（優先已驗證入口 / 登入是被測流程才用測試帳密 / 過不去判 BLOCKED），含安全硬規則（絕不自創帳密、不用開發者本人帳號、帳密不寫進報告）與反 rabbit-hole（同道牆 2-3 次即停、不觸發 dialog、不解 CAPTCHA）。
+- 新增 `plugins/code/commands/verify-flow.md`：`/code:verify-flow` 指令入口。
+
+### Changed
+
+- `code-feat`（Tier 3 orchestrator）：新增 Step 6.5「操作流程驗證」（與 Reviewer 同層 gate，可平行、都綠才進註解整理），原註解整理順延為 Step 6.7；front matter、Skills/Model 表、Retry 迴路（新增「操作流程驗證 FAIL → Coder 修復」小迴路與計數）、輸出格式、Guardrails 均納入。觸發條件為改動觸及 UI/流程。
+- `code-fix`（Tier 2 orchestrator）：**維持不變**，刻意不納入操作流程驗證——Tier 2 輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重，小改動人工瞄一眼即可；需要時獨立跑 `/code:verify-flow` 或升 Tier 3。
+- `ai-development-pipeline.md`：Phase 2 Agent Pipeline 圖改為 Reviewer ∥ 操作流程驗證同層 gate（可平行、都綠才進註解整理）；新增「操作流程驗證 Agent」專節；失敗處理策略、Model 分層表、Agent Knowledge Skills 載入表、工具依賴表、Tier 3 流程總覽、Skill 架構分類表均納入；Phase 3 補述「前置過濾器」定位。
+
+### Removed
+
+- `ai-development-pipeline.md`：移除「實驗記錄」段（實驗 1/2/3，2026-02～03 的早期驗證紀錄）——內容已久遠、發現事項均已落地進流程，留著意義不大。Orchestrator「現狀」附註中對「兩次實驗」的懸空引用一併改為「已實測可行」。
+- README：指令表新增 `/code:verify-flow` 列、Agent 編排段新增「操作流程驗證」項、`/code:feat` 流程圖納入。
+- `plugin.json`、`marketplace.json` 的 plugin 版號升至 0.9.0，description 補上 `code-verify-flow`。
+
+### Notes
+
+- 定位為**前置過濾器不取代人工驗收**：擋低級的「流程走不通」，縮小人工驗收範圍，不接手 AI 碰不了的判斷題。
+- 觸發條件為改動觸及 user-facing 流程/畫面（如 `.vue` template）；純後端/composable、Tier 1 微調跳過。
+- 排序理由：與 Reviewer 同屬「會打回 Coder 的 gate」故同層；註解整理只動註解不動邏輯、必排所有 gate 之後跑一次，且不會弄壞走得通的流程，故驗證永不因註解整理重跑。
+- 呼應「自主優先」：灰色地帶（驗收依據含糊、算不算壞模稜兩可）描述現象、標待人確認，不擅自放行也不擅自 block。
+- 新指令需重載 plugin（重新 install 或重啟 Claude Code）才會生效。
+
 ## 0.8.0 — 2026-06-23
 
 新增 `code-decisions` skill 與 `/code:decisions` 指令：在 `opsx:explore` 與 `opsx:propose` 之間補上「動手前決策收斂」閘門。explore 是發散探索、容易聊到「感覺完整」就進 propose，未定的小細節（邊界、空狀態、錯誤情境、需求衝突）便被包裝成看似完整的 spec，最後在 Coder／Reviewer／retry 階段才爆出來。本 skill 沿決策樹只挑「Coder 動手時必須有答案、但目前未定」的分支逐一收斂，把 `code-guidelines` 的「預防比 retry 便宜」思路延伸到設計端。
