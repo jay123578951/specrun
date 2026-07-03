@@ -58,10 +58,17 @@
 
 ### Added
 
+- **G5＋G8 `/code:retro` 回饋迴路（雙模式 skill ＋ 全域收件匣）**：新增 `code-retro` skill 與 `/code:retro` 指令。**記錄模式（預設，自動）**——`code-feat` Step 7 與 `code-fix` Step 8 完成報告尾端內建一行呼叫（SSOT：事件表與條目格式只活在 retro SKILL），對照列舉事件表記錄偏離快樂路徑的事件（gate FAIL 哪關第幾輪、counter 達 2/3、test-defect 仲裁、flaky、BLOCKED、G7 規模超標、驗收修正、pragma 攔截、安全 review、無法測試清單）＋快樂路徑統計行（調閾值的分母）；條目＝固定詞彙＋一行事實＋指路＋session 指針，**不寫解讀**；另設開放觀察欄收事件表外的異常（反覆出現→提案收進事件表，收集工具本身也被優化）。**歸檔模式（`--archive`，手動）**——讀收件匣→聚類找跨專案模式→需要時順 session 指針開採 transcripts（平行 subagent 分片）→附證據的 kit 優化提案→**徵求同意**→已消化條目移入 `runs-archive.jsonl`。檔案：`~/.claude/sdd-kit-feedback/runs.jsonl`（跨專案單一收件匣，自動 append 點只進不出）；>30 筆在完成報告提醒 `--archive`。定位翻轉：retro 受益對象是 **kit 不是專案**——教訓寫回 kit 的 prompt，**不寫專案 CLAUDE.md**（單專案受惠＋各專案規則各自演化是 drift 溫床）；源頭語義記錄召回率遠高於事後 transcripts 關鍵字開採。`scope_exceeded` 事件為 `docs/routing-cases.md` 新題候選（與 G9 接軌）。
 - **A1 `opus-reviewer` plugin agent**（`plugins/code/agents/opus-reviewer.md`）：Reviewer 派發改走 plugin agent——frontmatter **鎖 `model: opus`**（「固定走 Opus」從派發參數的一句話變成機械保證）與**工具白名單**（Skill/Read/Grep/Glob/Bash，拿掉 Write/Edit——report-only 的工具層門檻；保留 Bash 供自跑 `git diff`，維持「只傳變更名稱、agent 自讀」的 context 經濟。誠實標註：提高失誤門檻，非 sandbox 保證）。agent 本體薄殼，仍載入 `code-review` 為規範單一來源（不破壞 SSOT）；**報告第一行自報實際 model**（零成本 runtime 降級偵測）。`code-review`／`code-feat` Step 6／`code-fix` Step 5.5 的派發參數統一改為 `subagent_type: opus-reviewer`；targeted re-check 維持 general-purpose + sonnet 不變。
 - G9 路由回歸案例集 `docs/routing-cases.md`：15 句 canonical 需求 → 預期 Tier 對照表（照第 21 條新判準寫，含邊界案例：對話定案小功能→Tier 2、驗收修正→Tier 2 場景 ii、小型新 API→Tier 3 陷阱題、決策未收斂→不派發）。kit repo 維護工具，不進 plugin 出貨、不被 runtime 載入——是改 description 措辭時的校準考卷，逐句對答案全對才放行，錯誤死在 kit repo。與 retro 迴路接軌：G7 規模超標實例為新題候選。`code-feat` description 同步對齊新判準（檔案數降為輔助訊號、補「行為值得規格化／需拆批」、指路改「決策已在對話收斂的小改動改用 code-fix」），command 副本經腳本重新生成；新 description 首考 15/15。
 - G13 防 drift 生成腳本 `scripts/sync-descriptions.mjs`：command frontmatter 的 description 改由腳本**從對應 skill 的 description 生成**，不再手寫——副本從「人寫的手抄本」變成「建置產物」，重跑即同步；附 `--check` 模式（發版前機械檢查，待同步差異或版號不一致即 exit 1）。版號一致性（plugin.json ＝ marketplace plugins[].version ＝ metadata.version）用比對不用生成——多處同值沒有主體可抄。判準一句話：**腳本能從主體算出副本 → 生成；敘事改寫 → G14 權威宣告；多處同值 → 比對**。立原則供日後複利：副本要嘛是產物、要嘛不該存在。首跑重新生成 4 個 command description（comment/fix/review/verify-flow——其中 fix 為第 21 條新判準版，review/comment/verify-flow 統一為 skill 版原文）。
 - G14 權威宣告：pipeline doc 開頭與 README 明文文件權威層級——**SKILL.md（執行契約權威）＞ pipeline doc（方法論）＞ README（摘要）**，說法衝突以 SKILL.md 為準並視為文件 bug。宣告不防 drift 發生，但把傷害從「各信一邊」降為「都知道以誰為準」。
+
+### Notes
+
+- **明文不做（審查定案的擱置區，理由見決策記錄）**：A2 pipeline 狀態檔（簡單場景對話記帳即可、災難恢復由磁碟優先架構承擔；極簡設計保留供日後重評）、A3 spec-code 同 commit hook（commit 刻意留在 kit 流程外）、C2' 回歸測試紅燈驗證（git stash 操作風險；若日後撿回走 TDD 排序）、W14 決策清單落盤（compaction 實務少發生、可用 --resume 自救）、G6 sync-map（對照表本身是會腐化的副本）、G11 spec 庫寫入序列化條文（單線開發現行設計正確；多 worktree 並行不在作者實務中）。
+- 「Code 和 Spec 同一個 commit」不變量不動；三層 Tier 統一為「全部 spec 先行，差別只在儀式重量」。
+- 新指令（`/code:retro`）與新 agent（`opus-reviewer`）需重載 plugin（重新 install 或重啟 Claude Code）才會生效。
 
 ## 0.9.0 — 2026-07-02
 

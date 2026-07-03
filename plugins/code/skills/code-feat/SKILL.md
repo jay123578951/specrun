@@ -314,6 +314,8 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項），提示進入 Phase 3 人工驗收。
 
+**retro 記錄（一行呼叫）**：載入 `code-retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表與條目格式以該 skill 為單一來源，此處不複製）；收件匣 > 30 筆時在完成報告加一行提醒 `/code:retro --archive`。append 失敗不阻斷報告，註記即可。
+
 報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔）——檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
 
 ---

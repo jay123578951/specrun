@@ -20,6 +20,7 @@
 | `/code:review [--staged \| --branch <ref> \| --change <name>]` | 獨立 code review | Opus subagent 獨立審查（與主對話 context 隔離） |
 | `/code:verify-flow [app URL] [驗收依據]` | 觸及 UI/流程的變更 | fresh-context subagent 用 claude-in-chrome 真點擊走完 spec 流程，確認不報錯/不中斷、spec 明文元件與位置成立；不判美感與資料合理性（留給人） |
 | `/code:comment [--staged \| --branch <ref> \| --whole-file]` | 開發收尾清理註解 | Sonnet subagent 以「完成後讀者」視角清除過時/冗餘/思考流程註解（冗餘含語意複述，非僅字面直譯），保留 why 與功能型指令（獨立模式預設只清 diff 鄰近，`--whole-file` 放寬到整檔） |
+| `/code:retro [--archive]` | kit 回饋迴路（記錄自動內建於 feat/fix 完成報告；手動＝補記） | 記錄模式對照事件表把偏離快樂路徑的事件與統計 append 進 `~/.claude/sdd-kit-feedback/runs.jsonl` 跨專案收件匣；`--archive` 聚類找模式、產出附證據的 kit 優化提案（經同意才動 kit、不寫專案 CLAUDE.md） |
 
 > 微調（CSS、文字、單行 fix）建議直接在主對話改，不需走 plugin。完整分級判斷見 [`plugins/code/docs/ai-development-pipeline.md`](plugins/code/docs/ai-development-pipeline.md)。
 >

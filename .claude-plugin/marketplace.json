@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "code",
-      "description": "Tier 1/2/3 SDD pipeline — code-decisions / code-feat / code-fix / code-review / code-verify-flow / code-comment + code-guidelines behavioral skill, driven by OpenSpec change artifacts",
+      "description": "Tier 1/2/3 SDD pipeline — code-decisions / code-feat / code-fix / code-review / code-verify-flow / code-comment / code-retro + code-guidelines behavioral skill + opus-reviewer agent, driven by OpenSpec change artifacts",
       "version": "0.10.0",
       "author": {
         "name": "jay123578951"
