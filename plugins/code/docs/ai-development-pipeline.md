@@ -458,7 +458,8 @@ Review 維度、嚴重程度定義、輸出格式、subagent prompt 模板等細
 
 **verdict 與後續**：
 - `PASS` → 進 Phase 3 人工驗收
-- `FAIL`（流程斷 / error 信號 / spec 明文項目不成立）→ 回 Coder 修（最多 3 輪）
+- `FAIL`（流程斷 / error 信號 / spec 明文項目不成立；**判 FAIL 前必重現一次**，視覺型 FAIL 附截圖或幾何描述）→ 回 Coder 修（最多 3 輪；修復走完整靜態關卡再 targeted re-run）
+- **flaky**（一次性錯誤、重現不出）→ 不打回 Coder、不計 retry，標註進報告交人工驗收確認（不靜默判 PASS）
 - `BLOCKED`（無法判定，**不計 retry**，報告須指明子原因）：
   - **工具未就緒**（Chrome 沒裝/沒連 claude-in-chrome）→ 優雅退化：跳過本關、退回純人工驗收，交付不卡死。**不當 FAIL**（沒工具 ≠ code 壞）、**不靜默放行**（別給假綠燈）
   - **環境**（dev server / seed data / 連不上）→ ⛔ 問人

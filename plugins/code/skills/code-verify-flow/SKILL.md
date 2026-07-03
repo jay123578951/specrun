@@ -49,6 +49,8 @@ description: Use when you need to confirm a spec-designed user flow actually run
 - console **`error`** 或未捕捉的 exception
 - **未預期的 network 4xx / 5xx**（該成功的請求失敗了）
 
+**FAIL 前的重現確認（必做）**：命中失敗信號後，先把**同一步驟再走一遍**——錯誤再次出現才正式判 FAIL 打回 Coder；重現不出 → 標記 **flaky**：不判 FAIL、也**不靜默當 PASS**，寫進報告交人工驗收確認。理由：code 造成的錯誤是確定性的（重做穩定再現），環境噪音是隨機的（HMR 抖動、冷啟動、偶發 timeout）——一次重做即可分流，且只是同一瀏覽器 session 多走一遍，成本趨近零。真正的間歇性 bug（race condition 類）可能兩次都不現身，所以不判 PASS 而是誠實標註交人——agent 只自動化「確定的」，「不確定的」留給人。
+
 ### 元件層——只驗 spec 點名的關鍵元件
 
 驗哪些元件，由**驗收依據點名的**決定（例如 scenario 寫「點擊拍照按鈕」→ 就驗「拍照按鈕」），**不要自由發揮去掃畫面上每個元素**（範圍無界會發散）。對這些被點名的元件，看：
@@ -110,10 +112,12 @@ Subagent 需要 **claude-in-chrome 瀏覽器工具**（`tabs_context_mcp` / `nav
 | verdict | 意義 | 後續 |
 |---------|------|------|
 | **PASS** | 流程走得完、spec 明文項目都成立、無 error 級信號 | 進下一步（人工驗收） |
-| **FAIL** | 流程斷 / error 級信號 / spec 明文項目不成立（元件沒出現、跑錯區域、明顯崩版） | 回 Coder 修 |
+| **FAIL** | 流程斷 / error 級信號 / spec 明文項目不成立（元件沒出現、跑錯區域、明顯崩版）——**且已重現確認** | 回 Coder 修 |
 | **BLOCKED** | 環境/資料問題導致無法判定（dev server、seed、連不上） | **問人**，不算 retry |
 
-不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。
+不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。
+
+**FAIL 的佐證要求**：視覺型 FAIL（元件沒出現、跑錯區域、明顯崩版）須附**截圖或幾何描述**（哪個元素、預期位置 vs 實際位置）；截圖存 `.claude/debug/`（不進版控，生命週期由呼叫方管理）。
 
 ---
 
@@ -189,10 +193,13 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 - console `error` 或未捕捉 exception（走完流程後用 read_console_messages 檢查）
 - 未預期的 network 4xx/5xx（用 read_network_requests 檢查該成功卻失敗的請求）
 
+**判 FAIL 前必須重現一次**：命中失敗信號後，把同一步驟再走一遍——再次出現才正式 FAIL；重現不出 → 記進輸出的「flaky」段（不判 FAIL、也不當沒看見），交人工驗收確認。
+
 **元件層**——只驗上面抓出的 spec 點名元件，別掃全畫面：
 - 存在（進了 DOM）、可見（有尺寸、非隱藏、在 viewport、沒被蓋住）、可互動（點得到）
 - spec 明文位置：只驗粗粒度——落在對的區域或相對關係對。明顯跑錯地方/崩版才 FAIL；「在對的區域只是沒對齊」放行。
 - 手法自選：瞄截圖、讀 DOM 幾何、看相對關係都行。
+- 視覺型 FAIL（元件沒出現/跑錯區域/崩版）須附佐證：截圖（存 `.claude/debug/`）或幾何描述（哪個元素、預期位置 vs 實際位置）。
 
 **console warning**：抓得到但分級——error/exception/5xx = FAIL 信號；warning = 回報但不 block。跟本次流程相關的 warning 值得標記，框架/第三方噪音（deprecation、favicon 404、source-map）略過。
 
@@ -209,6 +216,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 ## 操作流程驗證：{流程名稱}
 
 ### Verdict：{PASS | FAIL | BLOCKED}
+實際驗證的 URL/port：{你真正操作的位址，如 http://localhost:3000——供人工對帳 dev server 身分}
 {若 BLOCKED：}子原因：{工具未就緒 | 環境（dev server/seed） | 登入牆（缺帳密 / OAuth / SSO / CAPTCHA / 2FA / 魔術連結）}
 建議動作：{例如「請人工走一遍流程」/「安裝 claude-in-chrome 後重跑」/「提供測試帳號」}
 
@@ -224,9 +232,12 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 | 拍照按鈕 | ✅ | ✅ | ✅ | spec:右上角 → 實際右上區 ✅ | OK |
 
 ### console / network 觀察
-- ❌ error：{有則列出，無則「無」}
+- ❌ error：{有則列出，無則「無」；FAIL 級信號皆已重現確認}
 - ⚠️ warning（不 block，供參考）：{相關的列出；純環境噪音可略}
 - network 異常：{未預期 4xx/5xx，無則「無」}
+
+### flaky（一次性、重現不出的錯誤）
+（首次出現的現象＋位置；已重走一遍未再現。不打回 Coder，交人工驗收確認；無則「無」）
 
 ### 待人確認（灰色地帶）
 （模稜兩可、無法客觀判定的，列出交人；無則「無」）
@@ -243,7 +254,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 | 使用者 | 如何使用 |
 |--------|---------|
-| `code-feat`（Tier 3） | 排在 **Reviewer 同層**（可平行）、**註解整理之前**。因為它跟 Reviewer 一樣是「會把 code 打回 Coder 的關卡」，而註解整理是只動註解的收尾，必須在所有 gate settle 後跑一次。FAIL → 回 Coder（套 retry 上限）；BLOCKED → 問人不計 retry |
+| `code-feat`（Tier 3） | 排在 **Reviewer 迴路完全 settle 之後**、**註解整理之前**——動態關卡永遠壓軸，驗的必是最終 code，PASS 不會過期。FAIL（重現確認後）→ 回 Coder，修復走完整靜態關卡後 targeted re-run（套 retry 上限）；flaky → 標註交人不計 retry；BLOCKED → 問人不計 retry |
 | `code-fix`（Tier 2） | **不納入**——Tier 2 刻意輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重（需 dev server + 瀏覽器）。小改動要驗流程 → 獨立跑 `/code:verify-flow` 或升 Tier 3 |
 | 獨立使用 | 任何時候對正在跑的 app 執行 `/code:verify-flow`，給它 URL + 驗收依據 |
 

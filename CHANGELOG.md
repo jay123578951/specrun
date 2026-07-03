@@ -34,6 +34,13 @@
 - **C5 派發中斷對帳＋C6 起跑髒檢查**：Coder/Tester 派發失敗或中斷 → `git status` 對照 tasks.md checkbox 對帳實際完成度後重派（磁碟優先）；Step 2 起跑加 advisory 髒檢查——`openspec/` 以外存在無關未 commit 修改時提醒不硬擋。
 - 同步位置：`code-feat` SKILL（Model 表、Step 2/4/5/6.5、Retry 迴路全section、Guardrails）、`code-review` SKILL（Grounding rules）、pipeline doc（Phase 2 流程圖、Gate 排序原則、失敗處理策略、Model 升級條件、Coder/Tester/驗證 Agent 專節、指令執行慣例）、README（Agent 編排段）。
 
+### Changed（操作流程驗證強化——`code-verify-flow` 批次）
+
+- **W11 transient 重現確認**：判 FAIL 前**必須重現一次**——同一步驟再走一遍，錯誤再現才正式 FAIL 打回 Coder；重現不出 → 標記 **flaky**（不打回、不計 counter、不靜默判 PASS），寫進報告交人工驗收確認。重現是便宜的分類器：code 錯誤是確定性的、環境噪音是隨機的，一次重做即可分流且成本趨近零；與三態 verdict「環境噪音不污染 retry」哲學同構。輸出格式新增「flaky」段。
+- **W12 dev server 身分**：輸出格式加一列「**實際驗證的 URL/port**」——純輸出、零行為規則，供人工對帳 dev server 身分。已知限制誠實記錄於決策：多 worktree 並行時仍有假綠燈風險，屆時再補條件規則。
+- **G10 視覺佐證＋`.claude/debug/` 生命週期**：視覺型 FAIL（元件沒出現、跑錯區域、崩版）須附**截圖或幾何描述**（哪個元素、預期 vs 實際位置）；截圖存 `.claude/debug/`（不進版控）。生命週期兩層制：`code-feat` Step 7 報告後**主動刪**本次 change 的殘留檔＋Step 2 **lazy cleanup** 掃孤兒（對應 change 已不存在者刪，仍在者保留為接手線索）。
+- 同步位置：`code-verify-flow` SKILL（判準精神、verdict 表、prompt 模板、輸出格式、與 Pipeline 的關係表）、`code-feat` SKILL（Step 2/6.5/7、Retry 迴路）、pipeline doc（驗證 Agent 專節、失敗處理策略）。
+
 ### Added
 
 - G9 路由回歸案例集 `docs/routing-cases.md`：15 句 canonical 需求 → 預期 Tier 對照表（照第 21 條新判準寫，含邊界案例：對話定案小功能→Tier 2、驗收修正→Tier 2 場景 ii、小型新 API→Tier 3 陷阱題、決策未收斂→不派發）。kit repo 維護工具，不進 plugin 出貨、不被 runtime 載入——是改 description 措辭時的校準考卷，逐句對答案全對才放行，錯誤死在 kit repo。與 retro 迴路接軌：G7 規模超標實例為新題候選。`code-feat` description 同步對齊新判準（檔案數降為輔助訊號、補「行為值得規格化／需拆批」、指路改「決策已在對話收斂的小改動改用 code-fix」），command 副本經腳本重新生成；新 description 首考 15/15。
