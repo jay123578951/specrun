@@ -24,6 +24,16 @@
 - **Spec 影響檢查前移（spec-first）**：`code-fix` 新增 Step 3「派發前 Spec 影響判斷」——場景 (i) 有影響先改 `openspec/specs/`、場景 (ii) 先回寫 change artifact，更新後的 spec 段落作為驗收依據注入 Coder prompt（Coder 拿權威版、Tester 稽核有 ground truth、仲裁錨更硬）；原 commit 前檢查降為 Step 7「輕量複核」（防實作範圍外溢）。三層 Tier 哲學統一：全部 spec 先行，差別只在儀式重量。
 - 同步位置：`code-fix` SKILL（description、定位段、適用判斷、流程 Step 1-8、輸出模板、Guardrails）、pipeline doc（判斷標準表、流程總覽、Tier 2 專節、Spec 影響檢查段）、README（理念段、指令表、Spec 同步段）。
 
+### Changed（Pipeline 行為修正——`code-feat` 大批次）
+
+- **W1＋W9 Gate 序列化**：統一原則「靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（操作流程驗證）永遠壓軸，驗的必是最終 code」。(1) 任何 gate FAIL 的修復完成後，修復 agent settle 前**自跑三件套（lint + typecheck + test）**——紅燈就地修不計 retry、就地修不掉回主對話記帳；全綠即 settle 不重派 Tester（修復後防的是機械回歸，Tester 的獨立價值在首輪設計測試）。(2) Reviewer 與操作流程驗證由平行改**序列**：Reviewer 迴路完全 settle 後才派發 verify-flow，其 PASS 不可能過期——「綠燈作廢」規則與 W9「同輪雙 FAIL 合併派發」條款因此都不需要存在。(3) verify-flow FAIL 的修復走完整靜態關卡（三件套 → Sonnet targeted re-check）後才 targeted re-run。Guardrails 平行派發補「檔案不相交」前提（通用防線）。取捨：快樂路徑 wall-clock 由 max 變相加——自主 pipeline 無人即時盯梭，wall-clock 是最便宜的貨幣，規則才是永久 drift 面。
+- **W3 test-defect 仲裁通道＋Tester 重定義為獨立稽核者**：retry prompt 明文開申辯通道——Coder 判斷「測試與驗收依據不符」（不論測試作者）可回報 test-defect，**必須引用驗收依據原文**、引不出不受理；主對話改派 Tester 修測試（測試檔守護者一律是 Tester）。權力結構：Coder 有上訴權無裁判權，裁判是驗收依據原文（spec 說了算），終審是人。Tester 工作順序重排防錨定：①先讀 specs 獨立列應驗行為清單（**此階段禁看任何測試檔**）→②對照找缺口與錯斷言→③補寫/修正→④跑全套；Coder 明文允許順手寫自證測試（輸出列出供稽核）。
+- **計數判準統一**：「品質失敗回到主對話、需派 agent 去修」＝計一圈；上訴輪同計。不計：ESLint/typecheck 自修、三件套就地修、BLOCKED、flaky 標註、targeted re-check/re-run。counter 語義＝「迴路為修品質問題轉了幾圈」，不做過錯歸屬。
+- **G2 typecheck gate**：Coder 完成後與 lint 並列跑 typecheck（優先專案 `typecheck` script；Nuxt 用 `pnpm exec nuxi typecheck`，裸跑 vue-tsc 在未 prepare 的 Nuxt 專案會炸）；自修不計 retry（比照 ESLint 前例）；修復輪自跑組合為三件套。補上「兩處條文把型別委派給編譯器、但編譯器從未被執行」的空崗位；掛回合終點 gate（vue-tsc 有 OOM 前科不適合高頻 hook）。pipeline doc「指令執行慣例」擴為 lint / typecheck / test 共用並新增 typecheck 慣例段。
+- **W19 升級規則統一＋W7 免重讀 escape hatch**：統一為「**同一迴路 counter ≥ 2 起，該迴路的修復派發升 Opus**」——Tier 2、Tier 3、測試迴路、Reviewer 迴路、驗證迴路一體適用；措辭**綁派發不綁角色**（上訴輪修復派發可能是 Tester）；棘輪不變。升 Opus 那輪**解除**「retry 免重讀 design/specs」限制（解禁非強制，範圍含 design.md 與 specs/）——判定需要深度推理的同時給足材料；前兩輪免重讀不變。`code-review` Grounding rules 補「spec alignment finding 必附被違反的 spec 段落原文（來源路徑＋段落內容），引不出原文的指控不成立」——orchestrator 全文轉遞後修復 agent 不必重讀 spec 檔，與 test-defect 引原文為同一 grounding 紀律、雙向對稱。
+- **C5 派發中斷對帳＋C6 起跑髒檢查**：Coder/Tester 派發失敗或中斷 → `git status` 對照 tasks.md checkbox 對帳實際完成度後重派（磁碟優先）；Step 2 起跑加 advisory 髒檢查——`openspec/` 以外存在無關未 commit 修改時提醒不硬擋。
+- 同步位置：`code-feat` SKILL（Model 表、Step 2/4/5/6.5、Retry 迴路全section、Guardrails）、`code-review` SKILL（Grounding rules）、pipeline doc（Phase 2 流程圖、Gate 排序原則、失敗處理策略、Model 升級條件、Coder/Tester/驗證 Agent 專節、指令執行慣例）、README（Agent 編排段）。
+
 ### Added
 
 - G9 路由回歸案例集 `docs/routing-cases.md`：15 句 canonical 需求 → 預期 Tier 對照表（照第 21 條新判準寫，含邊界案例：對話定案小功能→Tier 2、驗收修正→Tier 2 場景 ii、小型新 API→Tier 3 陷阱題、決策未收斂→不派發）。kit repo 維護工具，不進 plugin 出貨、不被 runtime 載入——是改 description 措辭時的校準考卷，逐句對答案全對才放行，錯誤死在 kit repo。與 retro 迴路接軌：G7 規模超標實例為新題候選。`code-feat` description 同步對齊新判準（檔案數降為輔助訊號、補「行為值得規格化／需拆批」、指路改「決策已在對話收斂的小改動改用 code-fix」），command 副本經腳本重新生成；新 description 首考 15/15。

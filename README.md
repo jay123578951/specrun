@@ -27,10 +27,10 @@
 
 ### Agent 編排
 
-- **Coder**（Sonnet → Opus 動態切換）— 預設 Sonnet subagent；首次派發前若判定為架構變更 / 安全敏感路徑 / 設計決策密集則升 Opus，retry 進入第 2 輪起也自動升 Opus（後續不再降回）。`/code:feat` 與 `/code:fix` 共用同一套 skill 規範：必載 `code-guidelines`（行為守則）/ `vue` / `vue-best-practices` / `nuxt` / `antfu`，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices` / `vueuse-functions` / `pnpm` / `turborepo`。Tier 差異在流程而非風格寬鬆度
-- **Tester**（Sonnet）— 自動載入 `vitest` / `antfu` / `vue-testing-best-practices`，測試失敗會退回 Coder 修復（最多 3 輪）
+- **Coder**（Sonnet → Opus 動態切換）— 預設 Sonnet subagent；首次派發前若判定為架構變更 / 安全敏感路徑 / 設計決策密集則升 Opus；任一 retry 迴路 counter ≥ 2 起，該迴路的修復派發自動升 Opus（後續不再降回；統一規則，綁派發不綁角色）。完成後自跑 lint + typecheck（自修不計 retry）。`/code:feat` 與 `/code:fix` 共用同一套 skill 規範：必載 `code-guidelines`（行為守則）/ `vue` / `vue-best-practices` / `nuxt` / `antfu`，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices` / `vueuse-functions` / `pnpm` / `turborepo`。Tier 差異在流程而非風格寬鬆度
+- **Tester**（Sonnet）— 獨立稽核者：先從 spec 獨立列應驗行為清單（禁看測試檔防錨定）再對照補寫/修正測試；自動載入 `vitest` / `antfu` / `vue-testing-best-practices`，測試失敗會退回 Coder 修復（最多 3 輪；Coder 可引驗收依據原文申辯 test-defect，改派 Tester 修測試）
 - **Reviewer**（Opus subagent）— Task tool 派發 Opus subagent 一次審完 code quality / 安全性 / 慣例 / spec alignment；改動觸及 `.vue` template/style 或純樣式檔時加載 `web-design-guidelines` 補 UI/a11y 檢查；安全敏感路徑或第 2 輪 retry 仍 FAIL 時自動升級為 adversarial prompt；FAIL 時退回對應 agent，WARNING re-check 降級為 Sonnet targeted check
-- **操作流程驗證**（Sonnet subagent，觸及 UI/流程時）— 載入 `code-verify-flow` + claude-in-chrome，在真瀏覽器實際點擊走完 spec 設計的流程，只驗「流程走得完、不報錯（console error / 未預期 4xx-5xx）、不中斷」與 spec 明文寫出的元件（存在/可見/可互動）及位置（粗粒度）；不碰美感、間距、資料合理性——那些留給人。與 Reviewer 同層可平行，FAIL 退回 Coder，環境問題判 BLOCKED 問人不計 retry；作為 Phase 3 人工驗收的前置過濾器
+- **操作流程驗證**（Sonnet subagent，觸及 UI/流程時）— 載入 `code-verify-flow` + claude-in-chrome，在真瀏覽器實際點擊走完 spec 設計的流程，只驗「流程走得完、不報錯（console error / 未預期 4xx-5xx）、不中斷」與 spec 明文寫出的元件（存在/可見/可互動）及位置（粗粒度）；不碰美感、間距、資料合理性——那些留給人。在 Reviewer 迴路 settle 後壓軸執行（驗的必是最終 code），FAIL（重現確認後）退回 Coder、修復走靜態關卡後再重驗；環境問題判 BLOCKED 問人、重現不出標 flaky 交人，皆不計 retry；作為 Phase 3 人工驗收的前置過濾器
 - **註解整理**（Sonnet subagent）— 開發收尾 fresh-eyes 清除 AI 累積的過時/疊加/思考流程/冗餘註解，以「功能完成後、不知道開發過程的讀者」視角評估：凡讀命名／結構／鄰近檔案（如 CSS／型別）即可回推者皆視為冗餘（涵蓋語意複述，不限字面直譯），唯跨越開發期仍成立的「為什麼」、JSDoc 與功能型指令註解（`eslint-disable`、`@ts-expect-error` 等）保留；依守則直接套用 Edit 後重跑 lint + 測試作安全網（指令依專案 package manager / scripts 偵測，不寫死 `npx`）
 
 ### Spec 同步保證

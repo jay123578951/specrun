@@ -174,6 +174,7 @@ Grounding rules：
 
 - 每個 finding 必須指到明確的「檔案:行號」
 - requirement / scenario 未實作時必須引用 spec 原文作為證據
+- 標記 spec alignment 問題（未實作／違反 spec）的 finding，**必須附上被違反的 spec 段落原文（來源路徑＋段落內容）**——引不出原文的「違反 spec」指控不成立；此原文會被 orchestrator 全文轉遞給修復 agent 作為權威依據
 - 不要推測「可能的問題」，只報告有證據支持的事實
 - 區分 observed fact 與 inference，inference 必須明確標註
 - 若資訊不足，標記為 open question 繼續完成其餘檢查，不要詢問澄清問題
