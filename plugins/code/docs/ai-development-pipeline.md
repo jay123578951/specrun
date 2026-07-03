@@ -27,13 +27,18 @@
 
 ### 判斷標準
 
+主判準是**決策狀態**與**是否需要新的 OpenSpec artifact**；檔案數只是輔助訊號，不是門檻。
+
 | 考量 | Tier 1 微調 | Tier 2 小改動 | Tier 3 完整功能 |
 |------|------------|--------------|----------------|
-| 影響檔案數 | 1-2 個 | 2-5 個 | 5+ 個或跨模組 |
-| 需要設計決策 | 否 | 否 | 是 |
-| 新增 API / 元件 | 否 | 否 | 是 |
-| 預估時間 | < 30 分鐘 | 30 分鐘 ~ 2 小時 | > 2 小時 |
-| 範例 | CSS 微調、文字修正、單行 bug fix | 跨檔案 bug fix、小型 UI 調整、composable 修正 | 新功能、大型重構、架構變更 |
+| 決策狀態 | 瑣碎，無需決策 | 決策已在對話收斂（微決策 1-2 題可當場定案再派發） | 決策分支多，需完整收斂流程（explore / decisions / propose） |
+| 需要新的 OpenSpec artifact | 否 | 否（驗收修正場景可回寫**既有** change） | 是（新增 API/元件、行為值得規格化、變更需拆批） |
+| 影響檔案數（輔助訊號） | 通常 1-2 個 | 通常 2-5 個 | 通常 5+ 或跨模組 |
+| 範例 | CSS 微調、文字修正、單行 bug fix | 跨檔案 bug fix、小型 UI 調整、composable 微調、Tier 3 驗收後的小修正 | 新功能、大型重構、架構變更 |
+
+**Tier 2 定位一句話**：「對話定案、乾淨執行、快速人工驗證」的執行品質層——品質高於主對話直改（fresh-context Coder 載守則＋Tester＋branch 隔離），重量低於 feat 驗證鏈（無 Reviewer、無操作流程驗證）。
+
+**三層哲學統一**：全部 spec 先行，差別只在儀式重量——Tier 3 完整 artifact／Tier 2 派發前直改 spec 庫／Tier 1 末端檢查兜底。
 
 ### 流程總覽
 
@@ -43,8 +48,8 @@
   │    主目錄直接修改 → ESLint --fix → 人工確認 → Spec 影響檢查 → Commit
   │
   ├─ Tier 2 (小改動)
-  │    建立 branch → Coder + Tester → 註解整理 → 人工確認 → Spec 影響檢查
-  │    → Commit → merge 回 main
+  │    對話定案 → 建立 branch → Spec 影響判斷（有影響先改 spec）→ Coder + Tester
+  │    → 註解整理 → Spec 輕量複核 → 人工確認 → Commit → merge 回 main
   │
   └─ Tier 3 (完整功能)
        /opsx:explore → 建立 branch（或 worktree）→〔決策分支多時〕/code:decisions → /opsx:propose
@@ -70,38 +75,44 @@
 
 ## Tier 2: 小改動
 
-適用：跨檔案 bug fix、小型 UI 調整、composable 修正、行為微調
+**定位**：「對話定案、乾淨執行、快速人工驗證」的執行品質層。適用：決策已在對話收斂、不需建立新的 OpenSpec artifact 的改動——跨檔案 bug fix、小型 UI 調整、composable 微調、行為微調、Tier 3 驗收後的小修正。
+
+兩種進入場景：**(i) 獨立小功能／改動**（主對話討論定案後派發）；**(ii) 進行中 change 的驗收修正**（問題不大到重跑 Tier 3、但有決策且要品質；不讀 Tier 3 執行狀態，retry counter 與 model 棘輪歸零重起）。
 
 ```
-描述問題/需求
+對話定案（微決策 1-2 題可當場收斂）
   → 建立 branch (git checkout -b fix-<描述>)
-  → Coder (Sonnet/Opus) + Tester (Sonnet)
+  → Spec 影響判斷（spec-first：場景 i 有影響先改 openspec/specs/；
+     場景 ii 影響在 spec/design 層先回寫 change artifact；純實作問題直接派發）
+  → Coder (Sonnet/Opus，prompt 注入更新後的 spec 段落作為驗收依據) + Tester (Sonnet)
   → 註解整理 (Sonnet)
+  → Spec 輕量複核（防實作範圍外溢）
   → 人工確認
-  → Spec 影響檢查
-  → Commit（在 fix branch 上）
+  → Commit（在 fix branch 上，Spec 與 code 同 commit）
   → merge 回 main
 ```
 
 透過 `/code:fix` 進入（command 位於 `plugins/code/commands/fix.md`）。
 
 - **在獨立 branch 中開發**（不使用 worktree，改動範圍小不需目錄隔離）
-- 跳過 OpenSpec change 流程（不建 proposal / design / tasks）
+- 不建立新的 OpenSpec artifact（不建 proposal / design / tasks；場景 ii 可回寫既有 change artifact）
 - **保留 Coder + Tester**（品質保證）
 - 跳過 Reviewer（變更範圍小，不需多視角審查）
 - Coder 與 Tester 的執行規則同 Tier 3（載入 skills、ESLint --fix、失敗重試最多 3 輪）
 - Coder model 預設 sonnet；改動觸及安全敏感路徑，或 retry 進入第 2 輪起，升 opus（見「Model 分層策略」）
-- Commit 前執行 **Spec 影響檢查**（見下方共用流程）
+- **Spec 影響判斷前移到派發前**（spec-first），commit 前僅做一行輕量複核（見下方共用流程）
 
 ---
 
-## Spec 影響檢查（Tier 1 & Tier 2 共用）
+## Spec 影響檢查（Tier 1 & Tier 2）
 
-SDD 核心原則：**Code 和 Spec 永遠在同一個 commit 裡，不允許「程式改了但文件沒跟上」的狀態。**
+SDD 核心原則：**Code 和 Spec 永遠在同一個 commit 裡，不允許「程式改了但文件沒跟上」的狀態。** 三層 Tier 哲學統一——全部 spec 先行，差別只在儀式重量：Tier 3 完整 artifact、Tier 2 派發前直改 spec 庫、Tier 1 末端檢查兜底。
 
-Tier 1 / Tier 2 不走 OpenSpec change 流程，但在 commit 前必須執行 Spec 影響檢查：
+### Tier 2（spec-first，派發前判斷）
 
-### 步驟
+`/code:fix` 在派發 Coder **之前**先做 Spec 影響判斷：場景 (i) 有影響先更新 `openspec/specs/`；場景 (ii) 影響在 spec/design 層先回寫 change artifact；更新後的 spec 段落作為驗收依據注入派發 prompt（Coder 拿權威版驗收依據、Tester 稽核有 ground truth）。commit 前另做一行**輕量複核**防實作範圍外溢。細節見 `code-fix` SKILL Step 3 / Step 7。
+
+### Tier 1（commit 前檢查）
 
 ```
 1. 列出本次修改的所有檔案

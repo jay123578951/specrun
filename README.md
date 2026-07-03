@@ -6,7 +6,7 @@
 
 `claude-sdd-kit` 把 Spec-Driven Development 的編排成本壓成一個指令。搭配 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 管理變更規格，Reviewer 透過 Opus subagent 進行獨立 code review。
 
-手動跑 SDD 流程時要自己載 skills、切換 Coder / Tester / Reviewer 三種角色、把 design 與 tasks 貼進對話、最後還要確保 spec 跟 code 同步——這些都能編排，但每次手動拼裝太累。更重要的是 **reviewer 應該獨立**：Coder / Tester / Reviewer 各自派發成獨立 subagent，Reviewer 固定走 Opus 並與其他角色 context 隔離，靠獨立視角避免自評自審讓品質失真。Coder 則依變更性質**動態選模型**——一般功能用 Sonnet，碰到架構變更、安全敏感路徑、設計決策密集或 retry 第 2 輪才升 Opus。所以這個 plugin 把 agent 派發、skill 載入、獨立 review 全包起來，並用**變更分級制度**避免小改動被完整 spec 流程綁住——改個 CSS 就用 `/code:fix`，做新功能才走 `/code:feat`。Coder 在動手前還會載入 `code-guidelines` **行為守則**（最小可行、外科手術式改動、自主判斷邊界），從生成端就避免過度設計與越界改動，而非全部留給 Reviewer 事後攔截——預防比 retry 便宜。同樣的預防思路延伸到設計端：`/code:decisions` 在 explore 與 propose 之間沿決策樹收斂未定分支，避免模糊需求被 propose 包裝成看似完整的 spec、最後才在實作階段爆出來。
+手動跑 SDD 流程時要自己載 skills、切換 Coder / Tester / Reviewer 三種角色、把 design 與 tasks 貼進對話、最後還要確保 spec 跟 code 同步——這些都能編排，但每次手動拼裝太累。更重要的是 **reviewer 應該獨立**：Coder / Tester / Reviewer 各自派發成獨立 subagent，Reviewer 固定走 Opus 並與其他角色 context 隔離，靠獨立視角避免自評自審讓品質失真。Coder 則依變更性質**動態選模型**——一般功能用 Sonnet，碰到架構變更、安全敏感路徑、設計決策密集或 retry 第 2 輪才升 Opus。所以這個 plugin 把 agent 派發、skill 載入、獨立 review 全包起來，並用**變更分級制度**避免小改動被完整 spec 流程綁住——對話定案的小改動用 `/code:fix`（spec-first：派發前先同步規格），做新功能才走 `/code:feat`。Coder 在動手前還會載入 `code-guidelines` **行為守則**（最小可行、外科手術式改動、自主判斷邊界），從生成端就避免過度設計與越界改動，而非全部留給 Reviewer 事後攔截——預防比 retry 便宜。同樣的預防思路延伸到設計端：`/code:decisions` 在 explore 與 propose 之間沿決策樹收斂未定分支，避免模糊需求被 propose 包裝成看似完整的 spec、最後才在實作階段爆出來。
 
 ## Features
 
@@ -16,7 +16,7 @@
 |------|----------|------|
 | `/code:decisions [任務描述]` | 完整新功能、全新 UI 流程設計（決策分支多） | 沿決策樹找出未定分支，逐一收斂後輸出決策清單餵 `/opsx:propose`（不產 spec、不寫 code） |
 | `/code:feat <change-name>` | 新功能、大型重構、跨模組變更 | Coder → Tester → Reviewer ∥ 操作流程驗證 → 註解整理，搭配 OpenSpec 變更 artifact |
-| `/code:fix` | 跨檔案 bug fix、小型 UI 調整、composable 微調 | Coder + Tester → 註解整理，含 Spec 影響檢查 |
+| `/code:fix` | 決策已在對話收斂、不需新 OpenSpec artifact 的小改動（跨檔案 bug fix、小型 UI 調整、composable 微調、驗收修正） | spec-first：派發前 Spec 影響判斷 → Coder + Tester → 註解整理 → commit 前輕量複核 |
 | `/code:review [--staged \| --branch <ref> \| --change <name>]` | 獨立 code review | Opus subagent 獨立審查（與主對話 context 隔離） |
 | `/code:verify-flow [app URL] [驗收依據]` | 觸及 UI/流程的變更 | fresh-context subagent 用 claude-in-chrome 真點擊走完 spec 流程，確認不報錯/不中斷、spec 明文元件與位置成立；不判美感與資料合理性（留給人） |
 | `/code:comment [--staged \| --branch <ref> \| --whole-file]` | 開發收尾清理註解 | Sonnet subagent 以「完成後讀者」視角清除過時/冗餘/思考流程註解（冗餘含語意複述，非僅字面直譯），保留 why 與功能型指令（獨立模式預設只清 diff 鄰近，`--whole-file` 放寬到整檔） |

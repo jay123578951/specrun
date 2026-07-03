@@ -17,6 +17,13 @@
 - W22：pipeline doc 修正 `/code:fix` command 路徑；`commands/fix.md` argument-hint 由 `[change-name]` 改 `[問題描述]`（code-fix 不吃 change name）；`marketplace.json` 的 `metadata.version` 由停滯的 0.4.0 對齊 plugin 版號。
 - W13（措辭）：三處「誤刪功能型指令註解會在重跑測試時暴露」改為誠實版——「大多數誤刪會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外，測試驗不到，靠保護清單防守」（`code-comment` 兩處、pipeline doc 一處、`code-feat` Step 6.7 一處）。防線什麼等級就寫什麼等級。
 
+### Changed（Tier 2 定位重寫＋spec-first 前移）
+
+- **Tier 2（`code-fix`）定位確立**：「對話定案、乾淨執行、快速人工驗證」的執行品質層——品質高於主對話直改（fresh-context Coder 載守則＋Tester＋branch 隔離），重量低於 feat 驗證鏈（無 Reviewer、無操作流程驗證）。新增兩種進入場景：(i) 獨立小功能／改動；(ii) 進行中 change 的驗收修正（不讀 Tier 3 執行狀態，counter 與 model 棘輪歸零重起）。
+- **路由判準改寫**（取代「2-5 檔、無需設計決策」）：決策已在對話收斂＋不需建立**新的** OpenSpec artifact → Tier 2；需要 spec 記錄（新增 API/元件、行為值得規格化）、決策分支多、需拆批 → Tier 3；單行/純樣式 → Tier 1。**檔案數降為輔助訊號**。明文化「微決策路徑」：1-2 題在對話收斂定案後即可派發（W10 結案）。
+- **Spec 影響檢查前移（spec-first）**：`code-fix` 新增 Step 3「派發前 Spec 影響判斷」——場景 (i) 有影響先改 `openspec/specs/`、場景 (ii) 先回寫 change artifact，更新後的 spec 段落作為驗收依據注入 Coder prompt（Coder 拿權威版、Tester 稽核有 ground truth、仲裁錨更硬）；原 commit 前檢查降為 Step 7「輕量複核」（防實作範圍外溢）。三層 Tier 哲學統一：全部 spec 先行，差別只在儀式重量。
+- 同步位置：`code-fix` SKILL（description、定位段、適用判斷、流程 Step 1-8、輸出模板、Guardrails）、pipeline doc（判斷標準表、流程總覽、Tier 2 專節、Spec 影響檢查段）、README（理念段、指令表、Spec 同步段）。
+
 ### Added
 
 - G14 權威宣告：pipeline doc 開頭與 README 明文文件權威層級——**SKILL.md（執行契約權威）＞ pipeline doc（方法論）＞ README（摘要）**，說法衝突以 SKILL.md 為準並視為文件 bug。宣告不防 drift 發生，但把傷害從「各信一邊」降為「都知道以誰為準」。
