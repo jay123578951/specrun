@@ -1,5 +1,5 @@
 ---
-description: 操作流程驗證 — fresh-context subagent 在真瀏覽器實際點擊走完 spec 設計的流程，確認不報錯/不中斷，不判美感與資料合理性
+description: Use when you need to confirm a spec-designed user flow actually runs end-to-end in a real browser — drives real clicks to check the flow completes without errors/interruptions, verifies spec-stated elements exist and sit where the spec says; does NOT judge aesthetics, spacing, or data correctness (those stay with the human)
 argument-hint: "[app URL] [驗收依據路徑或描述]"
 ---
 

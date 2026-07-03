@@ -26,6 +26,7 @@
 
 ### Added
 
+- G13 防 drift 生成腳本 `scripts/sync-descriptions.mjs`：command frontmatter 的 description 改由腳本**從對應 skill 的 description 生成**，不再手寫——副本從「人寫的手抄本」變成「建置產物」，重跑即同步；附 `--check` 模式（發版前機械檢查，待同步差異或版號不一致即 exit 1）。版號一致性（plugin.json ＝ marketplace plugins[].version ＝ metadata.version）用比對不用生成——多處同值沒有主體可抄。判準一句話：**腳本能從主體算出副本 → 生成；敘事改寫 → G14 權威宣告；多處同值 → 比對**。立原則供日後複利：副本要嘛是產物、要嘛不該存在。首跑重新生成 4 個 command description（comment/fix/review/verify-flow——其中 fix 為第 21 條新判準版，review/comment/verify-flow 統一為 skill 版原文）。
 - G14 權威宣告：pipeline doc 開頭與 README 明文文件權威層級——**SKILL.md（執行契約權威）＞ pipeline doc（方法論）＞ README（摘要）**，說法衝突以 SKILL.md 為準並視為文件 bug。宣告不防 drift 發生，但把傷害從「各信一邊」降為「都知道以誰為準」。
 
 ## 0.9.0 — 2026-07-02

@@ -1,5 +1,5 @@
 ---
-description: 註解整理 — fresh-eyes subagent 清除過時/冗餘/思考流程註解，保留 why 與功能型指令
+description: Use when tidying code comments at the end of development — removes stale/redundant/thinking-process comments while preserving "why" comments, conventions, and functional directives
 argument-hint: "[--staged | --branch <name> | --whole-file]"
 ---
 

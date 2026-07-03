@@ -1,5 +1,5 @@
 ---
-description: Use when reviewing code changes for quality, security, and project conventions
+description: Use when reviewing code changes for quality, security, and project conventions — standalone or as review standard within code-feat pipeline
 argument-hint: "[target]"
 ---
 
