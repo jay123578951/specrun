@@ -155,11 +155,7 @@ Orchestrator 根據問題描述和相關檔案判斷 Coder 除了必載的 `vue`
 
 **測試失敗時**：進入 Retry 迴路（見下方）。
 
-### Step 4: 報告結果
-
-顯示完成摘要，提示人工確認修復結果。
-
-### Step 4.5: 註解整理（Sonnet subagent）
+### Step 4: 註解整理（Sonnet subagent）
 
 Coder/Tester settle 後、Spec 影響檢查前，派發一次註解整理 Agent 清除本次修復累積的過時／思考流程／冗餘註解。
 
@@ -184,6 +180,10 @@ Coder/Tester settle 後、Spec 影響檢查前，派發一次註解整理 Agent 
 ```
 
 **不執行 commit。** Commit 時機由人工決定（通常在 change 歸檔時一併處理）。
+
+### Step 6: 報告結果
+
+顯示完成摘要（含註解整理與 Spec 影響檢查結果），提示人工確認修復結果。
 
 ---
 

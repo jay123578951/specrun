@@ -1,6 +1,6 @@
 {
   "name": "code",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Tier 1/2/3 SDD pipeline — code-decisions / code-feat / code-fix / code-review / code-verify-flow / code-comment + code-guidelines behavioral skill, driven by OpenSpec change artifacts",
   "author": {
     "name": "jay123578951"

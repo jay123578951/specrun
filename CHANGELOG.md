@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0 — 2026-07-03
+
+依 2026-07 設計審查定案（`docs/design-review-decisions-2026-07.md`，25 條定案）分批實作。本版為審查落地版：文件層大掃除（drift 修正、權威宣告、措辭誠實化）、Tier 2 定位重寫與 spec-first 前移、Pipeline 行為修正（gate 序列化、typecheck、test-defect 仲裁、升級規則統一）、新能力（opus-reviewer plugin agent、retro 回饋迴路、description 生成腳本、路由案例集）。
+
+### Fixed（Drift 逐條修，讓文件說實話——無行為改動）
+
+- W6：`commands/feat.md` description 與 pipeline doc 流程總覽補上 0.9.0 漏同步的「∥操作流程驗證」；CHANGELOG 0.9.0 兩條 Changed 條目從 Removed 段移回 Changed 段。
+- W16：`code-fix` 步驟重排——「報告結果」移到最後一步（原 Step 4 在註解整理與 Spec 檢查之前，與完成模板矛盾）。
+- W17：Tier 3 分支命名統一為 `feat/<change-name>`（pipeline doc 兩處 `feature-<描述>` 改齊 skill 版）；流程總覽改為先 `/opsx:explore` 再建分支（與 Phase 1 詳細步驟一致）。
+- W18：`code-feat` Step 6.5 觸發信號自己寫清楚，不再宣稱「沿用 Reviewer 偵測信號」（兩者條件本不相容）；明文**純樣式 changeset 不觸發操作流程驗證**——樣式驗不出流程斷裂，UI/UX 交 Reviewer 的 `web-design-guidelines`。
+- W8：pipeline doc 載入表改與 `code-feat` 實際設計一致（操作流程驗證／註解整理由 orchestrator 載入 skill、展開模板注入，subagent 不自行載入）；`code-review` 各章節加受眾標頭（呼叫方 vs subagent），開頭補受眾說明。
+- W20：pipeline doc 的 Spec 影響檢查移除前身專案殘留（`docs/plans/` 硬編碼、風力等級範例），泛化為「openspec/specs/ ＋ 專案 CLAUDE.md 定義的設計文件位置」；README Spec 同步段同步修正。
+- C3：五處「繁體中文 UI 文字」硬編碼改為「CLAUDE.md 定義的 UI 語言慣例」（`code-review` 兩處、`code-feat` 兩處、pipeline doc 一處）——通用流程出貨於 kit、專案知識留 CLAUDE.md。
+- W21：README 依賴表與驗證指令補漏 `vue-best-practices`；Tester 行補 `antfu`。
+- W22：pipeline doc 修正 `/code:fix` command 路徑；`commands/fix.md` argument-hint 由 `[change-name]` 改 `[問題描述]`（code-fix 不吃 change name）；`marketplace.json` 的 `metadata.version` 由停滯的 0.4.0 對齊 plugin 版號。
+
 ## 0.9.0 — 2026-07-02
 
 新增 `code-verify-flow` skill 與 `/code:verify-flow` 指令：在 Phase 2 尾端補上「操作流程驗證」閘門，作為 Phase 3 人工驗收的前置過濾器。過去自動化只有 vitest（驗零件邏輯，mock、靜態），驗不到「零件組起來真接上跑會不會斷」；這類低級問題（流程走不通、報錯、明顯崩版）一路留到人工驗收才被發現。本 skill 透過 claude-in-chrome 在真瀏覽器實際點擊走完 spec 設計的流程，擋掉這層，讓開發者專注在 AI 碰不了的判斷題（美感、資料合理性、體驗）。刻意採「北極星 + 邊界」而非機械檢查表——職責邊界訂死、方法與灰色地帶判斷留給模型，並設計為不綁專案可攜。
@@ -15,12 +31,12 @@
 - `code-feat`（Tier 3 orchestrator）：新增 Step 6.5「操作流程驗證」（與 Reviewer 同層 gate，可平行、都綠才進註解整理），原註解整理順延為 Step 6.7；front matter、Skills/Model 表、Retry 迴路（新增「操作流程驗證 FAIL → Coder 修復」小迴路與計數）、輸出格式、Guardrails 均納入。觸發條件為改動觸及 UI/流程。
 - `code-fix`（Tier 2 orchestrator）：**維持不變**，刻意不納入操作流程驗證——Tier 2 輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重，小改動人工瞄一眼即可；需要時獨立跑 `/code:verify-flow` 或升 Tier 3。
 - `ai-development-pipeline.md`：Phase 2 Agent Pipeline 圖改為 Reviewer ∥ 操作流程驗證同層 gate（可平行、都綠才進註解整理）；新增「操作流程驗證 Agent」專節；失敗處理策略、Model 分層表、Agent Knowledge Skills 載入表、工具依賴表、Tier 3 流程總覽、Skill 架構分類表均納入；Phase 3 補述「前置過濾器」定位。
+- README：指令表新增 `/code:verify-flow` 列、Agent 編排段新增「操作流程驗證」項、`/code:feat` 流程圖納入。
+- `plugin.json`、`marketplace.json` 的 plugin 版號升至 0.9.0，description 補上 `code-verify-flow`。
 
 ### Removed
 
 - `ai-development-pipeline.md`：移除「實驗記錄」段（實驗 1/2/3，2026-02～03 的早期驗證紀錄）——內容已久遠、發現事項均已落地進流程，留著意義不大。Orchestrator「現狀」附註中對「兩次實驗」的懸空引用一併改為「已實測可行」。
-- README：指令表新增 `/code:verify-flow` 列、Agent 編排段新增「操作流程驗證」項、`/code:feat` 流程圖納入。
-- `plugin.json`、`marketplace.json` 的 plugin 版號升至 0.9.0，description 補上 `code-verify-flow`。
 
 ### Notes
 
