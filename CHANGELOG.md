@@ -34,6 +34,13 @@
 - **C5 派發中斷對帳＋C6 起跑髒檢查**：Coder/Tester 派發失敗或中斷 → `git status` 對照 tasks.md checkbox 對帳實際完成度後重派（磁碟優先）；Step 2 起跑加 advisory 髒檢查——`openspec/` 以外存在無關未 commit 修改時提醒不硬擋。
 - 同步位置：`code-feat` SKILL（Model 表、Step 2/4/5/6.5、Retry 迴路全section、Guardrails）、`code-review` SKILL（Grounding rules）、pipeline doc（Phase 2 流程圖、Gate 排序原則、失敗處理策略、Model 升級條件、Coder/Tester/驗證 Agent 專節、指令執行慣例）、README（Agent 編排段）。
 
+### Changed（Tier 2 品質補強——`code-fix` 批次）
+
+- **W4 安全 review 聯動**：Tier 2 因安全敏感路徑（auth/payment/API key/session）升 Opus 時，聯動設 `{securityReview}=true`——Tester 通過後、註解整理之前，自動補派一次 **adversarial Opus review**（與 Tier 3 同款訊號同款待遇）。修補內部矛盾：同一訊號在 Tier 3 觸發 adversarial review、在 Tier 2 只升 model 就結束；安全殺傷力與改動行數無關，**分級管的是流程重量，不分掉安全底線**。FAIL 修復走完整靜態關卡（三件套 → targeted re-check）。
+- **W5 Tier 2 報告行**：Tester「無法測試清單」非空且模組被頁面使用（grep 一條指令）→ 受影響頁面清單寫進完成報告新增的「人工確認提示」段。Tier 2 不派 verify-flow——洞的本質是人工確認時不知道爆炸半徑，給人 grep 清單即補上資訊差，要看多細由人決定（分級哲學）。
+- **共通條文同步（與 Tier 3 對齊）**：Coder 完成後 lint + typecheck 自修；修復 Coder settle 前自跑三件套、全綠即 settle 不重派 Tester；計數判準統一（計一圈＝品質失敗回主對話派 agent 修；自修不計）；升級措辭統一（counter ≥ 2 起修復派發升 Opus，綁派發不綁角色；升 Opus 輪解除免重讀）；Tester prompt 注入 spec 驗收依據（spec-first 銜接）。
+- 同步位置：`code-fix` SKILL（Model 策略、Step 4/5/5.5/6、Retry 迴路、輸出模板、Guardrails）、pipeline doc（Tier 2 專節）、`code-verify-flow`（與 Pipeline 的關係表 Tier 2 列）。
+
 ### Changed（操作流程驗證強化——`code-verify-flow` 批次）
 
 - **W11 transient 重現確認**：判 FAIL 前**必須重現一次**——同一步驟再走一遍，錯誤再現才正式 FAIL 打回 Coder；重現不出 → 標記 **flaky**（不打回、不計 counter、不靜默判 PASS），寫進報告交人工驗收確認。重現是便宜的分類器：code 錯誤是確定性的、環境噪音是隨機的，一次重做即可分流且成本趨近零；與三態 verdict「環境噪音不污染 retry」哲學同構。輸出格式新增「flaky」段。

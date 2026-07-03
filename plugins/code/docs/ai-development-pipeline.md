@@ -85,6 +85,7 @@
   → Spec 影響判斷（spec-first：場景 i 有影響先改 openspec/specs/；
      場景 ii 影響在 spec/design 層先回寫 change artifact；純實作問題直接派發）
   → Coder (Sonnet/Opus，prompt 注入更新後的 spec 段落作為驗收依據) + Tester (Sonnet)
+  →〔安全敏感路徑時〕adversarial Opus review（與 Coder 升 Opus 同一訊號聯動）
   → 註解整理 (Sonnet)
   → Spec 輕量複核（防實作範圍外溢）
   → 人工確認
@@ -97,9 +98,10 @@
 - **在獨立 branch 中開發**（不使用 worktree，改動範圍小不需目錄隔離）
 - 不建立新的 OpenSpec artifact（不建 proposal / design / tasks；場景 ii 可回寫既有 change artifact）
 - **保留 Coder + Tester**（品質保證）
-- 跳過 Reviewer（變更範圍小，不需多視角審查）
-- Coder 與 Tester 的執行規則同 Tier 3（載入 skills、ESLint --fix、失敗重試最多 3 輪）
-- Coder model 預設 sonnet；改動觸及安全敏感路徑，或 retry 進入第 2 輪起，升 opus（見「Model 分層策略」）
+- 跳過 Reviewer（變更範圍小，不需多視角審查）；**例外：安全敏感路徑**——Coder 升 Opus 時聯動補一次 adversarial Opus review（Tester 通過後、註解整理前）。分級管的是流程重量，不分掉安全底線
+- Coder 與 Tester 的執行規則同 Tier 3（載入 skills、lint + typecheck 自修、失敗重試最多 3 輪、修復後自跑三件套）
+- Coder model 預設 sonnet；改動觸及安全敏感路徑，或 retry counter ≥ 2 起，修復派發升 opus（統一規則，見「Model 分層策略」）
+- Tester 的「無法測試清單」非空且模組被頁面使用 → 受影響頁面清單寫進人工確認報告（Tier 2 不派 verify-flow，給人爆炸半徑資訊）
 - **Spec 影響判斷前移到派發前**（spec-first），commit 前僅做一行輕量複核（見下方共用流程）
 
 ---

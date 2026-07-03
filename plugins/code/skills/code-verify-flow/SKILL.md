@@ -255,7 +255,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 | 使用者 | 如何使用 |
 |--------|---------|
 | `code-feat`（Tier 3） | 排在 **Reviewer 迴路完全 settle 之後**、**註解整理之前**——動態關卡永遠壓軸，驗的必是最終 code，PASS 不會過期。FAIL（重現確認後）→ 回 Coder，修復走完整靜態關卡後 targeted re-run（套 retry 上限）；flaky → 標註交人不計 retry；BLOCKED → 問人不計 retry |
-| `code-fix`（Tier 2） | **不納入**——Tier 2 刻意輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重（需 dev server + 瀏覽器）。小改動要驗流程 → 獨立跑 `/code:verify-flow` 或升 Tier 3 |
+| `code-fix`（Tier 2） | **不納入**——Tier 2 刻意輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重（需 dev server + 瀏覽器）。composable 無法測試的空窗走「報告行」補資訊差（受影響頁面清單寫進人工確認報告）。小改動要驗流程 → 獨立跑 `/code:verify-flow` 或升 Tier 3 |
 | 獨立使用 | 任何時候對正在跑的 app 執行 `/code:verify-flow`，給它 URL + 驗收依據 |
 
 **觸發條件（本 kit）**：改動觸及 user-facing 流程或畫面（如 `.vue` 的 `<template>`）才跑；純後端/composable 改動、Tier 1 微調跳過。
