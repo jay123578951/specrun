@@ -47,6 +47,8 @@
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 產出/管理 `openspec/` 變更 artifact（建議；`/code:feat` 需要變更目錄已存在） |
 | [antfu/skills](https://github.com/antfu/skills) | 提供 `vue` / `vue-best-practices` / `nuxt` / `antfu` / `vitest` / `vue-testing-best-practices`（必裝） |
 
+> 相容性：本 plugin 依賴 OpenSpec 的目錄約定（`openspec/changes/<name>/` ＋ proposal / design / tasks / specs）與 antfu/skills 的現行 skill 命名——皆為名字級依賴。外部 skill 缺裝或改名時，agent 會**停下回報**，不在無慣例約束下繼續寫（preflight 紀律）。
+
 ### 安裝本 plugin
 
 ```bash

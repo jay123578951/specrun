@@ -258,6 +258,6 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 | `code-fix`（Tier 2） | **不納入**——Tier 2 刻意輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重（需 dev server + 瀏覽器）。composable 無法測試的空窗走「報告行」補資訊差（受影響頁面清單寫進人工確認報告）。小改動要驗流程 → 獨立跑 `/code:verify-flow` 或升 Tier 3 |
 | 獨立使用 | 任何時候對正在跑的 app 執行 `/code:verify-flow`，給它 URL + 驗收依據 |
 
-**觸發條件（本 kit）**：改動觸及 user-facing 流程或畫面（如 `.vue` 的 `<template>`）才跑；純後端/composable 改動、Tier 1 微調跳過。
+**觸發條件（本 kit）**：改動觸及 user-facing 流程或畫面（如 `.vue` 的 `<template>`、頁面/路由/互動流程變更）才跑；或 Tester「無法測試清單」非空且模組被頁面使用（Tier 3 的 OR 觸發，受影響頁面做 targeted 驗證）。純樣式 changeset、純後端/純邏輯改動、Tier 1 微調跳過。
 
 **它不取代人工驗收**：它是 Phase 3 的**前置過濾器**——擋掉「流程根本走不通」這種低級問題，讓開發者專注在它碰不了的判斷題（美感、資料合理性、體驗）。順序、觸發、model 由呼叫方（本 kit 為 `code-feat`）管理，本 skill 只負責「怎麼驗、驗到什麼標準、怎麼回報」。

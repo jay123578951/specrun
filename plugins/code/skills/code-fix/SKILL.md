@@ -122,6 +122,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 開始工作前：
 1. 用 Skill tool 載入以下 skills：code-guidelines, vue, vue-best-practices, nuxt, antfu{additionalSkills}
    （`code-guidelines` 是寫 code 的行為守則，其餘為知識型；務必先讀 `code-guidelines` 再動手）
+   任一必載 skill 載入失敗（缺裝／改名）→ 停下回報，不要在缺慣例約束的情況下繼續寫
 2. 讀取專案的 CLAUDE.md 了解專案慣例
 
 注意：若修復過程中發現需要用到上方未列出的 skill，可自行載入補充。
@@ -162,6 +163,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 開始工作前：
 1. 用 Skill tool 載入以下 skills：vitest, antfu, vue-testing-best-practices
+   任一必載 skill 載入失敗（缺裝／改名）→ 停下回報，不要在缺慣例約束的情況下繼續寫
 2. 讀取 Coder 修改的檔案：
    {Coder 回報的檔案路徑列表}
 
@@ -179,8 +181,12 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 - 純邏輯函式應抽出為獨立模組，測試 import 實際模組（不複製邏輯）
 
 排除規則（不要撰寫以下測試）：
-- TypeScript 型別/介面欄位存在性測試（TypeScript 編譯器已保證型別正確性）
-- 無法 import 實際模組時（如 Nuxt composable），跳過該模組的單元測試，不要複製邏輯自測
+- TypeScript 型別/介面欄位存在性測試（typecheck gate 已保證型別正確性）
+
+Nuxt composable 的測試策略（三層，依序）：
+1. 純邏輯抽為獨立模組的規則不變（結構層優先）——能測 import 實際模組的先這樣測
+2. 殘餘的 Nuxt runtime 依賴：讀 package.json 偵測 `@nuxt/test-utils` 是否已裝——已裝即用它直接測；只在需要重環境的測試檔標 `@vitest-environment nuxt`，純邏輯測試照走輕環境。永不主動安裝依賴
+3. 未裝才跳過該模組的單元測試（不要複製邏輯自測），列入「無法測試的模組清單」輸出
 
 完成後執行測試：優先跑專案 test script（如 `pnpm test`，依專案 package manager 調整）；需要逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`。不要用裸 `npx`。
 
@@ -283,7 +289,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ### 遇到阻塞
 
-Orchestrator 在宣告阻塞前，輸出 debug 檔案 `debug-fix-{timestamp}.md`（放在專案根目錄）：
+Orchestrator 在宣告阻塞前，輸出 debug 檔案 `.claude/debug/fix-{timestamp}.md`（不放專案根目錄——檔案含完整 diff，`.claude/` 應由專案 gitignore 蓋掉）：
 
 ```markdown
 ## Pipeline 暫停：{問題摘要}
@@ -324,7 +330,7 @@ Orchestrator 在宣告阻塞前，輸出 debug 檔案 `debug-fix-{timestamp}.md`
 - Tester 派發次數：{testerCalls}
 
 ### Debug 檔案
-已輸出至 debug-fix-{timestamp}.md
+已輸出至 .claude/debug/fix-{timestamp}.md
 
 ### 選項
 1. 人工介入修復

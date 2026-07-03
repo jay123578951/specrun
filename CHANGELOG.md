@@ -34,6 +34,14 @@
 - **C5 派發中斷對帳＋C6 起跑髒檢查**：Coder/Tester 派發失敗或中斷 → `git status` 對照 tasks.md checkbox 對帳實際完成度後重派（磁碟優先）；Step 2 起跑加 advisory 髒檢查——`openspec/` 以外存在無關未 commit 修改時提醒不硬擋。
 - 同步位置：`code-feat` SKILL（Model 表、Step 2/4/5/6.5、Retry 迴路全section、Guardrails）、`code-review` SKILL（Grounding rules）、pipeline doc（Phase 2 流程圖、Gate 排序原則、失敗處理策略、Model 升級條件、Coder/Tester/驗證 Agent 專節、指令執行慣例）、README（Agent 編排段）。
 
+### Changed（散件收尾）
+
+- **W5 composable 三層測試策略**：Tester 對 Nuxt composable 改為——①純邏輯抽獨立模組（既有規則不變）→ ②殘餘 runtime 依賴偵測 `@nuxt/test-utils` 已裝即直接測（`@vitest-environment nuxt` 只標需要重環境的檔；kit 永不主動安裝依賴）→ ③未裝才跳過＋輸出無法測試清單。**清單接上消費者**：Tier 3 在 verify-flow 觸發判斷加 OR 條件（清單非空且模組被頁面使用 → 純 composable 改動也強制觸發，受影響頁面注入 prompt targeted 驗證）；Tier 2 走報告行（見上方 W5）。封住「改 composable 可零 runtime 驗證走完全 pipeline」的空窗。
+- **G7 中途規模矯正**：`code-guidelines` STOP 清單加第四款——「實際規模明顯超出派發宣告 → 回報，不硬做也不縮水交付」。Tier 判定在動手前、規模真相常在動手後揭曉；「要不要升 Tier 重走流程」是路由決策，歸 orchestrator／人。
+- **G12 依賴 preflight**：四個 agent prompt（feat/fix 的 Coder 與 Tester）補「任一必載 skill 載入失敗（缺裝／改名）→ 停下回報，不在無慣例約束下繼續寫」（與 subagent 派發失敗紀律同構）；README 補相容性聲明（OpenSpec 目錄約定與 antfu/skills 命名為名字級依賴）。
+- **W13（機械網）保護清單前後計數**：`code-comment` 整理前後對保護清單**逐 pattern** regex 計數並核對（不加總——總數不變可能互相掩護）；任一 pattern 變少即誤刪，補回才 settle。build-time pragma（測試驗不到）的機械防線；輸出「安全網」段新增計數行。
+- **C4 debug 檔生命週期**：阻塞 debug 檔（含完整 diff）由專案根目錄改寫入 `.claude/debug/`（feat 與 fix），與 G10 截圖同家族，gitignore 一併蓋掉。
+
 ### Changed（Tier 2 品質補強——`code-fix` 批次）
 
 - **W4 安全 review 聯動**：Tier 2 因安全敏感路徑（auth/payment/API key/session）升 Opus 時，聯動設 `{securityReview}=true`——Tester 通過後、註解整理之前，自動補派一次 **adversarial Opus review**（與 Tier 3 同款訊號同款待遇）。修補內部矛盾：同一訊號在 Tier 3 觸發 adversarial review、在 Tier 2 只升 model 就結束；安全殺傷力與改動行數無關，**分級管的是流程重量，不分掉安全底線**。FAIL 修復走完整靜態關卡（三件套 → targeted re-check）。
