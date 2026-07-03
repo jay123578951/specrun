@@ -1,5 +1,7 @@
 # AI 開發 Pipeline 設計
 
+> **文件權威層級**：各 `SKILL.md` 為**執行契約權威**（runtime 只載入 SKILL.md；條文衝突時以它為準，並視為文件 bug 回報修正）＞ 本文件為**方法論**（解釋設計理由與整體流程）＞ README 為**摘要**（導覽）。
+
 ## 目標
 
 設計一套完整的 AI 輔助開發流程，在設計文件完成後，AI 透過專業分工的 agent pipeline 自動完成實作、測試、審查與交付。
@@ -415,7 +417,7 @@ Review 維度、嚴重程度定義、輸出格式、subagent prompt 模板等細
 
 **必須保留（不可誤刪）**：解釋「為什麼」的註解、公開 API 的 JSDoc/docstring、複雜演算法說明、功能型指令註解（`eslint-disable`、`@ts-expect-error`、`v-html` 安全註記等）、授權標頭、具體的 TODO/FIXME。
 
-**行為**：與 `code-review`（report-only + STOP）不同，整理 Agent 依守則**直接套用 Edit**並自跑專案 lint script（優先 `pnpm lint --fix`，依專案 package manager 偵測，不寫死 `npx`），完成後回報改了什麼。註解改動風險低、不動 code 邏輯，故不需 Opus 重 review；orchestrator 在整理後**重跑測試**作為安全網（誤刪功能型指令註解會在此暴露）。
+**行為**：與 `code-review`（report-only + STOP）不同，整理 Agent 依守則**直接套用 Edit**並自跑專案 lint script（優先 `pnpm lint --fix`，依專案 package manager 偵測，不寫死 `npx`），完成後回報改了什麼。註解改動風險低、不動 code 邏輯，故不需 Opus 重 review；orchestrator 在整理後**重跑測試**作為安全網（大多數誤刪功能型指令註解會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外——測試驗不到，靠 `code-comment` 保護清單防守）。
 
 **位置**：
 - Tier 3（`/code:feat`）：Reviewer PASS 後執行（retry 迴路全部 settle 後一次清最終狀態最乾淨）

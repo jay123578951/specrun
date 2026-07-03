@@ -281,7 +281,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次 Pipeline 修改的檔案清單」（即 Coder 各批產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`，subagent 不需自行偵測 diff
 - 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令依專案偵測，優先 `pnpm lint --fix`，不寫死 `npx`；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
-- 整理完成後，**orchestrator 重跑一次測試**（專案 test script，如 `pnpm test`）作為安全網——純註解改動不該破壞行為，若失敗代表誤刪到功能型註解，回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
+- 整理完成後，**orchestrator 重跑一次測試**（專案 test script，如 `pnpm test`）作為安全網——純註解改動不該破壞行為，失敗多半是誤刪到功能型註解，回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人。注意此安全網接不住 build-time pragma（`@__PURE__`、`webpackChunkName` 等）的誤刪——測試驗不到，靠 `code-comment` 保護清單防守
 
 放在所有 gate（Reviewer + 操作流程驗證）settle 之後的理由：retry 迴路中 Coder 多次修復會持續疊加註解，待全部 settle 後一次清理最終狀態最乾淨。註解改動風險低、不動 code 邏輯，故不需重跑 Opus Reviewer 或操作流程驗證（純註解改動不會弄壞走得通的流程）；ESLint + 測試即足夠安全網。
 

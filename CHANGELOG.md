@@ -2,7 +2,7 @@
 
 ## 0.10.0 — 2026-07-03
 
-依 2026-07 設計審查定案（`docs/design-review-decisions-2026-07.md`，25 條定案）分批實作。本版為審查落地版：文件層大掃除（drift 修正、權威宣告、措辭誠實化）、Tier 2 定位重寫與 spec-first 前移、Pipeline 行為修正（gate 序列化、typecheck、test-defect 仲裁、升級規則統一）、新能力（opus-reviewer plugin agent、retro 回饋迴路、description 生成腳本、路由案例集）。
+依 2026-07 設計審查逐項討論定案（25 條）分批實作。本版為審查落地版：文件層大掃除（drift 修正、權威宣告、措辭誠實化）、Tier 2 定位重寫與 spec-first 前移、Pipeline 行為修正（gate 序列化、typecheck、test-defect 仲裁、升級規則統一）、新能力（opus-reviewer plugin agent、retro 回饋迴路、description 生成腳本、路由案例集）。
 
 ### Fixed（Drift 逐條修，讓文件說實話——無行為改動）
 
@@ -15,6 +15,11 @@
 - C3：五處「繁體中文 UI 文字」硬編碼改為「CLAUDE.md 定義的 UI 語言慣例」（`code-review` 兩處、`code-feat` 兩處、pipeline doc 一處）——通用流程出貨於 kit、專案知識留 CLAUDE.md。
 - W21：README 依賴表與驗證指令補漏 `vue-best-practices`；Tester 行補 `antfu`。
 - W22：pipeline doc 修正 `/code:fix` command 路徑；`commands/fix.md` argument-hint 由 `[change-name]` 改 `[問題描述]`（code-fix 不吃 change name）；`marketplace.json` 的 `metadata.version` 由停滯的 0.4.0 對齊 plugin 版號。
+- W13（措辭）：三處「誤刪功能型指令註解會在重跑測試時暴露」改為誠實版——「大多數誤刪會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外，測試驗不到，靠保護清單防守」（`code-comment` 兩處、pipeline doc 一處、`code-feat` Step 6.7 一處）。防線什麼等級就寫什麼等級。
+
+### Added
+
+- G14 權威宣告：pipeline doc 開頭與 README 明文文件權威層級——**SKILL.md（執行契約權威）＞ pipeline doc（方法論）＞ README（摘要）**，說法衝突以 SKILL.md 為準並視為文件 bug。宣告不防 drift 發生，但把傷害從「各信一邊」降為「都知道以誰為準」。
 
 ## 0.9.0 — 2026-07-02
 
