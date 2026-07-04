@@ -181,7 +181,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Tester 通過後、註解整理之前，自動補派一次 **adversarial Opus review**——與 Tier 3 同款訊號同款待遇。安全殺傷力與改動行數無關（兩行 session 邏輯的爆炸半徑可大於二十檔 UI 重構）；分級管的是流程重量，不該分掉安全底線。
 
-- 載入 `code-review` skill 取得規範，依其 Reviewer Subagent Prompt 模板派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單），`{adversarial}=true`、scope 為本次修改檔案的 diff
+- Orchestrator 載入 `code-review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `code-review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
 - **FAIL 的修復走完整靜態關卡**：Coder 修 → settle 前自跑三件套（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）；小迴路最多 3 輪，仍 FAIL → 停下來問人。嚴重安全問題 → 直接停下來問人
 - Subagent 派發失敗 → 停下來問人，不退化為主對話自審（獨立審查不變量）
 
