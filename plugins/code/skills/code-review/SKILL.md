@@ -52,7 +52,7 @@ description: Use when reviewing code changes for quality, security, and project 
 - 安全敏感路徑（auth、payment、API key 處理、session 管理）
 - 資料庫 schema 變更或生產資料遷移
 - 使用者明確要求深度 review
-- `code-feat` Reviewer 在第 2 輪 retry 仍 FAIL 時升級
+- `code-feat` 升級模式開啟後（任一 gate 進入第 2 輪修復）重派 Reviewer 時升級
 
 被 `code-feat` 載入時，adversarial 與否由呼叫方指定。
 
