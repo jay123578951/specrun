@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.11.0 — 2026-07-04
+
+Skill 減重版。依「skill 條文只寫給執行期 AI」與 SSOT 原則全面去重：設計論證出文、規範副本收斂、reference 檔漸進揭露；唯一行為變更是 retry 升級規則收斂為全 pipeline 單一開關。八個 skill 全數落在 SKILL.md 500 行建議值內（最大 334 行）。
+
+### Changed（行為變更——升級模式）
+
+- **Retry 動態升級收斂為全 pipeline 單一開關**（取代 0.10.0 的「同一迴路 counter ≥ 2 分帳」）：任一 gate 進入第 2 輪修復即開啟**升級模式**——此後所有修復派發一律升 Opus（綁派發不綁角色）、Opus Reviewer 重派一律帶 adversarial、免重讀限制解除；開啟後不關閉。理由：升級訊號出現後多花的 Opus 呼叫是便宜貨幣，逐迴路記帳的複雜度才是永久 drift 面——orchestrator 只需維護一個布林狀態。targeted re-check／re-run 是驗證派發，維持 Sonnet 不受影響。
+- **輪數累計規則推廣至所有 gate**：「同 Pipeline 內累計、不因修復成功重置」原僅明文於 Reviewer 迴路，其他迴路未定義；統一為所有 gate 適用（收斂原有歧義）。各 gate 3 輪停損、不計輪清單（就地自修／BLOCKED／flaky／targeted 驗證派發）皆不變。
+- 同步位置：`code-feat`（Retry 迴路、Model 表）、`code-fix`（Model 策略、Retry 迴路）、`code-review`（adversarial 觸發條件）、pipeline doc（流程圖、Model 升級條件、Adversarial 升級）、README。`code-retro` 的 `counter_2`／`counter_3` 為收件匣 JSONL 固定詞彙不改名，語義在升級模式下仍成立（第 2 輪＝升級、第 3 輪＝停損）。
+
+### Changed（文件結構——執行契約不變）
+
+- **code-feat 減重（508 → 334 行）**：刪除條文內嵌的說服性論證與維護者導向說明（論證已存於 CHANGELOG 與決策記錄，維護時走 git blame 溯源）；Retry 迴路六小節收斂為「通用規格＋各 gate 差異表＋test-defect 申辯通道」，操作規則全數保留；Guardrails 只留獨有不變量，砍複述正文的條目。
+- **feat／fix 共用段落抽 reference 檔（SSOT＋漸進揭露）**：新增 `code-feat/references/` 三檔——`coder-skills-map.md`（額外 skills 預判表，orchestrator 派發前讀）、`tester-conventions.md`（Tester 測試守則，orchestrator 注入絕對路徑、subagent 開工前必讀，讀不到即停下回報）、`blocked-report.md`（阻塞輸出模板，宣告阻塞時才讀）。code-fix 以相對路徑引用，共用檔以 Tier 3 目錄為權威所在；各 tier 特有段（feat 防錨定工作順序、fix spec 驗收依據注入）留在各自檔內。code-fix 357 → 287 行。
+- **code-verify-flow 檔內去重（263 → 171 行）**：本體「判準精神」「灰色地帶」「前置檢查與擋路情境」三節與 Subagent Prompt 模板逐字重複——刪除本體版，模板為單一來源；「工具未就緒＝優雅退化」的呼叫方語義併入 verdict 表 BLOCKED 列。
+- **code-review 收斂為純呼叫方文件**：`opus-reviewer` 由「開工前載入 code-review」改為「派發 prompt 由呼叫方自模板展開、已內含完整規範，subagent 不載入」；通用模板新增追加 skills 條件區塊（`web-design-guidelines` 由 prompt 指示 subagent 載入）；`code-feat` Step 6 刪除內嵌 Reviewer prompt（第三份規範副本），改為 change 模式展開指示。每次 Reviewer 派發省下 subagent 整份 code-review（約 8.7k 字元）載入，review 規範三份副本收斂為一份，「受眾說明」段不再需要。
+
+### Notes
+
+- **減重判準（立為原則供日後複利）**：skill 條文只寫給執行期的 AI——判斷指引（「拿不準就保留」「判定保守」）留，規則的辯護詞與出處路標刪；抽象設計哲學不另立前言，精神體現在具體規則；規範副本要嘛是產物、要嘛不該存在（與 G13 同軸）。
+- 減重不動任何 gate 順序、停損上限、STOP 條款與交付流程；除升級模式外執行契約不變。
+
 ## 0.10.0 — 2026-07-03
 
 依 2026-07 設計審查逐項討論定案（25 條）分批實作。本版為審查落地版：文件層大掃除（drift 修正、權威宣告、措辭誠實化）、Tier 2 定位重寫與 spec-first 前移、Pipeline 行為修正（gate 序列化、typecheck、test-defect 仲裁、升級規則統一）、新能力（opus-reviewer plugin agent、retro 回饋迴路、description 生成腳本、路由案例集）。
