@@ -9,7 +9,8 @@
 - **斜線指令前綴 `code:` → `srn:`**：`/code:feat` → `/srn:feat`，其餘 fix／review／comment／verify-flow／retro／decisions 同理。安裝後需以新前綴呼叫。
 - **移除 `commands/` 包裝層（P2）**：7 個 command 檔刪除，skill 直接作為斜線指令（官方已將 command 併入 skill）。`argument-hint` 由 command 搬入對應 skill frontmatter；skill 目錄去 `code-` 前綴（`code-feat/` → `feat/`），命名空間 `srn:` 已足以與內建及外部 skill 區隔，前綴屬冗餘。
 - **內部 skill 載入改用限定名（P1）**：feat／fix 的操作型載入指示一律 `srn:review`／`srn:comment`／`srn:guidelines` 等,杜絕撞內建 `/code-review`；外部 skill（vue／antfu／vitest…）維持裸名（個人層、無命名空間）。純敘述性提及維持裸短名。
-- **安裝識別碼變更**：`/plugin install code@claude-sdd-kit` → `/plugin install srn@specrun`。GitHub repo 改名（`claude-sdd-kit` → `specrun`）為後續手動步驟；完成前 `marketplace add` 仍指向舊 repo slug。
+- **安裝識別碼變更**：`/plugin install code@claude-sdd-kit` → `/plugin install srn@specrun`。GitHub repo 已改名（`claude-sdd-kit` → `specrun`），`marketplace add jay123578951/specrun`、plugin.json homepage/repository、README 連結同步更新。
+- **回饋收件匣路徑正名**：`~/.claude/sdd-kit-feedback/` → `~/.claude/specrun-feedback/`（retro skill 收件匣與歸檔檔）。原路徑無累積資料，屬乾淨正名。
 
 ### Changed（invocation control——P3）
 

@@ -1,7 +1,7 @@
 ---
 name: retro
 argument-hint: "[--archive]"
-description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/sdd-kit-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
+description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/specrun-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
 ---
 
 Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 kit 的 prompt 決定、跨專案同一套）——寫進單一專案的 CLAUDE.md 等於埋掉。本 skill 在源頭（orchestrator 事發時在場）做語義記錄，比事後開採 transcripts 的關鍵字偵測召回率高得多；歸檔模式再把收件匣消化成 kit 優化提案。這是唯一能讓 pipeline 隨使用次數變便宜的複利投資。
@@ -14,8 +14,8 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 
 | 檔案 | 用途 |
 |------|------|
-| `~/.claude/sdd-kit-feedback/runs.jsonl` | 收件匣：每次 pipeline run 一行 JSON（質化事件＋量化統計同檔） |
-| `~/.claude/sdd-kit-feedback/runs-archive.jsonl` | 歸檔：`--archive` 消化並經人同意後，條目從收件匣移入此處 |
+| `~/.claude/specrun-feedback/runs.jsonl` | 收件匣：每次 pipeline run 一行 JSON（質化事件＋量化統計同檔） |
+| `~/.claude/specrun-feedback/runs-archive.jsonl` | 歸檔：`--archive` 消化並經人同意後，條目從收件匣移入此處 |
 
 目錄不存在時建立。transcripts 約 30 天會被清理，所以條目的 session 指針只是深挖線索，**一行事實必須自足**。
 
