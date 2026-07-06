@@ -8,7 +8,7 @@ description: Use when reviewing code changes for quality, security, and project 
 
 **Input**: 可選指定 review 範圍（見下方模式）。未指定時自動偵測 git diff。
 
-**Model 策略**：Reviewer 走 Opus subagent，與主對話的 Sonnet 隔離（context 不互相污染、避免自評自審），同時取得 Opus 的深度推理能力。
+**Model 策略**：Reviewer 走 Opus subagent，與主對話 Sonnet 隔離（避免 context 污染與自評自審）並取得深度推理。
 
 **成本提示**：Opus subagent 每次呼叫會消耗較多 Claude token。以下情境建議略過此 skill，直接請主對話讀檔給意見：
 

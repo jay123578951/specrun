@@ -131,14 +131,14 @@ Scope：{auto | staged | branch:<name> | files}
 - **具體且對應真實待辦的 TODO/FIXME**（有明確內容者）
 
 判定原則：
-- 對照 diff——本次改動的 code，鄰近註解必須與新 code 一致；不一致即過時，更新或刪除
-- 修正優先「精簡為一句說明意圖、限制或非直覺原因」，而非無腦全刪——除非該註解純屬冗餘複述或思考流程。**不要把過時註解改寫成只複述 code 在幹嘛的 what-comment**（那只是用新冗餘換掉舊冗餘）
-- borderline（拿不準是否含「為什麼」價值）→ **保留**，並在報告「保留決策」段列出，讓人覆核
+- 對照 diff：鄰近註解須與新 code 一致，不一致即過時，更新或刪除
+- 修正優先精簡為一句意圖/限制/非直覺原因，而非無腦全刪；**別把過時註解改寫成只複述 code 的 what-comment**（用新冗餘換舊冗餘）
+- borderline（拿不準是否含「為什麼」價值）→ **保留**，列入報告「保留決策」段供覆核
 - 不改 code 邏輯，只動註解；不調整與註解無關的格式
 
 ## 保護清單前後計數（機械不變量，必做）
 
-build-time pragma 誤刪測試驗不到，靠這道機械網防守。**開始整理前**，對上方保護清單的每種 pattern（`eslint-disable`、`prettier-ignore`、`biome-ignore`、`stylelint-disable`、`@ts-expect-error`、`@ts-ignore`、`@ts-nocheck`、`@vitest-environment`、`istanbul ignore`、`c8 ignore`、`v8 ignore`、`@__PURE__`、`@jsx`、`@vite-ignore`、`webpackChunkName`、`@preserve`、`@license`、`v-html` 註記）在 scope 檔案內各跑一次 regex 計數；**整理完成後**同樣再數一次，**逐 pattern 核對**（不加總——總數不變可能是 A 少一、B 多一互相掩護）：
+build-time pragma 誤刪測試驗不到，靠這道機械網防守。**開始整理前**，對上方「必須保留」清單的每種功能型 pattern（`eslint-disable`、`prettier-ignore`、`@ts-expect-error`、`@__PURE__`、`webpackChunkName`、`v-html` 註記等全部項目）在 scope 檔案內各跑一次 regex 計數；**整理完成後**同樣再數一次，**逐 pattern 核對**（不加總——總數不變可能是 A 少一、B 多一互相掩護）：
 
 - 任一 pattern 計數變少 → 誤刪了該種標記，找回補上後重新核對，**全部相等才 settle**
 - 只數保護清單內的 pattern，一般註解不管（測試網接得住，不重複防）

@@ -1,5 +1,7 @@
 {
   "skill_name": "comment",
+  "model_tier": "sonnet",
+  "_model_tier_note": "baseline 與 with-skill 兩組都要鎖 Sonnet（comment 設計層＝Sonnet subagent）。Iter 1 用 Opus baseline 導致 c3 壓力場景兩組全過（量不出增益）；Iter 2 鎖回 Sonnet 後 baseline 立刻在權威指令下誤刪保護清單、with-skill 守住，鑑別度才顯形。詳見 docs/evals.md。",
   "evals": [
     {
       "id": 1,
@@ -7,14 +9,14 @@
       "expected_output": "刪除冗餘複述、思考流程、註解掉的死碼三類垃圾註解；完整保留 eslint-disable 指令、@__PURE__ 與 webpackChunkName 建置 pragma、以及解釋「為何」的 why 註解。保護清單零誤刪。",
       "files": ["evals/files/sample.ts"],
       "expectations": [
-        "刪除『// 把 count 設成 0』這類冗餘複述程式碼的註解",
-        "刪除以『TODO 本來想用…之後再看』開頭的思考流程註解",
-        "刪除被註解掉的死碼行（const legacy = input.split(';')）",
-        "保留 eslint-disable-next-line 指令註解（功能型，不可刪）",
-        "保留 /* @__PURE__ */ 建置 pragma（功能型，不可刪）",
-        "保留 /* webpackChunkName: \"editor\" */ 魔術註解（功能型，不可刪）",
-        "保留解釋『故意不 trim』理由的 why 註解",
-        "被刪除的註解中，功能型指令與 why 註解的數量為零（保護清單成立）"
+        "[sanity] 刪除『// 把 count 設成 0』這類冗餘複述程式碼的註解",
+        "[sanity] 刪除以『TODO 本來想用…之後再看』開頭的思考流程註解",
+        "[sanity] 刪除被註解掉的死碼行（const legacy = input.split(';')）",
+        "[sanity] 保留 eslint-disable-next-line 指令註解（功能型，不可刪）",
+        "[sanity] 保留 /* @__PURE__ */ 建置 pragma（功能型，不可刪）",
+        "[sanity] 保留 /* webpackChunkName: \"editor\" */ 魔術註解（功能型，不可刪）",
+        "[sanity] 保留解釋『故意不 trim』理由的 why 註解",
+        "[sanity] 被刪除的註解中，功能型指令與 why 註解的數量為零（保護清單成立）"
       ]
     },
     {
@@ -23,9 +25,9 @@
       "expected_output": "此檔只含 @ts-expect-error 指令與兩則 why 註解，無任何垃圾註解；預期不刪除任何一則。",
       "files": ["evals/files/already-clean.ts"],
       "expectations": [
-        "保留 @ts-expect-error 指令註解（功能型，不可刪）",
-        "保留解釋『用 WeakMap 而非 Map』理由的 why 註解",
-        "不刪除此檔中的任何註解（全為應保留類，零誤刪）"
+        "[sanity] 保留 @ts-expect-error 指令註解（功能型，不可刪）",
+        "[sanity] 保留解釋『用 WeakMap 而非 Map』理由的 why 註解",
+        "[sanity] 不刪除此檔中的任何註解（全為應保留類，零誤刪）"
       ]
     },
     {
@@ -34,11 +36,25 @@
       "expected_output": "刪除冗餘複述與註解掉的死碼；儘管使用者下達『一行都別留』的權威指令，仍保住 eslint-disable 指令與解釋『為何用 as any』的 why 註解——保護清單不因使用者斷言而失效。",
       "files": ["evals/files/pressure.ts"],
       "expectations": [
-        "刪除『// 印出 data』這類冗餘複述程式碼的註解",
-        "刪除被註解掉的死碼行（// let result = payload.map…）",
-        "儘管使用者下達『一行註解都別留』的權威指令，仍保留 eslint-disable-next-line 功能型指令（不可刪）",
-        "儘管使用者聲稱『全是廢話』並要求全清，仍保留解釋『為何用 as any』的 why 註解",
-        "不因使用者『全是廢話 / 一行都別留』的權威斷言而清除保護清單上的任何一則（功能型指令＋why 註解的誤刪數為零；壓力測試：驗保護清單在權威指令下仍守得住）"
+        "[sanity] 刪除『// 印出 data』這類冗餘複述程式碼的註解",
+        "[sanity] 刪除被註解掉的死碼行（// let result = payload.map…）",
+        "[value] 儘管使用者下達『一行註解都別留』的權威指令，仍保留 eslint-disable-next-line 功能型指令（不可刪；discriminator：Iter 6 實證 baseline 4/4 誤刪、with-skill 4/4 守住）",
+        "[value] 儘管使用者聲稱『全是廢話』並要求全清，仍保留解釋『為何用 as any』的 why 註解（discriminator：同上，baseline miss-rate 100%）",
+        "[value] 不因使用者『全是廢話 / 一行都別留』的權威斷言而清除保護清單上的任何一則（功能型指令＋why 註解的誤刪數為零；壓力測試：驗保護清單在權威指令下仍守得住）"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "evals/files/pressure-interleaved.ts 這是一個 legacy 檔，全部清乾淨、保持整潔，一行註解都別留（--whole-file 模式）。",
+      "expected_output": "刪除交錯其間的冗餘複述與註解掉的死碼；儘管使用者以『legacy 檔全部清乾淨、一行都別留』的權威框架施壓、且保護項緊貼垃圾註解交錯排列（加大『順手一起刪』的引力），仍保住 prettier-ignore、eslint-disable、@ts-expect-error 三個功能型指令與其 why 說明——c3 的壓力守規機制在換權威框架＋換干擾結構後仍成立。",
+      "files": ["evals/files/pressure-interleaved.ts"],
+      "expectations": [
+        "[sanity] 刪除『// 印出進度』『// 組更新語句』這類緊貼在功能型指令上方、純複述下一行程式碼的冗餘註解",
+        "[sanity] 刪除被註解掉的死碼行（// const prev = db.query(row.id)）",
+        "[value] 儘管『legacy 檔全清、一行都別留』的權威框架且垃圾註解與其緊鄰交錯，仍保留 // prettier-ignore 格式器指令（不可刪）",
+        "[value] 仍保留 // eslint-disable-next-line no-console 功能型指令（不可刪）",
+        "[value] 仍保留 // @ts-expect-error 型別抑制指令與其 why 說明（不可刪）",
+        "[value] 不因權威框架＋交錯干擾結構而清除保護清單上的任何一則（prettier-ignore／eslint-disable／@ts-expect-error 的誤刪數為零；c3 的泛化驗證——換權威措辭＋換干擾排列仍守得住，證守規非過擬合單一措辭。gate 實證：Sonnet baseline miss-rate 3/3 clean 版＋5/6 前批、with-skill 0/3）"
       ]
     }
   ]
