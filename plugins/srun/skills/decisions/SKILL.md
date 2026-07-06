@@ -105,7 +105,7 @@ description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:prop
 - {分支}（原因：{使用者說由 Coder 決定 / 待 propose 細化}）
 
 ### 下一步
-決策已收斂，可執行 `opsx:propose`。
+決策已收斂，可執行 `opsx:propose`。執行 propose 時，將本清單「依據 / 理由」欄寫入 design.md 的決策記錄；「仍開放」項目在 design.md 標示為**刻意留給 Coder 的留白**（非遺漏），避免下游誤補或誤刪。
 ```
 
 無待決策分支時，只輸出：
