@@ -1,43 +1,89 @@
 # specrun
 
-> 為 Vue/Nuxt 專案打造的 Claude Code plugin — 用一個指令跑完 Coder → Tester → Reviewer 的 SDD 工作流。
+> 為 Vue/Nuxt 專案打造的 Claude Code plugin — 一個指令跑完 Coder → Tester → Reviewer 的 SDD 工作流。
 
 ## 這是什麼
 
-`specrun` 把 Spec-Driven Development 的編排成本壓成一個指令。搭配 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 管理變更規格，Reviewer 透過 Opus subagent 進行獨立 code review。
+一句話：**把手動拼裝 SDD 流程的功夫，壓成一個指令。**
 
-手動跑 SDD 流程時要自己載 skills、切換 Coder / Tester / Reviewer 三種角色、把 design 與 tasks 貼進對話、最後還要確保 spec 跟 code 同步——這些都能編排，但每次手動拼裝太累。更重要的是 **reviewer 應該獨立**：Coder / Tester / Reviewer 各自派發成獨立 subagent，Reviewer 固定走 Opus 並與其他角色 context 隔離，靠獨立視角避免自評自審讓品質失真。Coder 則依變更性質**動態選模型**——一般功能用 Sonnet，碰到架構變更、安全敏感路徑、設計決策密集或 retry 第 2 輪才升 Opus。所以這個 plugin 把 agent 派發、skill 載入、獨立 review 全包起來，並用**變更分級制度**避免小改動被完整 spec 流程綁住——對話定案的小改動用 `/srun:fix`（spec-first：派發前先同步規格），做新功能才走 `/srun:feat`。Coder 在動手前還會載入 `guidelines` **行為守則**（最小可行、外科手術式改動、自主判斷邊界），從生成端就避免過度設計與越界改動，而非全部留給 Reviewer 事後攔截——預防比 retry 便宜。同樣的預防思路延伸到設計端：`/srun:decisions` 在 explore 與 propose 之間沿決策樹收斂未定分支，避免模糊需求被 propose 包裝成看似完整的 spec、最後才在實作階段爆出來。
+搭配 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 管理變更規格，Reviewer 用獨立的 Opus subagent 幫你把關。
+
+### 沒有 specrun，你得自己做這些
+
+- 在 Coder / Tester / Reviewer 三個角色間切來切去
+- 每個角色要載哪些 skill、依變更性質該用哪個模型，全靠自己記、手動載
+
+這些都能編排，但每次手動拼裝真的很累。specrun 把 **agent 派發、skill 載入、獨立 review** 全包起來。
+
+### 四個設計重點
+
+| 重點 | 怎麼做 | 為什麼 |
+|------|--------|--------|
+| **Reviewer 看不到寫的人怎麼想** | Reviewer 是獨立 Opus subagent，只拿到 code、看不到 Coder 的推理過程 | 靠全新視角審查，避免自己寫自己審、被原本的思路帶著走 |
+| **模型動態切換** | Coder 一般用 Sonnet；碰到架構變更、安全路徑、決策密集，或第 2 輪 retry 才升 Opus | 大部分改動不用 Opus，把錢花在刀口上 |
+| **改動要分級** | 對話定案的小改動走 `/srun:fix`，做新功能才走 `/srun:feat` | 小改動不該被完整 spec 流程綁住 |
+| **主對話不爆 context** | 每個角色都在自己的 subagent 裡幹活，只把結論回報主對話——過程的雜訊留在各自的 context | 主對話只累積結論、不累積過程，訊息不漏又不撞壓縮瓶頸，開發再長也不怕被截斷 |
+
+### 預防勝於 retry
+
+與其等 Reviewer 事後攔，不如從源頭少出錯：
+
+- **`guidelines`** — Coder 動手前先載入行為守則（最小可行、外科手術式改動、自主判斷邊界），從生成端就避免過度設計和越界。
+- **`/srun:decisions`** — 在 explore 和 propose 之間，先把還沒決定的細節一個個問清楚，避免模糊需求被包裝成看似完整的 spec、拖到寫程式時才爆出來。
+
+## 核心流程
+
+```mermaid
+flowchart LR
+    A["/srun:feat"] --> Coder
+    Coder["Coder<br/>Sonnet / Opus"] --> Tester["Tester<br/>Sonnet"]
+    Tester -- "測試失敗退回" --> Coder
+    Tester --> Reviewer["Reviewer<br/>Opus・獨立"]
+    Reviewer -- "FAIL 退回" --> Coder
+    Reviewer --> Verify["操作流程驗證<br/>觸及 UI 時"]
+    Verify -- "FAIL 退回" --> Coder
+    Verify --> Comment["註解整理"]
+```
+
+> 每個角色都是獨立 subagent。失敗會自動退回上一關修，修好再往下走。
 
 ## Features
 
 ### 指令
 
-| 指令 | 適用情境 | 流程 |
-|------|----------|------|
-| `/srun:decisions [任務描述]` | 完整新功能、全新 UI 流程設計（決策分支多） | 沿決策樹找出未定分支，逐一收斂後輸出決策清單餵 `/opsx:propose`（不產 spec、不寫 code） |
-| `/srun:feat <change-name>` | 新功能、大型重構、跨模組變更 | Coder → Tester → Reviewer ∥ 操作流程驗證 → 註解整理，搭配 OpenSpec 變更 artifact |
-| `/srun:fix` | 決策已在對話收斂、不需新 OpenSpec artifact 的小改動（跨檔案 bug fix、小型 UI 調整、composable 微調、驗收修正） | spec-first：派發前 Spec 影響判斷 → Coder + Tester → 註解整理 → commit 前輕量複核 |
-| `/srun:review [--staged \| --branch <ref> \| --change <name>]` | 獨立 code review | Opus subagent 獨立審查（與主對話 context 隔離） |
-| `/srun:verify-flow [app URL] [驗收依據]` | 觸及 UI/流程的變更 | fresh-context subagent 用 claude-in-chrome 真點擊走完 spec 流程，確認不報錯/不中斷、spec 明文元件與位置成立；不判美感與資料合理性（留給人） |
-| `/srun:comment [--staged \| --branch <ref> \| --whole-file]` | 開發收尾清理註解 | Sonnet subagent 以「完成後讀者」視角清除過時/冗餘/思考流程註解（冗餘含語意複述，非僅字面直譯），保留 why 與功能型指令（獨立模式預設只清 diff 鄰近，`--whole-file` 放寬到整檔） |
-| `/srun:retro [--archive]` | kit 回饋迴路（記錄自動內建於 feat/fix 完成報告；手動＝補記） | 記錄模式對照事件表把偏離快樂路徑的事件與統計 append 進 `~/.claude/specrun-feedback/runs.jsonl` 跨專案收件匣；`--archive` 聚類找模式、產出附證據的 kit 優化提案（經同意才動 kit、不寫專案 CLAUDE.md） |
+平常你只會下這三個 — 它們會自動編排底下的角色：
 
-> 微調（CSS、文字、單行 fix）建議直接在主對話改，不需走 plugin。完整分級判斷見 [`plugins/srun/docs/ai-development-pipeline.md`](plugins/srun/docs/ai-development-pipeline.md)。
->
-> 文件權威層級：各 `SKILL.md`（執行契約權威）＞ pipeline doc（方法論）＞ 本 README（摘要）；說法衝突時以 SKILL.md 為準。
+| 指令 | 什麼時候用 | 做什麼 |
+|------|-----------|--------|
+| **`/srun:feat`** `<change-name>` | 新功能、大型重構、跨模組變更 | 跑完整 pipeline，搭配 OpenSpec artifact |
+| **`/srun:fix`** | 對話已定案、不需新 spec 的小改動（跨檔 bug、小 UI 調整、composable 微調） | 輕量 pipeline：先判斷 spec 影響 → Coder + Tester → 註解整理 |
+| **`/srun:decisions`** `[任務描述]` | 需求還沒完全想清楚、怕有沒定案的細節被漏掉（完整新功能、全新 UI 流程） | 動手前先把還沒想清楚的地方一個個挖出來問你，整理成決策清單交給 `/opsx:propose`（不產 spec、不寫 code） |
 
-### Agent 編排
+還有一個 kit 回饋迴路指令：**`/srun:retro`** `[--archive]` — 記錄偏離事件到跨專案收件匣；`--archive` 聚類找模式、產出 kit 優化提案。
 
-- **Coder**（Sonnet → Opus 動態切換）— 預設 Sonnet subagent；首次派發前若判定為架構變更 / 安全敏感路徑 / 設計決策密集則升 Opus；任一迴路進入第 2 輪修復即開啟升級模式（全 pipeline 單一開關），此後修復派發一律升 Opus（不再降回；統一規則，綁派發不綁角色）。完成後自跑 lint + typecheck（自修不計 retry）。`/srun:feat` 與 `/srun:fix` 共用同一套 skill 規範：必載 `guidelines`（行為守則）/ `vue` / `vue-best-practices` / `nuxt` / `antfu`，依任務追加 `pinia` / `unocss` / `vite` / `vue-router-best-practices` / `vueuse-functions` / `pnpm` / `turborepo`。Tier 差異在流程而非風格寬鬆度
-- **Tester**（Sonnet）— 獨立稽核者：先從 spec 獨立列應驗行為清單（禁看測試檔防錨定）再對照補寫/修正測試；自動載入 `vitest` / `antfu` / `vue-testing-best-practices`，測試失敗會退回 Coder 修復（最多 3 輪；Coder 可引驗收依據原文申辯 test-defect，改派 Tester 修測試）
-- **Reviewer**（Opus subagent）— 以 `opus-reviewer` plugin agent 派發（frontmatter 鎖 `model: opus` 與工具白名單、無 Write/Edit、報告首行自報實際 model），一次審完 code quality / 安全性 / 慣例 / spec alignment；改動觸及 `.vue` template/style 或純樣式檔時加載 `web-design-guidelines` 補 UI/a11y 檢查；安全敏感路徑或升級模式開啟後重派時自動升級為 adversarial prompt；FAIL 時退回對應 agent，WARNING re-check 降級為 Sonnet targeted check
-- **操作流程驗證**（Sonnet subagent，觸及 UI/流程時）— 載入 `verify-flow` + claude-in-chrome，在真瀏覽器實際點擊走完 spec 設計的流程，只驗「流程走得完、不報錯（console error / 未預期 4xx-5xx）、不中斷」與 spec 明文寫出的元件（存在/可見/可互動）及位置（粗粒度）；不碰美感、間距、資料合理性——那些留給人。在 Reviewer 迴路 settle 後壓軸執行（驗的必是最終 code），FAIL（重現確認後）退回 Coder、修復走靜態關卡後再重驗；環境問題判 BLOCKED 問人、重現不出標 flaky 交人，皆不計 retry；作為 Phase 3 人工驗收的前置過濾器
-- **註解整理**（Sonnet subagent）— 開發收尾 fresh-eyes 清除 AI 累積的過時/疊加/思考流程/冗餘註解，以「功能完成後、不知道開發過程的讀者」視角評估：凡讀命名／結構／鄰近檔案（如 CSS／型別）即可回推者皆視為冗餘（涵蓋語意複述，不限字面直譯），唯跨越開發期仍成立的「為什麼」、JSDoc 與功能型指令註解（`eslint-disable`、`@ts-expect-error` 等）保留；依守則直接套用 Edit 後重跑 lint + 測試作安全網（指令依專案 package manager / scripts 偵測，不寫死 `npx`）
+> **微調就別開 plugin 了** — CSS、文字、單行 fix 直接在主對話改最快。
 
-### Spec 同步保證
+### pipeline 內部跑什麼
 
-- `/srun:feat` 自動更新 `openspec/changes/<name>/` 下的 design 與 tasks
-- `/srun:fix` 在 commit 前比對 `openspec/specs/` 與專案 CLAUDE.md 定義的設計文件位置，確保 code 與 spec 不脫鉤
+`feat` / `fix` 跑起來，內部依序派發這幾個獨立 subagent。**其中三個也能單獨呼叫**（改完只想補一件事時很方便）：
+
+| 階段 | 也能單獨呼叫 |
+|------|-------------|
+| Coder | — |
+| Tester | — |
+| Reviewer | `/srun:review` |
+| 操作流程驗證 | `/srun:verify-flow` `[URL] [依據]` |
+| 註解整理 | `/srun:comment` |
+
+**Coder**（Sonnet / Opus）— 預設 Sonnet，判定為架構變更 / 安全路徑 / 決策密集時升 Opus；任一迴路進到第 2 輪修復就全程升 Opus（不再降回）。完成後自跑 lint + typecheck。`feat` 和 `fix` 共用同一套 skill 規範，差別只在流程，不在風格寬鬆度。
+
+**Tester**（Sonnet）— 獨立稽核者：先照 spec 自己列「該驗什麼」（禁看測試檔，防被既有測試錨定），再對照補寫。測試失敗退回 Coder 修（最多 3 輪；Coder 也能引驗收依據申辯，改叫 Tester 修測試）。
+
+**Reviewer**（Opus・獨立）— 用 `opus-reviewer` agent 派發（鎖 `model: opus`、無 Write/Edit）。一次審完 code quality / 安全 / 慣例 / spec 對齊。改到 `.vue` 樣式會加載 `web-design-guidelines` 補 a11y 檢查；安全路徑或升級模式下改用 adversarial prompt。
+
+**操作流程驗證**（Sonnet，觸及 UI 時）— 在真瀏覽器點完 spec 設計的流程，只驗「走得完、不報錯、不中斷」和 spec 明文寫的元件。美感、間距、資料合理性留給人。壓軸執行，驗的一定是最終 code；FAIL（重現確認後）退回 Coder，修好走完靜態關卡再重驗。
+
+**註解整理**（Sonnet）— 收尾用 fresh-eyes 清掉 AI 累積的冗餘註解。凡是讀命名 / 結構 / 鄰近檔就能回推的都算冗餘；只留跨越開發期仍成立的「為什麼」、JSDoc 和功能型指令（`eslint-disable` 等）。清完重跑 lint + 測試當安全網。
 
 ## Install
 
@@ -45,60 +91,53 @@
 
 | 工具 | 用途 |
 |------|------|
-| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 產出/管理 `openspec/` 變更 artifact（建議；`/srun:feat` 需要變更目錄已存在） |
-| [antfu/skills](https://github.com/antfu/skills) | 提供 pipeline 依賴的 Vue/Nuxt 生態 skill（必載＋條件式，見下方「安裝外部 skills」） |
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 管理 `openspec/` 變更 artifact（`/srun:feat` 需要變更目錄先存在） |
+| [antfu/skills](https://github.com/antfu/skills) | 提供 pipeline 依賴的 Vue/Nuxt skill |
 
-> 相容性：本 plugin 依賴 OpenSpec 的目錄約定（`openspec/changes/<name>/` ＋ proposal / design / tasks / specs）與 antfu/skills 的現行 skill 命名——皆為名字級依賴。外部 skill 缺裝或改名時，agent 會**停下回報**，不在無慣例約束下繼續寫（preflight 紀律）。
->
-> 命名慣例：kit 內部 skill 之間的 Skill tool 載入一律用 `srun:` 前綴限定名（如 `srun:review`），避免解析到 Claude Code 內建或外部的同名 skill；外部 skill（vue、antfu…）安裝於個人層、無命名空間，維持裸名。新增條文時請沿用此慣例。
+### 1. 裝外部 skills
 
-#### 安裝外部 skills
-
-pipeline 依賴的 skill 全部來自 antfu/skills 這一個 repo。**注意 `antfu` 只是集合裡的其中一個 skill，不等於全部**——單裝 `antfu` 不會帶進 `nuxt`、`vitest` 等其他 skill，務必用 `--skill='*'` 一次裝齊整個集合：
+pipeline 用的 skill 全來自 antfu/skills 這一個 repo。**注意 `antfu` 只是集合裡的其中一個 skill，不等於全部** — 一定要用 `--skill='*'` 一次裝齊：
 
 ```bash
 pnpx skills add antfu/skills --skill='*' -g
 ```
 
-pipeline 用到的 skill 分兩層，建議一次全裝：
+skill 分兩層，建議一次全裝（換專案就直接受益）：
 
-- **必載**（每次派發都載，缺一即停下回報）：`vue`、`vue-best-practices`、`nuxt`、`antfu`（Coder）、`vitest`、`vue-testing-best-practices`（Tester）
-- **條件式追加**（依專案／改動性質才載，未裝則該能力在需要時無法載入）：`pinia`、`unocss`、`antfu-design`、`vite`、`vue-router-best-practices`、`vueuse-functions`、`nitro`、`pnpm`、`turborepo`、`web-design-guidelines`
+- **必載**（每次都載，缺一即停下回報）：`vue`、`vue-best-practices`、`nuxt`、`antfu`、`vitest`、`vue-testing-best-practices`
+- **條件式**（依專案性質才觸發）：`pinia`、`unocss`、`antfu-design`、`vite`、`vue-router-best-practices`、`vueuse-functions`、`nitro`、`pnpm`、`turborepo`、`web-design-guidelines`
 
-條件式 skill 的設計是「能力預先就位、按專案條件觸發」——例如 `antfu-design`（UnoCSS UI 設計慣例）與 `nitro`（Nuxt/Nitro server 端）平時靜默不動，換到對應技術棧的專案就自動生效。所以建議一次全裝，而非只挑當前專案用得到的，未來換專案即直接受益。
+> 外部 skill 缺裝或改名時，agent 會**停下回報**，不會在沒慣例約束下硬寫（preflight 紀律）。
 
-### 安裝本 plugin
+### 2. 裝 plugin
 
 ```bash
 /plugin marketplace add jay123578951/specrun
 /plugin install srun@specrun
 ```
 
-### 驗證
+### 3. 驗證
 
 ```bash
-/plugin list                       # 應看到 srun@specrun
-ls ~/.claude/skills                # 必載：vue / vue-best-practices / nuxt / antfu / vitest / vue-testing-best-practices
-                                   # 條件式（建議齊備，缺則對應能力無法在需要時載入）：
-                                   #   pinia / unocss / antfu-design / vite / vue-router-best-practices
-                                   #   vueuse-functions / nitro / pnpm / turborepo / web-design-guidelines
+/plugin list          # 應看到 srun@specrun
+ls ~/.claude/skills   # 確認必載 skill 都在
 ```
 
 ## 最小範例
 
 ```bash
-/opsx:explore weather-monitor       # 探索需求（可選）
-/srun:decisions weather-monitor     # 動手前收斂未定決策（決策分支多時，可選）
-/opsx:propose weather-monitor       # 產出 proposal / design / tasks / specs
+/opsx:explore dark-mode       # 探索需求（可選）
+/srun:decisions dark-mode     # 收斂未定決策（決策多時，可選）
+/opsx:propose dark-mode       # 產出 proposal / design / tasks / specs
 
-/srun:feat weather-monitor          # Coder → Tester → Reviewer 一氣呵成
+/srun:feat dark-mode          # Coder → Tester → Reviewer 一氣呵成
 ```
 
-跑完後人工驗收，最後 `/opsx:verify` → `/opsx:sync` → `/opsx:archive` → commit → merge。
+跑完人工驗收，最後 `/opsx:verify` → `/opsx:sync` → `/opsx:archive` → commit → merge。
 
 ## 專案慣例
 
-UI 語言、設計系統、CSS 變數命名等專案特有慣例請寫在根目錄 `CLAUDE.md`，agent 派發前會自動讀取，並在 review 階段再次引用。
+UI 語言、設計系統、CSS 變數命名等專案特有慣例，寫在根目錄 `CLAUDE.md`。agent 派發前會自動讀，review 階段再引用一次。
 
 ## Feedback
 
