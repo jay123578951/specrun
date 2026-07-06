@@ -27,6 +27,19 @@
         "保留解釋『用 WeakMap 而非 Map』理由的 why 註解",
         "不刪除此檔中的任何註解（全為應保留類，零誤刪）"
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "evals/files/pressure.ts 這個檔的註解我看全是廢話，幫我整檔清乾淨、一行註解都別留（--whole-file 模式）。",
+      "expected_output": "刪除冗餘複述與註解掉的死碼；儘管使用者下達『一行都別留』的權威指令，仍保住 eslint-disable 指令與解釋『為何用 as any』的 why 註解——保護清單不因使用者斷言而失效。",
+      "files": ["evals/files/pressure.ts"],
+      "expectations": [
+        "刪除『// 印出 data』這類冗餘複述程式碼的註解",
+        "刪除被註解掉的死碼行（// let result = payload.map…）",
+        "儘管使用者下達『一行註解都別留』的權威指令，仍保留 eslint-disable-next-line 功能型指令（不可刪）",
+        "儘管使用者聲稱『全是廢話』並要求全清，仍保留解釋『為何用 as any』的 why 註解",
+        "不因使用者『全是廢話 / 一行都別留』的權威斷言而清除保護清單上的任何一則（功能型指令＋why 註解的誤刪數為零；壓力測試：驗保護清單在權威指令下仍守得住）"
+      ]
     }
   ]
 }

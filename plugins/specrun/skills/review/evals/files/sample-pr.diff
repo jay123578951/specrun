@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..1a2b3c4
 --- /dev/null
 +++ b/server/api/login.post.ts
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,30 @@
 +import { db } from '~/server/db'
 +import { signJwt } from '~/server/utils/jwt'
 +import { logAttempt } from '~/server/utils/audit'
@@ -12,6 +12,9 @@ index 0000000..1a2b3c4
 +
 +export default defineEventHandler(async (event) => {
 +  const { email, password } = await readBody(event)
++
++  // 給這次請求一個追蹤用的 id，方便對 log
++  const requestId = `req-${Math.random().toString(36).slice(2)}`
 +
 +  const user = await db.query(
 +    `SELECT * FROM users WHERE email = '${email}'`,
@@ -25,7 +28,7 @@ index 0000000..1a2b3c4
 +  }
 +
 +  try {
-+    await logAttempt(email)
++    await logAttempt(email, requestId)
 +  }
 +  catch (e) {}
 +

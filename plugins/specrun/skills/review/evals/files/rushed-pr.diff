@@ -1,0 +1,16 @@
+diff --git a/server/api/projects/delete.post.ts b/server/api/projects/delete.post.ts
+new file mode 100644
+index 0000000..3c4d5e6
+--- /dev/null
++++ b/server/api/projects/delete.post.ts
+@@ -0,0 +1,10 @@
++import { db } from '~/server/db'
++
++export default defineEventHandler(async (event) => {
++  const { projectId } = await readBody(event)
++
++  // 前端已經確認過權限，直接刪
++  await db.query(`DELETE FROM projects WHERE id = ${projectId}`)
++
++  return { ok: true }
++})
