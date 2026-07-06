@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.12.0 — 2026-07-06
+
+專案改名 `claude-sdd-kit` → **specrun**、plugin 命名空間 `code` → **srn**。動機是命名撞名與冗餘：舊 skill `code-review` 與 Claude Code 內建 bundled skill `/code-review` 同名，而 kit 內部一律以裸名稱透過 Skill tool 載入，orchestrator 有解析到內建版、靜默替換 review 規範的正確性風險（稽核報告 P1）；同時 `commands/` 包裝層與 skills 雙重註冊，造成 `/code:feat`＋`/code:code-feat` 雙入口與 description 雙倍常駐 context（P2）。改名一次收斂兩者。
+
+### Changed（破壞性——指令名稱變更）
+
+- **斜線指令前綴 `code:` → `srn:`**：`/code:feat` → `/srn:feat`，其餘 fix／review／comment／verify-flow／retro／decisions 同理。安裝後需以新前綴呼叫。
+- **移除 `commands/` 包裝層（P2）**：7 個 command 檔刪除，skill 直接作為斜線指令（官方已將 command 併入 skill）。`argument-hint` 由 command 搬入對應 skill frontmatter；skill 目錄去 `code-` 前綴（`code-feat/` → `feat/`），命名空間 `srn:` 已足以與內建及外部 skill 區隔，前綴屬冗餘。
+- **內部 skill 載入改用限定名（P1）**：feat／fix 的操作型載入指示一律 `srn:review`／`srn:comment`／`srn:guidelines` 等,杜絕撞內建 `/code-review`；外部 skill（vue／antfu／vitest…）維持裸名（個人層、無命名空間）。純敘述性提及維持裸短名。
+- **安裝識別碼變更**：`/plugin install code@claude-sdd-kit` → `/plugin install srn@specrun`。GitHub repo 改名（`claude-sdd-kit` → `specrun`）為後續手動步驟；完成前 `marketplace add` 仍指向舊 repo slug。
+
+### Changed（invocation control——P3）
+
+- `guidelines` 加 `user-invocable: false`：純背景行為守則，只被 Coder subagent 以 Skill tool 載入，從 `/` 選單隱藏（description 仍常駐 context 供載入）。
+- `feat`／`fix` **維持 model-invocable**（不上 `disable-model-invocation`）：保留自主優先哲學下的自動 tier 路由能力；副作用由 pipeline 內建 phase gate 與 spec-first 前提條款把關。
+
+### Changed（P4／P7 順手收斂）
+
+- 跨 skill 引用改用 `${CLAUDE_SKILL_DIR}/../feat/references/…` 基底，消除 cwd 依賴。
+- `argument-hint` 與 `$ARGUMENTS` 收斂進 skill 層（command 移除後的自然歸位）。
+- `sync-descriptions.mjs` 收斂為純版號一致性檢查（command 生成同步已無對象）。
+
+### Notes
+
+- CHANGELOG 舊條目維持原名不動（歷史紀錄，改名等於竄改）。
+- 本次不改任何 gate 順序、停損上限、STOP 條款、model 策略與交付流程；純命名／結構重構。
+
 ## 0.11.0 — 2026-07-04
 
 Skill 減重版。依「skill 條文只寫給執行期 AI」與 SSOT 原則全面去重：設計論證出文、規範副本收斂、reference 檔漸進揭露；唯一行為變更是 retry 升級規則收斂為全 pipeline 單一開關。八個 skill 全數落在 SKILL.md 500 行建議值內（最大 334 行）。

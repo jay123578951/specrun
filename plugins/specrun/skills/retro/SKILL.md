@@ -1,6 +1,7 @@
 ---
-name: code-retro
-description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：code-feat/code-fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/sdd-kit-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
+name: retro
+argument-hint: "[--archive]"
+description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/sdd-kit-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
 ---
 
 Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 kit 的 prompt 決定、跨專案同一套）——寫進單一專案的 CLAUDE.md 等於埋掉。本 skill 在源頭（orchestrator 事發時在場）做語義記錄，比事後開採 transcripts 的關鍵字偵測召回率高得多；歸檔模式再把收件匣消化成 kit 優化提案。這是唯一能讓 pipeline 隨使用次數變便宜的複利投資。
@@ -22,7 +23,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 
 ## 記錄模式（預設）
 
-**呼叫點**：`code-feat` Step 7 與 `code-fix` Step 8 的完成報告尾端內建一行呼叫（SSOT——事件表與條目格式只活在本 skill，feat/fix 不各抄一份）。手動呼叫 `/code:retro` ＝ 臨時補記（如人工驗收後才發現的問題）。
+**呼叫點**：`feat` Step 7 與 `fix` Step 8 的完成報告尾端內建一行呼叫（SSOT——事件表與條目格式只活在本 skill，feat/fix 不各抄一份）。手動呼叫 `/srn:retro` ＝ 臨時補記（如人工驗收後才發現的問題）。
 
 **記錄什麼——對照列舉事件表，偏離快樂路徑全記**：
 
@@ -49,7 +50,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 
 - `events`：只用事件表的固定詞彙；一行事實＋指路，**不寫解讀**（解讀是歸檔模式的事）
 - `observations`（開放觀察欄）：模型判斷有事件表之外值得 kit 注意的異常時，以事實＋證據格式一併記，同樣不寫解讀——收集工具本身也是被優化的對象（反覆出現的觀察，消化時提案收進事件表）
-- **閾值提醒**：append 時順手數行數（`wc -l`），收件匣 > 30 筆 → 在 pipeline 完成報告加一行：「回饋收件匣已累積 N 筆，建議擇時執行 `/code:retro --archive` 消化」。30 只是提醒閾值，不是歸檔門檻
+- **閾值提醒**：append 時順手數行數（`wc -l`），收件匣 > 30 筆 → 在 pipeline 完成報告加一行：「回饋收件匣已累積 N 筆，建議擇時執行 `/srn:retro --archive` 消化」。30 只是提醒閾值，不是歸檔門檻
 
 ---
 

@@ -1,21 +1,21 @@
 {
-  "name": "claude-sdd-kit",
+  "name": "specrun",
   "owner": {
     "name": "jay123578951"
   },
   "metadata": {
     "description": "Spec-Driven Development pipeline skills for Claude Code (Vue/Nuxt 專案)",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "plugins": [
     {
-      "name": "code",
-      "description": "Tier 1/2/3 SDD pipeline — code-decisions / code-feat / code-fix / code-review / code-verify-flow / code-comment / code-retro + code-guidelines behavioral skill + opus-reviewer agent, driven by OpenSpec change artifacts",
-      "version": "0.11.0",
+      "name": "srn",
+      "description": "Tier 1/2/3 SDD pipeline — /srn:decisions / /srn:feat / /srn:fix / /srn:review / /srn:verify-flow / /srn:comment / /srn:retro + guidelines behavioral skill + opus-reviewer agent, driven by OpenSpec change artifacts",
+      "version": "0.12.0",
       "author": {
         "name": "jay123578951"
       },
-      "source": "./plugins/code"
+      "source": "./plugins/specrun"
     }
   ]
 }

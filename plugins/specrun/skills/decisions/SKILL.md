@@ -1,5 +1,6 @@
 ---
-name: code-decisions
+name: decisions
+argument-hint: "[任務摘要或需求描述]"
 description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:propose 之前，沿決策樹找出「Coder 動手時必須有答案、但目前未定」的分支，逐一問你收斂後輸出決策清單餵給 propose。用於完整新功能、全新 UI 流程設計等決策分支多的任務；既有功能的調整、需求已明確、純樣式微調不需使用。
 ---
 
@@ -64,7 +65,7 @@ description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:prop
 讀 explore 結論（或需求描述）+ 專案 CLAUDE.md + 相關既有程式碼，依「核心判準」列出所有待決策分支。
 
 - **能查 codebase / CLAUDE.md / 既有慣例就先查**，能推出答案的分支直接標記為「已定（依據：…）」，不拿來問人。
-- 宣告：「code:decisions：{任務摘要}，找到 N 個待決策分支」。
+- 宣告：「srn:decisions：{任務摘要}，找到 N 個待決策分支」。
 - **找不到任何待決策分支時，直說「無未定決策，可直接 propose」，不要硬湊問題。**
 
 ### Step 2：逐一收斂（一次只問一個）
@@ -110,7 +111,7 @@ description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:prop
 無待決策分支時，只輸出：
 
 ```
-## code:decisions：{任務摘要}
+## srn:decisions：{任務摘要}
 無未定決策（依據：explore 結論已明確 / 可由既有慣例推得）。可直接執行 `opsx:propose`。
 ```
 

@@ -1,6 +1,6 @@
 # Coder 額外 Skills 預判表（feat／fix 共用）
 
-Orchestrator 派發 Coder 前，根據 task／問題內容判斷必載 skills（`code-guidelines`, `vue`, `vue-best-practices`, `nuxt`, `antfu`）之外還需要哪些額外 skills，寫入 `{additionalSkills}`：
+Orchestrator 派發 Coder 前，根據 task／問題內容判斷必載 skills（`guidelines`, `vue`, `vue-best-practices`, `nuxt`, `antfu`）之外還需要哪些額外 skills，寫入 `{additionalSkills}`：
 
 - 涉及 store / state → 加 `pinia`
 - 涉及 CSS utility / atomic → 加 `unocss`
