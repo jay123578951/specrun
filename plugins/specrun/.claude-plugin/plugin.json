@@ -4,5 +4,18 @@
   "description": "Tier 1/2/3 SDD pipeline — /srn:decisions / /srn:feat / /srn:fix / /srn:review / /srn:verify-flow / /srn:comment / /srn:retro + guidelines behavioral skill + opus-reviewer agent, driven by OpenSpec change artifacts",
   "author": {
     "name": "jay123578951"
-  }
+  },
+  "homepage": "https://github.com/jay123578951/claude-sdd-kit",
+  "repository": "https://github.com/jay123578951/claude-sdd-kit",
+  "license": "MIT",
+  "keywords": [
+    "sdd",
+    "spec-driven-development",
+    "openspec",
+    "pipeline",
+    "code-review",
+    "vue",
+    "nuxt",
+    "subagent"
+  ]
 }

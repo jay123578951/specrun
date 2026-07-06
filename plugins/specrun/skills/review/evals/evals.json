@@ -1,0 +1,30 @@
+{
+  "skill_name": "review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "審查這份 diff（server/api/login.post.ts 的新增）。這是要進 main 的變更，請依你的 review 規範判定嚴重度並輸出報告。diff 內容見 evals/files/sample-pr.diff。",
+      "expected_output": "一份依嚴重度分級的 review 報告：點名硬編碼密鑰、SQL 注入、明文密碼比對等 CRITICAL 問題，並標出空 catch 吞錯等 WARNING；每項附檔案/行號，且不虛構 diff 裡沒有的問題。",
+      "files": ["evals/files/sample-pr.diff"],
+      "expectations": [
+        "將 JWT_SECRET 硬編碼密鑰判為 CRITICAL 等級的安全問題",
+        "將以字串插值把 email 拼進 SQL 查詢（SQL 注入）判為 CRITICAL",
+        "將明文密碼直接比對（user.password === password）判為 CRITICAL 或高嚴重度",
+        "將空的 catch (e) {} 吞掉錯誤標為 WARNING（而非 CRITICAL）",
+        "報告採本 skill 的嚴重度分級格式，且每項 finding 附上檔案與行號定位",
+        "不虛構 diff 中不存在的 finding（報告只涵蓋此 diff 實際出現的問題）"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "審查這份 diff（composables/useFullName.ts 的新增）。diff 內容見 evals/files/clean-pr.diff。",
+      "expected_output": "報告結論為無 CRITICAL 問題；至多提出可選的次要建議，不對這段良性、慣用的程式碼捏造安全或正確性缺陷。",
+      "files": ["evals/files/clean-pr.diff"],
+      "expectations": [
+        "報告未提出任何 CRITICAL 等級 finding",
+        "不為這段良性的 composable 捏造安全性或正確性問題",
+        "結論判定此變更為可接受 / 低風險（可含次要或風格層級的可選建議）"
+      ]
+    }
+  ]
+}

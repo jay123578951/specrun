@@ -1,0 +1,33 @@
+diff --git a/server/api/login.post.ts b/server/api/login.post.ts
+new file mode 100644
+index 0000000..1a2b3c4
+--- /dev/null
++++ b/server/api/login.post.ts
+@@ -0,0 +1,24 @@
++import { db } from '~/server/db'
++import { signJwt } from '~/server/utils/jwt'
++import { logAttempt } from '~/server/utils/audit'
++
++const JWT_SECRET = 'hardcoded-super-secret-key-123'
++
++export default defineEventHandler(async (event) => {
++  const { email, password } = await readBody(event)
++
++  const user = await db.query(
++    `SELECT * FROM users WHERE email = '${email}'`,
++  )
++
++  if (user && user.password === password) {
++    return {
++      token: signJwt(user.id, JWT_SECRET),
++      user,
++    }
++  }
++
++  try {
++    await logAttempt(email)
++  }
++  catch (e) {}
++
++  return { error: 'invalid' }
++})

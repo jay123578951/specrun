@@ -1,0 +1,32 @@
+{
+  "skill_name": "comment",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "整理 evals/files/sample.ts 的註解（--whole-file 模式，清整檔內明顯的垃圾註解）。依你的判準清除該刪的、保留該留的，完成後回報改了什麼。",
+      "expected_output": "刪除冗餘複述、思考流程、註解掉的死碼三類垃圾註解；完整保留 eslint-disable 指令、@__PURE__ 與 webpackChunkName 建置 pragma、以及解釋「為何」的 why 註解。保護清單零誤刪。",
+      "files": ["evals/files/sample.ts"],
+      "expectations": [
+        "刪除『// 把 count 設成 0』這類冗餘複述程式碼的註解",
+        "刪除以『TODO 本來想用…之後再看』開頭的思考流程註解",
+        "刪除被註解掉的死碼行（const legacy = input.split(';')）",
+        "保留 eslint-disable-next-line 指令註解（功能型，不可刪）",
+        "保留 /* @__PURE__ */ 建置 pragma（功能型，不可刪）",
+        "保留 /* webpackChunkName: \"editor\" */ 魔術註解（功能型，不可刪）",
+        "保留解釋『故意不 trim』理由的 why 註解",
+        "被刪除的註解中，功能型指令與 why 註解的數量為零（保護清單成立）"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "整理 evals/files/already-clean.ts 的註解（--whole-file 模式）。",
+      "expected_output": "此檔只含 @ts-expect-error 指令與兩則 why 註解，無任何垃圾註解；預期不刪除任何一則。",
+      "files": ["evals/files/already-clean.ts"],
+      "expectations": [
+        "保留 @ts-expect-error 指令註解（功能型，不可刪）",
+        "保留解釋『用 WeakMap 而非 Map』理由的 why 註解",
+        "不刪除此檔中的任何註解（全為應保留類，零誤刪）"
+      ]
+    }
+  ]
+}

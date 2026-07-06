@@ -1,0 +1,15 @@
+diff --git a/composables/useFullName.ts b/composables/useFullName.ts
+new file mode 100644
+index 0000000..2b3c4d5
+--- /dev/null
++++ b/composables/useFullName.ts
+@@ -0,0 +1,10 @@
++import { computed, type Ref } from 'vue'
++
++// 中文姓名不加空格；西文姓名以單一空格串接。
++export function useFullName(first: Ref<string>, last: Ref<string>) {
++  return computed(() => {
++    const hasCjk = /\p{Script=Han}/u.test(first.value + last.value)
++    return hasCjk ? `${last.value}${first.value}` : `${first.value} ${last.value}`
++  })
++}
