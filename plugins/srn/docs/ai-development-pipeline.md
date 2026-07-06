@@ -332,15 +332,17 @@ Orchestrator 負責保留每個 agent 的輸出摘要，在派發下一個 agent
 
 | Agent | 必須載入的 Skills | 額外 Skills | 用途 |
 |-------|-----------------|------------|------|
-| Coder（`/srn:feat` 與 `/srn:fix` 共用） | `guidelines`, `vue`, `vue-best-practices`, `nuxt`, `antfu` | 由 orchestrator 根據 task / 問題內容預判並寫入 prompt（如 `pinia`, `unocss`, `vite`, `vue-router-best-practices`, `vueuse-functions`, `pnpm`, `turborepo`）；Coder 實作中發現不足可自行補充載入 | `guidelines` 為**行為守則**（最小可行、外科手術式改動、自主判斷邊界），從生成端約束過度設計與越界改動；其餘為 Vue/Nuxt 開發慣例、程式碼風格、元件拆分守則。**兩個 pipeline 共用相同 skill 規範**，Tier 差異體現在流程（是否走 OpenSpec change / Reviewer），不在風格寬鬆度 |
+| Coder（`/srn:feat` 與 `/srn:fix` 共用） | `guidelines`, `vue`, `vue-best-practices`, `nuxt`, `antfu` | 由 orchestrator 根據 task / 問題內容預判並寫入 prompt（如 `pinia`, `unocss`, `antfu-design`, `vite`, `vue-router-best-practices`, `vueuse-functions`, `nitro`, `pnpm`, `turborepo`）；Coder 實作中發現不足可自行補充載入 | `guidelines` 為**行為守則**（最小可行、外科手術式改動、自主判斷邊界），從生成端約束過度設計與越界改動；其餘為 Vue/Nuxt 開發慣例、程式碼風格、元件拆分守則。**兩個 pipeline 共用相同 skill 規範**，Tier 差異體現在流程（是否走 OpenSpec change / Reviewer），不在風格寬鬆度 |
 | Tester | `vitest`, `antfu`, `vue-testing-best-practices` | — | 測試框架用法、Vue 元件測試慣例（describe/it、Vue Test Utils、Pinia 注入、Teleport） |
-| Reviewer | `review` | 改動觸及 `.vue` 的 `<template>` / `<style>` 區塊或純樣式檔（`.css` / `.scss` / `.sass` / `.less`）時加 `web-design-guidelines`（補 UI/UX/a11y 檢查） | Review 標準、subagent prompt 模板、嚴重度與輸出格式的單一來源；由 **orchestrator 載入**、展開其模板注入 opus-reviewer subagent（prompt 已內含完整規範，subagent 只載入呼叫方指定的追加 skills） |
+| Reviewer | `review` | 改動觸及 `.vue` 的 `<template>` / `<style>` 區塊或純樣式檔（`.css` / `.scss` / `.sass` / `.less`）時加 `web-design-guidelines`（補 UI/UX/a11y 檢查）；以 UnoCSS 建構 UI 時加 `antfu-design`（設計慣例／token 遵循）；觸及 Nuxt/Nitro server 端時加 `nitro`（route rules／快取／event handler 慣例） | Review 標準、subagent prompt 模板、嚴重度與輸出格式的單一來源；由 **orchestrator 載入**、展開其模板注入 opus-reviewer subagent（prompt 已內含完整規範，subagent 只載入呼叫方指定的追加 skills） |
 | 操作流程驗證 | `verify-flow` | 需 claude-in-chrome 瀏覽器工具（deferred 時 subagent 先 ToolSearch 批次載入） | 流程驗證判準精神、邊界、輸出格式的單一來源；觸及 UI/流程時派發。由 **orchestrator 載入**本 skill、展開其 subagent prompt 模板後注入 fresh-context subagent（subagent 不自行載入 skill） |
 | 註解整理 | `comment` | — | 註解衛生判準、修正方式、輸出格式的單一來源；由 **orchestrator 於收尾時載入**本 skill、展開 prompt 模板注入 Sonnet subagent（subagent 不自行載入 skill） |
 
 **Conditional skills 偵測方式**（orchestrator 在派發前先做）：
 - `pnpm` → 讀 `package.json` 的 `packageManager` 欄位，或 `Glob pnpm-lock.yaml`
 - `turborepo` → `Glob turbo.json`
+- `nitro` → 改動觸及 `server/` 下 API routes／event handlers、`nitro.config`、`routeRules`、server 快取／tasks／websocket、部署 preset（`nuxt` 管框架整合面，`nitro` 補 server 引擎細節）
+- `antfu-design` → 以 UnoCSS 建構／重構 UI 介面（semantic token、雙主題、視覺樣式、micro-interaction；`unocss` 管 rule 語法，`antfu-design` 管設計慣例與 token 命名）
 - 其他 skills 依 task / 問題語意關鍵字判斷
 
 ### 分批策略

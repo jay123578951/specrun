@@ -46,11 +46,26 @@
 | 工具 | 用途 |
 |------|------|
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 產出/管理 `openspec/` 變更 artifact（建議；`/srn:feat` 需要變更目錄已存在） |
-| [antfu/skills](https://github.com/antfu/skills) | 提供 `vue` / `vue-best-practices` / `nuxt` / `antfu` / `vitest` / `vue-testing-best-practices`（必裝） |
+| [antfu/skills](https://github.com/antfu/skills) | 提供 pipeline 依賴的 Vue/Nuxt 生態 skill（必載＋條件式，見下方「安裝外部 skills」） |
 
 > 相容性：本 plugin 依賴 OpenSpec 的目錄約定（`openspec/changes/<name>/` ＋ proposal / design / tasks / specs）與 antfu/skills 的現行 skill 命名——皆為名字級依賴。外部 skill 缺裝或改名時，agent 會**停下回報**，不在無慣例約束下繼續寫（preflight 紀律）。
 >
 > 命名慣例：kit 內部 skill 之間的 Skill tool 載入一律用 `srn:` 前綴限定名（如 `srn:review`），避免解析到 Claude Code 內建或外部的同名 skill；外部 skill（vue、antfu…）安裝於個人層、無命名空間，維持裸名。新增條文時請沿用此慣例。
+
+#### 安裝外部 skills
+
+pipeline 依賴的 skill 全部來自 antfu/skills 這一個 repo。**注意 `antfu` 只是集合裡的其中一個 skill，不等於全部**——單裝 `antfu` 不會帶進 `nuxt`、`vitest` 等其他 skill，務必用 `--skill='*'` 一次裝齊整個集合：
+
+```bash
+pnpx skills add antfu/skills --skill='*' -g
+```
+
+pipeline 用到的 skill 分兩層，建議一次全裝：
+
+- **必載**（每次派發都載，缺一即停下回報）：`vue`、`vue-best-practices`、`nuxt`、`antfu`（Coder）、`vitest`、`vue-testing-best-practices`（Tester）
+- **條件式追加**（依專案／改動性質才載，未裝則該能力在需要時無法載入）：`pinia`、`unocss`、`antfu-design`、`vite`、`vue-router-best-practices`、`vueuse-functions`、`nitro`、`pnpm`、`turborepo`、`web-design-guidelines`
+
+條件式 skill 的設計是「能力預先就位、按專案條件觸發」——例如 `antfu-design`（UnoCSS UI 設計慣例）與 `nitro`（Nuxt/Nitro server 端）平時靜默不動，換到對應技術棧的專案就自動生效。所以建議一次全裝，而非只挑當前專案用得到的，未來換專案即直接受益。
 
 ### 安裝本 plugin
 
@@ -63,7 +78,10 @@
 
 ```bash
 /plugin list                       # 應看到 srn@specrun
-ls ~/.claude/skills                # 應有 vue / vue-best-practices / nuxt / antfu / vitest / vue-testing-best-practices
+ls ~/.claude/skills                # 必載：vue / vue-best-practices / nuxt / antfu / vitest / vue-testing-best-practices
+                                   # 條件式（建議齊備，缺則對應能力無法在需要時載入）：
+                                   #   pinia / unocss / antfu-design / vite / vue-router-best-practices
+                                   #   vueuse-functions / nitro / pnpm / turborepo / web-design-guidelines
 ```
 
 ## 最小範例

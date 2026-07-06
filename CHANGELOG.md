@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13.0 — 2026-07-06
+
+antfu/skills 上游同步後，將兩個新 skill 接進 pipeline 的自動載入邏輯。動機是這兩個 skill 直接對應本 kit 的 Vue/Nuxt 定位缺口：`nitro` 補齊 Nuxt server 引擎面（原本 Coder 碰 `server/` 只有 `nuxt` 的框架整合視角，缺 route rules／快取層／event handler 的引擎細節），`antfu-design` 補齊 UnoCSS 的設計慣例面（原本 `unocss` 只管 rule 語法，缺 semantic token／雙主題／anti-slop 的設計判準）。
+
+### Added
+
+- **Coder 預判表新增 `nitro`、`antfu-design` 兩條偵測規則**（`skills/feat/references/coder-skills-map.md`，feat／fix 共用）：
+  - 涉及 Nuxt/Nitro server 端（`server/` API routes／event handlers、`nitro.config`、`routeRules`、server 快取、tasks／websocket、部署 preset）→ 自動載 `nitro`。
+  - 涉及以 UnoCSS 建構／重構 UI（semantic token、雙 light/dark 主題、視覺樣式、micro-interaction）→ 自動載 `antfu-design`。
+- **Reviewer 端同步追加規則**（`skills/feat/SKILL.md`）：改動觸及 UnoCSS UI 時追加 `antfu-design`（設計慣例／token 遵循），觸及 server 端時追加 `nitro`（route rules／快取／event handler 慣例），與既有 `web-design-guidelines`（a11y／UX）互補。
+
+### Changed
+
+- `feat`／`fix` skill 表格「可選 Skills」欄與 `docs/ai-development-pipeline.md` 的 Coder 清單、Reviewer 觸發、Conditional skills 偵測方式三處同步鏡射，保持單一來源一致。
+- 規則內明寫分工邊界避免與既有 skill 重疊：`unocss` 管 rule 語法／`antfu-design` 管設計慣例與 token 命名；`nuxt` 管框架整合面／`nitro` 補 server 引擎細節。
+- **README 外部 skill 依賴同步**：原本前置依賴只列 6 個必載 skill 且缺安裝指令，補上 `#### 安裝外部 skills` 區塊——明列 `pnpx skills add antfu/skills --skill='*' -g`、點破「`antfu` 只是集合裡的一個 skill 不等於全部」、並將依賴拆成「必載 6 個」與「條件式追加 10 個」（含 `nitro`、`antfu-design`）兩層完整列出；驗證指令的 `ls ~/.claude/skills` 預期清單同步補上條件式 skill。修正條件式那層在文件中不存在、使用者只裝 6 個導致條件式受益靜默落空的缺口。
+
 ## 0.12.0 — 2026-07-06
 
 專案改名 `claude-sdd-kit` → **specrun**、plugin 命名空間 `code` → **srn**。動機是命名撞名與冗餘：舊 skill `code-review` 與 Claude Code 內建 bundled skill `/code-review` 同名，而 kit 內部一律以裸名稱透過 Skill tool 載入，orchestrator 有解析到內建版、靜默替換 review 規範的正確性風險（稽核報告 P1）；同時 `commands/` 包裝層與 skills 雙重註冊，造成 `/code:feat`＋`/code:code-feat` 雙入口與 description 雙倍常駐 context（P2）。改名一次收斂兩者。
