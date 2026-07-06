@@ -65,7 +65,7 @@ description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:prop
 讀 explore 結論（或需求描述）+ 專案 CLAUDE.md + 相關既有程式碼，依「核心判準」列出所有待決策分支。
 
 - **能查 codebase / CLAUDE.md / 既有慣例就先查**，能推出答案的分支直接標記為「已定（依據：…）」，不拿來問人。
-- 宣告：「srn:decisions：{任務摘要}，找到 N 個待決策分支」。
+- 宣告：「srun:decisions：{任務摘要}，找到 N 個待決策分支」。
 - **找不到任何待決策分支時，直說「無未定決策，可直接 propose」，不要硬湊問題。**
 
 ### Step 2：逐一收斂（一次只問一個）
@@ -111,7 +111,7 @@ description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:prop
 無待決策分支時，只輸出：
 
 ```
-## srn:decisions：{任務摘要}
+## srun:decisions：{任務摘要}
 無未定決策（依據：explore 結論已明確 / 可由既有慣例推得）。可直接執行 `opsx:propose`。
 ```
 

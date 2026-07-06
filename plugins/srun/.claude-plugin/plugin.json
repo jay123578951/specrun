@@ -1,7 +1,7 @@
 {
-  "name": "srn",
-  "version": "0.13.0",
-  "description": "Tier 1/2/3 SDD pipeline — /srn:decisions / /srn:feat / /srn:fix / /srn:review / /srn:verify-flow / /srn:comment / /srn:retro + guidelines behavioral skill + opus-reviewer agent, driven by OpenSpec change artifacts",
+  "name": "srun",
+  "version": "0.14.0",
+  "description": "Tier 1/2/3 SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + opus-reviewer agent, driven by OpenSpec change artifacts",
   "author": {
     "name": "jay123578951"
   },

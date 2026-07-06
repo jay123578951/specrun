@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.0 — 2026-07-06
+
+plugin 命名空間 `srn` → **`srun`**。動機是直覺性：`srn` 三個子音連寫唸不出來、也丟失了專案名 `specrun` 的記憶點「run」；`srun` 可直接唸成 spec-run 的縮音、打字手感更順，語意連回專案名。與 Slurm 內建 `srun` 的撞名僅屬理論——此處是 slash command 命名空間（`/srun:`）而非 shell 指令，受眾為前端 SDD pipeline 不碰 HPC。本次僅改 plugin 名，marketplace 名（＝ GitHub repo 名）維持 `specrun`，不涉及 repo 改名。
+
+### Changed（破壞性——指令名稱變更）
+
+- **斜線指令前綴 `srn:` → `srun:`**：`/srn:feat` → `/srun:feat`，其餘 fix／review／comment／verify-flow／retro／decisions 同理。安裝後需以新前綴呼叫。
+- **內部 skill 載入限定名同步**：feat／fix／decisions 的操作型載入指示一律 `srun:review`／`srun:comment`／`srun:guidelines`／`srun:verify-flow` 等。
+- **plugin 目錄改名**：`plugins/srn/` → `plugins/srun/`，`marketplace.json` 的 `source`、`scripts/sync-descriptions.mjs` 讀取路徑、plugin.json／marketplace description 同步更新。
+- **安裝識別碼變更**：`/plugin install srn@specrun` → `/plugin install srun@specrun`。`marketplace add jay123578951/specrun` 與 repo 不變（marketplace 名仍為 `specrun`）；`/plugin list` 應看到 `srun@specrun`。
+
 ## 0.13.0 — 2026-07-06
 
 antfu/skills 上游同步後，將兩個新 skill 接進 pipeline 的自動載入邏輯。動機是這兩個 skill 直接對應本 kit 的 Vue/Nuxt 定位缺口：`nitro` 補齊 Nuxt server 引擎面（原本 Coder 碰 `server/` 只有 `nuxt` 的框架整合視角，缺 route rules／快取層／event handler 的引擎細節），`antfu-design` 補齊 UnoCSS 的設計慣例面（原本 `unocss` 只管 rule 語法，缺 semantic token／雙主題／anti-slop 的設計判準）。

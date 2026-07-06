@@ -25,10 +25,10 @@ description: Use when reviewing code changes for quality, security, and project 
 根據輸入自動判斷：
 
 ```
-/srn:review                     → 自動偵測：git diff 未 commit 的變更
-/srn:review --staged            → 只看 staged changes
-/srn:review --branch feat/xxx   → 整個 branch 相對 main 的 diff
-/srn:review --change xxx        → 讀取 OpenSpec 變更 artifact 作為 review 基準
+/srun:review                     → 自動偵測：git diff 未 commit 的變更
+/srun:review --staged            → 只看 staged changes
+/srun:review --branch feat/xxx   → 整個 branch 相對 main 的 diff
+/srun:review --change xxx        → 讀取 OpenSpec 變更 artifact 作為 review 基準
 ```
 
 被 `feat` 的 Reviewer 載入時，由呼叫方 prompt 指定範圍，不需自動偵測。
@@ -59,7 +59,7 @@ description: Use when reviewing code changes for quality, security, and project 
 
 ### Step 3: 派發 Reviewer Subagent
 
-使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**——本 plugin 出貨的 agent（`plugins/srn/agents/opus-reviewer.md`），frontmatter 鎖 `model: opus` 與工具白名單（Skill/Read/Grep/Glob/Bash，無 Write/Edit：report-only 的工具層門檻，保留 Bash 供自跑 `git diff`——提高失誤門檻，非 sandbox 保證），並要求報告第一行自報實際 model（runtime 降級偵測）。prompt 模板見「Reviewer Subagent Prompt 模板」章節，依模式注入對應 scope 與 adversarial flag。
+使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**——本 plugin 出貨的 agent（`plugins/srun/agents/opus-reviewer.md`），frontmatter 鎖 `model: opus` 與工具白名單（Skill/Read/Grep/Glob/Bash，無 Write/Edit：report-only 的工具層門檻，保留 Bash 供自跑 `git diff`——提高失誤門檻，非 sandbox 保證），並要求報告第一行自報實際 model（runtime 降級偵測）。prompt 模板見「Reviewer Subagent Prompt 模板」章節，依模式注入對應 scope 與 adversarial flag。
 
 Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的「輸出格式」最終報告。主對話收到後直接呈現，不需要再做重新包裝或補充檢查（這些責任已在 prompt 中明確交給 subagent）。
 
@@ -325,7 +325,7 @@ Grounding rules：
 |--------|---------|
 | `feat` Step 6 | Orchestrator 載入此 skill，以 change 模式展開通用模板後派發 `opus-reviewer`（Coder/Tester 摘要附於 prompt 末段） |
 | `feat` WARNING re-check | Orchestrator 展開 Targeted Check 模板後派發 Sonnet subagent |
-| `fix`（可選） | 完成後人工決定是否跑 `/srn:review` |
+| `fix`（可選） | 完成後人工決定是否跑 `/srun:review` |
 | 獨立使用 | 任何時候對任意 diff 執行 review |
 
 此 skill 只負責「怎麼 review」與「派發給誰」。失敗派發邏輯（retry、歸屬路由、3 輪上限）由呼叫方（`feat` 或人）管理。

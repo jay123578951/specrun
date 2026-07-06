@@ -19,10 +19,10 @@ description: Use when tidying code comments at the end of development — remove
 根據輸入自動判斷：
 
 ```
-/srn:comment                    → 自動偵測：git diff 未 commit 的變更
-/srn:comment --staged           → 只看 staged changes
-/srn:comment --branch feat/xxx  → 整個 branch 相對 main 的 diff
-/srn:comment --whole-file       → 獨立模式下放寬到整個改動檔案（預設只清 diff 鄰近區）
+/srun:comment                    → 自動偵測：git diff 未 commit 的變更
+/srun:comment --staged           → 只看 staged changes
+/srun:comment --branch feat/xxx  → 整個 branch 相對 main 的 diff
+/srun:comment --whole-file       → 獨立模式下放寬到整個改動檔案（預設只清 diff 鄰近區）
 ```
 
 被 `feat`／`fix` 收尾步驟載入時，由呼叫方 prompt 指定範圍（通常是「本次 Pipeline 修改的檔案清單」），不需自動偵測。
@@ -200,6 +200,6 @@ build-time pragma 誤刪測試驗不到，靠這道機械網防守。**開始整
 |--------|---------|
 | `feat`（Tier 3）收尾 | Reviewer PASS 後，orchestrator 派發 Sonnet 整理 Agent subagent，載入此 skill 取得規範；整理後重跑 lint + 測試，再進交付 |
 | `fix`（Tier 2）收尾 | Coder/Tester settle 後、Spec 影響檢查前，orchestrator 派發整理 Agent |
-| 獨立使用 | 任何時候對任意 diff 執行 `/srn:comment` |
+| 獨立使用 | 任何時候對任意 diff 執行 `/srun:comment` |
 
 此 skill 只負責「怎麼判斷與整理註解」與「派發給誰」。在 Pipeline 中的位置、重跑測試的時機由呼叫方（`feat`／`fix`）管理。
