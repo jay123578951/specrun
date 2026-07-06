@@ -49,6 +49,8 @@
 | [antfu/skills](https://github.com/antfu/skills) | 提供 `vue` / `vue-best-practices` / `nuxt` / `antfu` / `vitest` / `vue-testing-best-practices`（必裝） |
 
 > 相容性：本 plugin 依賴 OpenSpec 的目錄約定（`openspec/changes/<name>/` ＋ proposal / design / tasks / specs）與 antfu/skills 的現行 skill 命名——皆為名字級依賴。外部 skill 缺裝或改名時，agent 會**停下回報**，不在無慣例約束下繼續寫（preflight 紀律）。
+>
+> 命名慣例：kit 內部 skill 之間的 Skill tool 載入一律用 `srn:` 前綴限定名（如 `srn:review`），避免解析到 Claude Code 內建或外部的同名 skill；外部 skill（vue、antfu…）安裝於個人層、無命名空間，維持裸名。新增條文時請沿用此慣例。
 
 ### 安裝本 plugin
 
