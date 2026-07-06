@@ -59,7 +59,7 @@ description: Use when reviewing code changes for quality, security, and project 
 
 ### Step 3: 派發 Reviewer Subagent
 
-使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**——本 plugin 出貨的 agent（`plugins/specrun/agents/opus-reviewer.md`），frontmatter 鎖 `model: opus` 與工具白名單（Skill/Read/Grep/Glob/Bash，無 Write/Edit：report-only 的工具層門檻，保留 Bash 供自跑 `git diff`——提高失誤門檻，非 sandbox 保證），並要求報告第一行自報實際 model（runtime 降級偵測）。prompt 模板見「Reviewer Subagent Prompt 模板」章節，依模式注入對應 scope 與 adversarial flag。
+使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**——本 plugin 出貨的 agent（`plugins/srn/agents/opus-reviewer.md`），frontmatter 鎖 `model: opus` 與工具白名單（Skill/Read/Grep/Glob/Bash，無 Write/Edit：report-only 的工具層門檻，保留 Bash 供自跑 `git diff`——提高失誤門檻，非 sandbox 保證），並要求報告第一行自報實際 model（runtime 降級偵測）。prompt 模板見「Reviewer Subagent Prompt 模板」章節，依模式注入對應 scope 與 adversarial flag。
 
 Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的「輸出格式」最終報告。主對話收到後直接呈現，不需要再做重新包裝或補充檢查（這些責任已在 prompt 中明確交給 subagent）。
 

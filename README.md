@@ -22,7 +22,7 @@
 | `/srn:comment [--staged \| --branch <ref> \| --whole-file]` | 開發收尾清理註解 | Sonnet subagent 以「完成後讀者」視角清除過時/冗餘/思考流程註解（冗餘含語意複述，非僅字面直譯），保留 why 與功能型指令（獨立模式預設只清 diff 鄰近，`--whole-file` 放寬到整檔） |
 | `/srn:retro [--archive]` | kit 回饋迴路（記錄自動內建於 feat/fix 完成報告；手動＝補記） | 記錄模式對照事件表把偏離快樂路徑的事件與統計 append 進 `~/.claude/specrun-feedback/runs.jsonl` 跨專案收件匣；`--archive` 聚類找模式、產出附證據的 kit 優化提案（經同意才動 kit、不寫專案 CLAUDE.md） |
 
-> 微調（CSS、文字、單行 fix）建議直接在主對話改，不需走 plugin。完整分級判斷見 [`plugins/specrun/docs/ai-development-pipeline.md`](plugins/specrun/docs/ai-development-pipeline.md)。
+> 微調（CSS、文字、單行 fix）建議直接在主對話改，不需走 plugin。完整分級判斷見 [`plugins/srn/docs/ai-development-pipeline.md`](plugins/srn/docs/ai-development-pipeline.md)。
 >
 > 文件權威層級：各 `SKILL.md`（執行契約權威）＞ pipeline doc（方法論）＞ 本 README（摘要）；說法衝突時以 SKILL.md 為準。
 

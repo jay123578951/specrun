@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-const pluginJson = JSON.parse(readFileSync(join(root, 'plugins/specrun/.claude-plugin/plugin.json'), 'utf8'))
+const pluginJson = JSON.parse(readFileSync(join(root, 'plugins/srn/.claude-plugin/plugin.json'), 'utf8'))
 const marketplace = JSON.parse(readFileSync(join(root, '.claude-plugin/marketplace.json'), 'utf8'))
 const marketplaceEntry = marketplace.plugins.find(p => p.name === pluginJson.name)
 
