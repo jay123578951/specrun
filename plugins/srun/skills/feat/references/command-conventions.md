@@ -9,8 +9,11 @@
 
 ## 通則
 
-- **優先用專案既有 script**（如 `pnpm lint`、`pnpm test`、`pnpm typecheck`）。
-- 對應 script 不存在才 fallback 到本地 binary（`pnpm exec eslint` / `pnpm exec vitest` 等，依偵測到的 PM）。
+- **先判斷 gate 存不存在（三態）**：
+  - 有專案 script（如 `pnpm lint`）→ 跑 script
+  - 無 script、但工具與設定在（eslint＋config／tsconfig＋typescript／vitest＋test 檔）→ fallback 本地 binary（`pnpm exec eslint` 等，依偵測到的 PM）
+  - **工具整個不存在** → **跳過此 gate，回報註明「專案無 X，未執行」**（跳過 ≠ 通過，不可報綠燈）
+- 判準看真實能力（dep＋config＋標的），不只看有沒有 npm script。
 - **絕不用裸 `npx`**——可能觸發下載或用錯版本。
 
 ## 各指令解析
