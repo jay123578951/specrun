@@ -20,7 +20,18 @@
 
 ## 執行測試
 
-優先跑專案 test script（如 `pnpm test`，依專案 package manager 調整）；需要逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`。不要用裸 `npx`。
+工具用法：優先跑專案 test script（如 `pnpm test`，依專案 package manager 調整）；需要逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`。不要用裸 `npx`。
+
+**執行節奏（scoped 先、全量後）**——省的不是牆鐘是 context：全套 vitest 與 scoped 執行的牆鐘差距微不足道；成本在讀輸出——全綠幾乎免費（尾巴摘要），紅燈才貴（失敗細節灌進 context）。所以浪費點是「還有紅燈時反覆跑全量，每輪重讀大量失敗輸出」。
+
+1. **收斂階段**：只跑正在改的那幾個改動檔的測試（scoped）——回饋快、紅燈輸出小、省 token
+2. **收尾階段**：全部綠了、**且不再動 code 之後**，跑一次全量當回歸安全網
+
+**必守順序**：全量必須在「最後一次改動之後」。先跑全量再改 code，那次全量就過期作廢。正確流程是：scoped 收斂到全綠 → 停止改 code → 全量蓋章。
+
+**收尾全量的例外**（判準：改動會不會波及改動檔以外）：
+- **會波及**（共用型別、跨模組邊界、AI prompt/schema、共用 fixture）→ 收尾全量非跑不可——typecheck 擋得住編譯期，擋不住 fixture/runtime 行為回歸
+- **不波及**（完全孤立的單一模組，無他處 import）→ scoped 到底即可，連收尾全量都可省
 
 ## 輸出必含
 
