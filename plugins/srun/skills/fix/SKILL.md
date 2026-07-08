@@ -108,7 +108,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 4: 派發 Coder Agent
 
-依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。使用 Task tool 派發 subagent（model: {coderModel}）。模板展開規則：`{變數}` 以實際值替換；`{若...：}` 條件區塊成立時留內文、不成立整段刪除：
+依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/command-conventions.md` 的**絕對路徑**代入 `{commandConventionsPath}`。使用 Task tool 派發 subagent（model: {coderModel}）。模板展開規則：`{變數}` 以實際值替換；`{若...：}` 條件區塊成立時留內文、不成立整段刪除：
 
 ```
 你是 Coder Agent。
@@ -139,9 +139,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 - 善用既有的 composables 和 utils
 - 只修改必要的部分，不做額外重構
 
-完成後依序執行（錯誤自行修復，不計 retry）：
-1. 專案 lint script（優先用專案既有 script，如 `pnpm lint --fix`；無對應 script 才 fallback 到 `pnpm exec eslint --fix`。依專案 package manager 調整指令，不要用裸 `npx`）
-2. typecheck：優先跑專案自己的 `typecheck` script；Nuxt 專案用 `pnpm exec nuxi typecheck`（裸跑 vue-tsc 在未 prepare 的 Nuxt 專案會炸）
+完成後依序執行 lint 與 typecheck（指令選用一律依 {commandConventionsPath}；錯誤自行修復，不計 retry）
 
 輸出：
 1. 修改的檔案路徑與變更摘要
@@ -193,7 +191,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次修改的檔案清單」（Coder 產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`
-- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令依專案偵測，優先 `pnpm lint --fix`，不寫死 `npx`；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
+- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用由 `comment` 規範，見其引用的 command-conventions；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
 - 整理完成後 orchestrator **重跑測試**（專案 test script，如 `pnpm test`）作為安全網；失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
 
 ### Step 7: Spec 輕量複核（commit 前）

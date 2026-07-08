@@ -105,7 +105,7 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 
 ### Step 4: 派發 Coder Agent
 
-使用 Task tool 派發 subagent（model: {coderModel}）：
+派發前把 `${CLAUDE_SKILL_DIR}/references/command-conventions.md` 的**絕對路徑**代入 `{commandConventionsPath}`。使用 Task tool 派發 subagent（model: {coderModel}）：
 
 ```
 你是 Coder Agent。
@@ -129,9 +129,7 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 - 每完成一個 task，更新 tasks.md 的 checkbox：`- [ ]` → `- [x]`
 - 允許順手撰寫自證用的測試（不強制）；正式的測試設計與稽核由 Tester 負責
 
-完成後依序執行（錯誤自行修復，不計 retry）：
-1. 專案 lint script（優先用專案既有 script，如 `pnpm lint --fix`；無對應 script 才 fallback 到 `pnpm exec eslint --fix`。依專案 package manager 調整指令，不要用裸 `npx`）
-2. typecheck：優先跑專案自己的 `typecheck` script；Nuxt 專案用 `pnpm exec nuxi typecheck`（裸跑 vue-tsc 在未 prepare 的 Nuxt 專案會炸）
+完成後依序執行 lint 與 typecheck（指令選用一律依 {commandConventionsPath}；錯誤自行修復，不計 retry）
 
 輸出：
 1. 列出你建立/修改/刪除的所有檔案路徑
@@ -244,7 +242,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次 Pipeline 修改的檔案清單」（即 Coder 各批產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`，subagent 不需自行偵測 diff
-- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令依專案偵測，優先 `pnpm lint --fix`，不寫死 `npx`；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
+- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用由 `comment` 規範，見其引用的 command-conventions；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
 - 整理完成後，**orchestrator 重跑一次測試**（專案 test script，如 `pnpm test`）作為安全網——純註解改動不該破壞行為，失敗多半是誤刪到功能型註解，回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人。注意此安全網接不住 build-time pragma（`@__PURE__`、`webpackChunkName` 等）的誤刪——測試驗不到，靠 `comment` 保護清單防守
 
 整理後**不需**重跑 Opus Reviewer 或操作流程驗證（純註解改動不動 code 邏輯）；ESLint + 測試即為安全網。

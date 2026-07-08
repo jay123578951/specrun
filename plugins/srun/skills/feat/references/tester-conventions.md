@@ -20,7 +20,7 @@
 
 ## 執行測試
 
-工具用法：優先跑專案 test script（如 `pnpm test`，依專案 package manager 調整）；需要逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`。不要用裸 `npx`。
+工具用法：PM 偵測、專案 script 優先、不裸 `npx` 等指令選用通則見同目錄 `command-conventions.md`。測試特有——需逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`（依偵測到的 PM）。
 
 **執行節奏（scoped 先、全量後）**——省的不是牆鐘是 context：全套 vitest 與 scoped 執行的牆鐘差距微不足道；成本在讀輸出——全綠幾乎免費（尾巴摘要），紅燈才貴（失敗細節灌進 context）。所以浪費點是「還有紅燈時反覆跑全量，每輪重讀大量失敗輸出」。
 
