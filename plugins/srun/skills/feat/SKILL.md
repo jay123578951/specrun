@@ -273,8 +273,8 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 | Gate 失敗 | 誰修 | 修完重驗什麼 |
 |----------|------|-------------|
 | 測試 | Coder（判斷屬測試問題 → 走申辯通道） | 三件套全綠即 settle，**不重派 Tester**——修復後防的是機械回歸，跑套件即可；Tester 的獨立價值在首輪設計測試 |
-| Review FAIL（有 CRITICAL） | 依歸屬：實作代碼 → Coder、測試代碼 → Tester；嚴重安全問題 → 直接停下來問人 | 重派 Opus Reviewer |
-| Review PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完** | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
+| Review FAIL（有 CRITICAL） | 依歸屬：實作代碼 → Coder、測試代碼 → Tester；嚴重安全問題 → 直接停下來問人（認為 finding 不成立 → 走 review-finding 申辯通道） | 重派 Opus Reviewer |
+| Review PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（認為 finding 不成立 → 走 review-finding 申辯通道） | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
 | 操作流程驗證 FAIL | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 完整靜態關卡再壓軸重驗：三件套 → Sonnet targeted re-check（只審修復 diff）→ **verify-flow targeted re-run**（只重走受影響流程） |
 
 操作流程驗證的 BLOCKED（工具未就緒 → 跳過退回人工驗收；環境／登入牆 → 問人）與 flaky 標註不進迴路、不計輪（見 Step 6.5）。
@@ -282,6 +282,17 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 ### test-defect 申辯通道
 
 Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論該測試的原作者是誰），可回報 test-defect：**必須引用驗收依據原文**（spec scenario／design 段落，含來源路徑）並指出斷言不符之處，**引不出原文不受理**，乖乖修 code。受理後主對話**改派 Tester 修測試**——測試檔一律只有 Tester 能動；Tester 可反駁，同樣須引依據原文。申辯輪照計輪。
+
+### review-finding 申辯通道
+
+修復 agent（Coder 或 Tester）判斷被指派修復的 review finding 不成立時（Reviewer 誤讀程式碼、finding 與驗收依據或專案慣例衝突、建議修法會違反 spec），可回報 review-defect：**必須引用依據原文**（spec 段落／CLAUDE.md 條文，含來源路徑；或指出誤讀處的檔案:行號與實際行為），**引不出依據不受理**，乖乖修。CRITICAL 與 WARNING 的修復派發皆適用。
+
+受理後主對話重派 **Opus Reviewer 仲裁**——targeted 派發：只裁被申辯的 finding，prompt 附原 finding 與申辯全文，要求逐點回應申辯依據後判「維持／撤回」；不重做完整 review、不計 Reviewer retry counter（性質同 targeted re-check 的驗證派發）。
+
+- **撤回** → 該 finding 自修復清單移除；該輪所有待修項皆被撤回 → 該輪視為通過，不需 re-check
+- **維持**而修復 agent 仍有異議 → 停下來問人（人是最終仲裁）
+
+申辯輪照計輪——防止以連續申辯拖延修復。
 
 ---
 

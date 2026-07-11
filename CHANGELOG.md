@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.16.0 — 2026-07-12
+
+對照外部 pipeline kit（hanamizuki/solopreneur）逐項評估後，採納兩項機制補洞：其一，retro 歸檔缺「模式 → 修法」的對應規範——所有聚類模式都反射性地「加一段條文」，會讓 kit 越修越肥、執行漂移越修越糟；其二，review finding 沒有對稱於 test-defect 的異議出口——修復 agent 遇到誤判 finding 只能照修或吃 retry counter，迴路可能被固執的 finding 卡死。同場評估的 spec 層對抗審查（需自訂 spectra workflow schema）與 context7 查核紀律均決議不做。
+
+### Added
+
+- **review-finding 申辯通道**（`skills/feat/SKILL.md`）：修復 agent（Coder 或 Tester）認為被指派修復的 finding 不成立時，可引依據原文申辯 review-defect（spec 段落／CLAUDE.md 條文，或誤讀處的檔案:行號與實際行為；引不出依據不受理）。受理後重派 Opus Reviewer targeted 仲裁——只裁該 finding、判維持／撤回、不計 Reviewer retry counter；維持而修復 agent 仍有異議 → 停下來問人。CRITICAL 與 WARNING 皆適用；申辯輪照計輪防拖延。Tier 2（fix）維持無申辯通道，與 test-defect 同款分級。
+- **retro 事件表新增 `review_defect`**（`skills/retro/SKILL.md`）：記上訴結果（finding 撤回／維持／升級問人），累積通道使用率與撤回率數據供日後調校。
+- **retro 歸檔模式新增歸因分類步驟**（`skills/retro/SKILL.md`）：聚類出的模式先歸因再開修法——條文不清 → 重寫該段；條文缺席 → 新增條文或事件；執行漂移 → 先查條文結構（過長／關鍵句被埋沒），同處反覆漂移才升 hook 等機制層；一次性失誤 → 不動 kit。
+
+### Changed
+
+- `docs/ai-development-pipeline.md` 同步申辯通道：Phase 2 管線圖 Reviewer 區塊、失敗處理策略的 Review FAIL 與 PASS with WARNING 分支；版本 0.15.1 → 0.16.0。
+
 ## 0.15.1 — 2026-07-11
 
 入口引導層 v1 的實測記錄通道。動機：v1 唯一驗收指標是「漏接率」，但引導漏接與誤觸發多發生在**未進 pipeline 的 session**（純討論、診斷、被越線的對話），retro 既有的 feat/fix 完成觸發點看不到它們——只靠自動記錄，量到的漏接率會系統性偏低。本版把記錄通道補上，不建自動偵測機制（為未量測的問題建機制正是 kit 在批的病），dogfood 階段靠事發當下手動補記。

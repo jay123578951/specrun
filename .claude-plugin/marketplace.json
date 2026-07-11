@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Spec-Driven Development pipeline skills for Claude Code (Vue/Nuxt 專案)",
-    "version": "0.15.1"
+    "version": "0.16.0"
   },
   "plugins": [
     {
       "name": "srun",
       "description": "Tier 1/2/3 SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + opus-reviewer agent + SessionStart intent-guidance hook (spectra/openspec backend adapter), driven by OpenSpec change artifacts",
-      "version": "0.15.1",
+      "version": "0.16.0",
       "author": {
         "name": "jay123578951"
       },

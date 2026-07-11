@@ -32,6 +32,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 | `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review / comment-safety-net） |
 | `counter_2` / `counter_3` | 任一迴路 counter 達 2（升 Opus）／達 3（停損問人） |
 | `test_defect` | test-defect 仲裁通道被使用（記上訴結果：測試改了／上訴不成立） |
+| `review_defect` | review-finding 申辯通道被使用（記上訴結果：finding 撤回／維持／升級問人） |
 | `flaky` | verify-flow 標記 flaky |
 | `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆） |
 | `scope_exceeded` | G7 規模超標回報（路由誤判實錘——`docs/routing-cases.md` 新題候選） |
@@ -69,9 +70,18 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 1. **讀收件匣**：全量讀 `runs.jsonl`
 2. **聚類找跨專案模式**：同類事件反覆出現（同一 gate 常 FAIL、同類 blocked、同一 skill 條文常被誤解）→ 候選模式；開放觀察欄反覆出現的觀察 → 提案收進事件表（自我完善迴路）
 3. **需要時深挖**：順條目的 session 指針開採 transcripts 還原細節——量大時平行派發 subagent 分片閱讀
-4. **產出 kit 優化提案報告**：每條提案附證據（哪幾筆條目、transcript 位置）、指向 kit 的哪個檔案哪段條文、建議修法；`scope_exceeded` 實例同時列為 `docs/routing-cases.md` 新題候選
-5. **徵求同意**：提案呈報使用者，**經同意才動 kit 檔案**（動慣例影響全域，是「該問人」的類型）
-6. **歸檔**：已消化條目 append 到 `runs-archive.jsonl` 並自 `runs.jsonl` 移除（唯一出口）
+4. **歸因分類**：每個候選模式先歸因、再開修法——歸因決定提案型態，避免所有模式都反射性地「加一段條文」：
+
+   | 歸因 | 修法 |
+   |------|------|
+   | 條文不清（規範存在但模糊／易誤讀） | 重寫該段條文 |
+   | 條文缺席（無規範可循，agent 只能猜） | 新增條文，或事件表／守則新增項目 |
+   | 執行漂移（條文清楚但未被遵守） | 先查條文是否過長、關鍵句被埋沒——調結構或前移；同處反覆漂移才考慮升 hook 等機制層 |
+   | 一次性失誤（無系統性成因） | 不動 kit——報告註記即可，不為非問題過度工程 |
+
+5. **產出 kit 優化提案報告**：每條提案標註歸因、附證據（哪幾筆條目、transcript 位置）、指向 kit 的哪個檔案哪段條文、建議修法；`scope_exceeded` 實例同時列為 `docs/routing-cases.md` 新題候選
+6. **徵求同意**：提案呈報使用者，**經同意才動 kit 檔案**（動慣例影響全域，是「該問人」的類型）
+7. **歸檔**：已消化條目 append 到 `runs-archive.jsonl` 並自 `runs.jsonl` 移除（唯一出口）
 
 **不寫專案 CLAUDE.md**——單專案受惠＋各專案規則各自演化是 drift 溫床；專案特定教訓由人工手動加。
 

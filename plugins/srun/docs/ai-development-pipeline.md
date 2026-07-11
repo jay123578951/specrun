@@ -250,6 +250,8 @@ Phase 4: 交付
   │  code quality + 安全性 + 慣例 + spec alignment + 整合輸出
   │  安全敏感路徑 / 升級模式開啟後重派 → adversarial
   │  FAIL → 修復（settle 前自跑三件套 lint+typecheck+test）→ 重審（最多 3 輪）
+  │  修復 agent 認為 finding 不成立 → 引依據原文申辯 review-defect
+  │         → Reviewer targeted 仲裁（維持／撤回），申辯輪照計 counter
   │
   ▼  Reviewer 迴路完全 settle（含 targeted re-check）後才派發下一關
 🖱️ 操作流程驗證（Sonnet subagent，觸及 UI/流程時才跑；永遠壓軸的動態關卡）
@@ -504,6 +506,9 @@ Review FAIL（有 CRITICAL）
   → 修復 agent 不需重讀 design.md / specs/（升 Opus 輪解除），只讀前輪摘要、Review 報告、要改的檔
     （spec alignment finding 已附 spec 段落原文，orchestrator 全文轉遞）
   → 修復 agent settle 前自跑三件套（靜態關卡跟著每一次修復重新蓋章）
+  → 修復 agent 認為 finding 不成立 → 引依據原文申辯 review-defect（引不出依據不受理）
+    → 重派 Opus Reviewer targeted 仲裁（只裁該 finding，維持／撤回，不計 Reviewer counter）
+    → 維持而修復 agent 仍有異議 → ⛔ 問人；申辯輪照計 counter
 
 Review PASS with WARNING
   → WARNING 視為需修復，送回對應 agent
@@ -512,6 +517,7 @@ Review PASS with WARNING
   → Coder 和 Tester 的修復任務若同時存在，可平行派發（前提：修復檔案集不相交）
   → 修復後的 re-check 使用 Sonnet model（非完整 Reviewer 流程）
   → re-check agent 載入 `review` skill，執行 targeted check 模式：只讀取改動的檔案和行數，驗證修復是否正確
+  → 認為 WARNING 不成立 → 走 review-defect 申辯（同 Review FAIL，見上；全部撤回且無其他待修項 → 該輪視為通過，不需 re-check）
 
 操作流程驗證 FAIL（觸及 UI/流程時才跑；Reviewer 迴路 settle 後壓軸）
   ├── 流程斷 / console error / spec 明文元件或位置不成立（判 FAIL 前先重現確認一次）
