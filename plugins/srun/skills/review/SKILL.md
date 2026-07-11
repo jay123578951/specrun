@@ -139,6 +139,8 @@ Scope：{auto | staged | branch:<name> | change:<changeName>}
 | 安全性 | API key 暴露、XSS、注入風險、敏感資料洩漏 |
 | 專案慣例 | CLAUDE.md 定義的 UI 語言慣例、CSS 變數使用（不硬編碼顏色/間距/字體大小）、遵循專案設計系統慣例、CLAUDE.md 中定義的其他規則 |
 
+過度設計類 finding（過度抽象、投機功能、重造輪子）在描述中標註違反七階梯第幾階——階梯序（與 Coder 守則 `guidelines` 同源）：1 需要存在嗎 → 2 codebase 已有 → 3 標準庫 → 4 平台原生 → 5 已裝依賴 → 6 一行解 → 7 最小實作。例：「違反第 2 階：重造既有 composable」。改動處若帶合格的 `TODO(debt):` 註記（含上限與升級條件），視為有記錄的刻意取捨，不以過度簡化立 finding——除非升級條件已明顯兌現。
+
 ### 條件檢查
 
 | 維度 | 觸發條件 | 檢查項目 |

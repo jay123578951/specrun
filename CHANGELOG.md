@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.17.0 — 2026-07-12
+
+對照外部 kit（DietrichGebert/ponytail）評估後，採納三項機制補 `guidelines` 的洞：其一，最小可行段只有原則式敘述，缺一個有順序、可停下的決策程序，且完全沒有依賴紀律——「新增依賴前先查 stdlib／平台原生／已裝依賴」這個 LLM 高頻通病無條文可管；其二，守則只往「砍到最小」單向推，沒有反向地板，存在 Coder 為了 diff 最小而砍掉輸入驗證／錯誤處理的風險；其三，七階梯把 Coder 更用力推向最小後，「刻意捷徑靜默轉正」風險升高，而捷徑的唯一去處（設計決策摘要）pipeline 結束即蒸發——採納債務註記慣例作配重，但**只做慣例不做回收命令**（回收命令是為未量測的問題建機制；等 `grep TODO(debt)` 顯示標記實際累積再議）。另採納其對照組 benchmark 的方法論精神進 retro 歸檔：提案必答「最便宜等效替代」。複雜度標籤 taxonomy 不照抄五標籤，改以七階梯編號讓 review 端與生成端同語彙。強度模式切換、多平台 adapter 決議不做。
+
+### Added
+
+- **`guidelines` §2 新增債務註記慣例**（`skills/guidelines/SKILL.md`）：刻意選較小做法且自知有天花板時，現場留 `TODO(debt): <簡化了什麼>。上限：<規模／情境>。升級條件：<何時該還>`——三要素缺一不可（沒上限無法判斷風險、沒觸發條件即永久延遲）；僅限有天花板疑慮的取捨，日常七階梯決策不留。固定前綴使債務可 `grep` 盤點，也讓日後 review 掃到最小實作時能識別「有記錄的取捨」而非漏做，減少誤判 finding 進申辯通道。
+- **`comment` 保護清單新增 `TODO(debt)`**（`skills/comment/SKILL.md`）：明列一律保留並納入保護清單前後計數（同 build-time pragma——誤刪測試驗不到）；註記是否已還清歸 Coder 的 code 層決策，不歸註解整理。
+- **`retro` 歸檔提案新增「最便宜等效替代」檢核**（`skills/retro/SKILL.md`）：每條 kit 優化提案必答「有沒有更便宜的修法達到同等效果（一句條文 vs 一段規範 vs 新機制）」，答不出為何便宜版不夠的提案不成立——接在歸因分類之後的第二道防肥關卡，方法論源自 ponytail benchmark 的廉價對照組設計（完整 skill 必須贏過一行 prompt 才算數）。
+- **`review` 過度設計 finding 對齊七階梯**（`skills/review/SKILL.md`）：過度設計類 finding 標註違反第幾階（階梯序內嵌模板——reviewer 不載入 guidelines），讓 finding→修復→申辯迴路與生成端守則共用語彙；並教 Reviewer 識別 `TODO(debt):` 註記——帶合格註記的最小實作是有記錄的取捨，不立 finding，除非升級條件已兌現。
+
+### Changed
+
+- **`guidelines` §2 最小可行實作改為七階梯決策程序**（`skills/guidelines/SKILL.md`）：動手前依序檢查「需要存在→codebase 已有→標準庫→平台原生→已裝依賴→一行解→最小實作」，停在第一個成立的階梯；新增依賴為最後手段，spec/design 沒指名的新依賴必須在設計決策摘要說明為何前四階不夠。原「不要／要」清單內容併入階梯與「寫最小實作時」小節，無條文刪減。
+- **`guidelines` §2 新增「最小化的底線」清單**：信任邊界輸入驗證、防資料遺失的錯誤處理、安全措施、無障礙基本項——永遠不准為了 diff 小而省。
+
 ## 0.16.0 — 2026-07-12
 
 對照外部 pipeline kit（hanamizuki/solopreneur）逐項評估後，採納兩項機制補洞：其一，retro 歸檔缺「模式 → 修法」的對應規範——所有聚類模式都反射性地「加一段條文」，會讓 kit 越修越肥、執行漂移越修越糟；其二，review finding 沒有對稱於 test-defect 的異議出口——修復 agent 遇到誤判 finding 只能照修或吃 retry counter，迴路可能被固執的 finding 卡死。同場評估的 spec 層對抗審查（需自訂 spectra workflow schema）與 context7 查核紀律均決議不做。

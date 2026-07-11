@@ -129,6 +129,7 @@ Scope：{auto | staged | branch:<name> | files}
   - 拿不準某註解是否為功能型指令時 → 一律保留
 - **法律／授權標頭**
 - **具體且對應真實待辦的 TODO/FIXME**（有明確內容者）
+- **債務註記 `TODO(debt):`**（`guidelines` 規範的刻意取捨記錄：簡化了什麼／上限／升級條件）——一律保留並納入下方保護清單計數；是否已還清（升級完成該移除）是 code 層決策，歸 Coder，不歸本 skill
 
 判定原則：
 - 對照 diff：鄰近註解須與新 code 一致，不一致即過時，更新或刪除
@@ -138,7 +139,7 @@ Scope：{auto | staged | branch:<name> | files}
 
 ## 保護清單前後計數（機械不變量，必做）
 
-build-time pragma 誤刪測試驗不到，靠這道機械網防守。**開始整理前**，對上方「必須保留」清單的每種功能型 pattern（`eslint-disable`、`prettier-ignore`、`@ts-expect-error`、`@__PURE__`、`webpackChunkName`、`v-html` 註記等全部項目）在 scope 檔案內各跑一次 regex 計數；**整理完成後**同樣再數一次，**逐 pattern 核對**（不加總——總數不變可能是 A 少一、B 多一互相掩護）：
+build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防守。**開始整理前**，對上方「必須保留」清單的每種功能型 pattern（`eslint-disable`、`prettier-ignore`、`@ts-expect-error`、`@__PURE__`、`webpackChunkName`、`v-html` 註記等全部項目）加上 `TODO(debt)` 在 scope 檔案內各跑一次 regex 計數；**整理完成後**同樣再數一次，**逐 pattern 核對**（不加總——總數不變可能是 A 少一、B 多一互相掩護）：
 
 - 任一 pattern 計數變少 → 誤刪了該種標記，找回補上後重新核對，**全部相等才 settle**
 - 只數保護清單內的 pattern，一般註解不管（測試網接得住，不重複防）
