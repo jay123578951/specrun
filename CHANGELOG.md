@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.14.0 — 2026-07-06
+## 0.15.0 — 2026-07-11
+
+入口意圖引導層 v1。動機：紀律是 opt-in 的——最需要流程的時刻，恰是使用者腦中沒有「我要開發」意識、不會想到打指令的時刻；意圖模糊時 AI 用預設（行動）填補，造成「只想討論／診斷卻被動了 code」的越線。本版把 kit 的路由判斷力送到入口與岔路口：引導制、無任何強制層。收斂過程、措辭定稿與事實查證記錄於維護者內部決策 doc（不隨 repo 發佈）；入口考卷 15 題，已以實際注入文本真考可考的 10 題——首考 8/10，「幫我處理一下」誤讀為修復授權，規則 3 補「模糊委託」句式後復考通過；漏接率與其餘 5 題實測待 dogfood。
+
+### Added
+
+- **SessionStart hook**（`hooks/hooks.json` ＋ `scripts/intent-guidance.sh`）：注入六條引導規則——動手邊界單點判斷、意圖清楚宣告後照做、模糊跳 AskUserQuestion 選項（說意圖不說指令名）、診斷結論即停點（「偏向做 X」非動工授權）、診斷臨時 log 紀律（唯讀流程宣告暫出）、頻率紀律與純討論靜默。matcher 不設限＝ startup／resume／clear／compact 四開，compact 後重灌規則緩解長 session 衰減。
+- **後端偵測與適配**：腳本確定性偵測（CLAUDE.md 的 `SPECTRA:START` 標記 → spectra；`openspec/` → openspec CLI；皆無 → 入口降級為「初始化／直改／診斷／討論」），只注入已解析後端的交界圖——入口與交界 1、4b 為岔路跳選項，直路只宣告，pipeline 內部靜默。適配表維護對照見 `plugins/srun/docs/intent-guidance-adapter.md`。
+- **實測背書**（記錄於決策 doc L 節）：SessionStart 對 subagent 不觸發、注入內容不進 subagent context（本機實驗定案）——pipeline 的 Coder 讀不到引導規則，「hook 攔到自家 subagent」的打架問題不存在。
+
+### Changed
+
+- plugin／marketplace description 補 SessionStart intent-guidance hook 一項；版本 0.14.0 → 0.15.0。
 
 plugin 命名空間 `srn` → **`srun`**。動機是直覺性：`srn` 三個子音連寫唸不出來、也丟失了專案名 `specrun` 的記憶點「run」；`srun` 可直接唸成 spec-run 的縮音、打字手感更順，語意連回專案名。與 Slurm 內建 `srun` 的撞名僅屬理論——此處是 slash command 命名空間（`/srun:`）而非 shell 指令，受眾為前端 SDD pipeline 不碰 HPC。本次僅改 plugin 名，marketplace 名（＝ GitHub repo 名）維持 `specrun`，不涉及 repo 改名。
 
