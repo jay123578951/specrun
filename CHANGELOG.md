@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.0 — 2026-07-12
+
+對照外部 kit（multica-ai/andrej-karpathy-skills，Karpathy 四原則濃縮版 CLAUDE.md）逐條評估後，結論是其三原則（Simplicity First／Surgical Changes／Goal-Driven）均為 `guidelines` 既有超集，Think Before Coding 的「問人」模式已由 `/srun:decisions`（pipeline 層）＋自主判斷邊界（agent 層）分層承接，不採納。唯二 delta：其一，「發現無關死碼 → mention it, don't delete it」——`guidelines` §3 只說不要刪，資訊被允許靜默蒸發，與 §1「關鍵假設不靜默吞掉」精神矛盾，本版採納；其二，bug 修復的紅綠驗證（先寫重現測試確認紅燈再修——現行 Coder 修完 Tester 才補測試，測試出生即綠、從未證明抓得到原 bug）為實質缺口，**本版未採納、另案評估**（落點在 Coder 端 test-first 或 Tester 端 revert 驗紅，成本取捨未定）。
+
+### Added
+
+- **`guidelines` §3 新增「順手觀察：回報不動手」**（`skills/guidelines/SKILL.md`）：在本次實際觸碰／閱讀的檔案裡撞見無關死碼／可疑邏輯／過時註解時，寫進輸出的「順手觀察」段（選填）——一行一項、註明位置、不附修法（附了就是誘惑下一步順手動工）。邊界從嚴：僅限路過看到的，不准為了填這段掃無關檔案；定位是給人的情報不是待辦，不觸發任何後續派發。
+- **feat／fix Coder 輸出新增「順手觀察」選填項，完成報告原樣透傳**（`skills/feat/SKILL.md`、`skills/fix/SKILL.md`、`docs/ai-development-pipeline.md`）：復用設計決策摘要既有的 Coder → orchestrator 出口，不新增通道；orchestrator 把觀察原樣帶進完成報告交人判斷，明文不觸發 retry 或派發（與 verify-flow flaky 標註同款「標註交人」形狀）。
+
 ## 0.17.0 — 2026-07-12
 
 對照外部 kit（DietrichGebert/ponytail）評估後，採納三項機制補 `guidelines` 的洞：其一，最小可行段只有原則式敘述，缺一個有順序、可停下的決策程序，且完全沒有依賴紀律——「新增依賴前先查 stdlib／平台原生／已裝依賴」這個 LLM 高頻通病無條文可管；其二，守則只往「砍到最小」單向推，沒有反向地板，存在 Coder 為了 diff 最小而砍掉輸入驗證／錯誤處理的風險；其三，七階梯把 Coder 更用力推向最小後，「刻意捷徑靜默轉正」風險升高，而捷徑的唯一去處（設計決策摘要）pipeline 結束即蒸發——採納債務註記慣例作配重，但**只做慣例不做回收命令**（回收命令是為未量測的問題建機制；等 `grep TODO(debt)` 顯示標記實際累積再議）。另採納其對照組 benchmark 的方法論精神進 retro 歸檔：提案必答「最便宜等效替代」。複雜度標籤 taxonomy 不照抄五標籤，改以七階梯編號讓 review 端與生成端同語彙。強度模式切換、多平台 adapter 決議不做。

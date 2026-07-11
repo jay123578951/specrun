@@ -135,6 +135,7 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 1. 列出你建立/修改/刪除的所有檔案路徑
 2. 簡述每個 task 的關鍵設計決策（供 retry 時參考）
 3. 若有順手寫測試，列出測試檔路徑（供 Tester 稽核）
+4. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
 ```
 
 ### Step 5: 派發 Tester Agent
@@ -249,7 +250,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 ### Step 7: 報告結果
 
-顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項），提示進入 Phase 3 人工驗收。
+顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
 
 **retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表與條目格式以該 skill 為單一來源，此處不複製）；收件匣 > 30 筆時在完成報告加一行提醒 `/srun:retro --archive`。append 失敗不阻斷報告，註記即可。
 
