@@ -1,7 +1,7 @@
 ---
 name: retro
 argument-hint: "[--archive]"
-description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/specrun-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
+description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/specrun-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記，含入口引導漏接／誤觸發事件）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
 ---
 
 Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 kit 的 prompt 決定、跨專案同一套）——寫進單一專案的 CLAUDE.md 等於埋掉。本 skill 在源頭（orchestrator 事發時在場）做語義記錄，比事後開採 transcripts 的關鍵字偵測召回率高得多；歸檔模式再把收件匣消化成 kit 優化提案。這是唯一能讓 pipeline 隨使用次數變便宜的複利投資。
@@ -39,16 +39,22 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 | `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
 | `security_review` | W4 安全 review 被觸發（記結果） |
 | `untestable_modules` | Tester 無法測試清單非空（記模組數與消費路徑：verify-flow OR 觸發／報告行） |
+| `guidance_miss` | 入口／交界引導漏接：意圖已浮現卻未宣告、未跳選項，或 AI 越線動手（記漏在哪個交界、當時句式） |
+| `guidance_false_trigger` | 引導誤觸發：Tier 1 小改被跳選項、純討論被逼問模式（記觸發位置與當時語境） |
+| `guidance_hit` | 引導正確出現且被採用（記交界與所選選項）——漏接率的分母，沒有它只有分子算不出率 |
+
+**引導事件（`guidance_*`）的通道差異**：漏接與誤觸發多發生在**未進 pipeline 的 session**（純討論、診斷、被越線的對話），走不到 feat/fix 完成報告——主通道是**手動補記**（事發當下呼叫 `/srun:retro`）。`guidance_hit` 若引導進線 pipeline，由 feat/fix 完成報告順帶記；未進線的命中（如選「繼續討論」）不強求記錄。
 
 **快樂路徑也記**（events 為空陣列）——統計行是日後調閾值（counter ≥ 2、3 輪停損）的分母。
 
 **條目格式**（一行 JSON append；事實不寫解讀）：
 
 ```json
-{"ts":"<ISO 時間>","project":"<專案名>","tier":"feat|fix","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
+{"ts":"<ISO 時間>","project":"<專案名>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
 ```
 
 - `events`：只用事件表的固定詞彙；一行事實＋指路，**不寫解讀**（解讀是歸檔模式的事）
+- `tier: "guidance"`：未進 pipeline 的引導事件補記條目——`stats` 省略、`subject` 寫當時對話主題一句
 - `observations`（開放觀察欄）：模型判斷有事件表之外值得 kit 注意的異常時，以事實＋證據格式一併記，同樣不寫解讀——收集工具本身也是被優化的對象（反覆出現的觀察，消化時提案收進事件表）
 - **閾值提醒**：append 時順手數行數（`wc -l`），收件匣 > 30 筆 → 在 pipeline 完成報告加一行：「回饋收件匣已累積 N 筆，建議擇時執行 `/srun:retro --archive` 消化」。30 只是提醒閾值，不是歸檔門檻
 
