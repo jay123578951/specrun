@@ -7,6 +7,7 @@
 - 測試檔放在與源碼同目錄（foo.test.ts）
 - 使用 describe/it API 結構
 - 純邏輯函式應抽出為獨立模組，測試 import 實際模組（不複製邏輯）
+- spec 條文帶量詞（每個／全部／各自）時，fixture 至少含複數個體、且對每個個體斷言——單元素 fixture 驗不出 each 語意
 
 ## 排除規則（不要撰寫以下測試）
 
@@ -32,6 +33,8 @@
 **收尾全量的例外**（判準：改動會不會波及改動檔以外）：
 - **會波及**（共用型別、跨模組邊界、AI prompt/schema、共用 fixture）→ 收尾全量非跑不可——typecheck 擋得住編譯期，擋不住 fixture/runtime 行為回歸
 - **不波及**（完全孤立的單一模組，無他處 import）→ scoped 到底即可，連收尾全量都可省
+
+**Settle 前 lint 自查**：對自己新增／修改的測試檔跑 scoped lint（per-file——全量 lint 會被 pre-existing error 淹沒而漏報；指令選用依 `command-conventions.md`），紅燈自修後才交付。
 
 ## 輸出必含
 

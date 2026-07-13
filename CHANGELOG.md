@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.19.0 — 2026-07-13
+
+首次 `/srun:retro --archive` 歸檔消化（收件匣 6 筆：2 feat＋1 fix＋3 guidance 對照實驗）驅動的改版。三筆 t-cert 引導對照實驗的核心發現：其一，discuss 唯讀、誤入成本近零，誤直改成本不可逆（匯出案落地了 discuss 對照組明確否決的方案）——錯誤成本不對稱，入口預設應倒向 fail-safe 側；其二，三件漏接全發生在「跳選項」之前的分類層（自判豁免、問在修法層、誤套驗收行），把體驗押在每次分類正確的選項制上，比押在粗但穩的預設上更脆；其三，調查品質的決定變數是有無 change context 而非走不走 discuss（有：查詞彙表、跨模組慣例比對；無：重新發明詞彙、單模組收斂）。據此把入口從選項制改為宣告制。SPECTRA／openspec 均為外部凍結件——change 掃描落在引導層、借力 spectra-discuss 既有的帶 name 載入條件句，兩後端零改動。
+
+### Changed
+
+- **入口意圖引導層改宣告制**（`scripts/intent-guidance.sh`、`docs/intent-guidance-adapter.md`）：開發／修改意圖（含求建議、求評估的開發話題）預設宣告一句進規格討論流程（spectra: `/spectra-discuss`；openspec: `/opsx:explore`），不跳選項、不徵求同意，宣告尾帶「要我直接動手就說一聲」當 escape hatch；AskUserQuestion 降為兜底（真模糊、多 change 歸屬、流程中段既有岔路）。動手邊界補「調查完才想動手＝回入口重判，勿套驗收交界」（上傳案誤套驗收行實錘）。none 後端無討論流程可進，維持降級選項制。
+- **直改豁免收斂為三錨白名單**（同上兩檔）：①祈使句式 ②標的明確到檔案／元件 ③不刪不換既有結構（刪 class／結構體系、置換視覺語意、對齊到另一套設計都不算微調）——符合才豁免，取代原「單行修改、純樣式微調永不觸發」的 AI 自由心證豁免（KPI 案實錘：刪整套 pr-kpi class 體系被自標「純樣式對齊」）。
+
+### Changed（機考回饋修正）
+
+- **規則 2 補「不就地代辦」**（`scripts/intent-guidance.sh`）：宣告後即執行流程指令，不在對話中就地代辦 discuss／decisions 的內容——19 題 sonnet headless 機考（13 PASS／3 EDGE／2 FAIL、越線動手 0 件）中五題未過的共同病灶即「流程代辦」：安全紀律滿分（零改動、有停下問授權），但把該進流程做的事在對話裡就地做完。
+- **規則 5 補中段表態優先級**（同上檔）：討論進行中的方案表態不重新觸發規則 2——進不進流程在意圖首次浮現時已判過，中段只確認要不要開始。機考 #04 暴露規則 2/5 對「我比較偏向 X」句式各有主張（考生依規則 2 宣告進 discuss、考卷預期依規則 5 問「要開始了嗎」），裁決規則 5 優先：對話開頭已決定過進不進流程，中段不需再問一次。
+
+### Added
+
+- **進場前 change 掃描**（`scripts/intent-guidance.sh`）：進規格討論流程前先列進行中 change（spectra: `spectra list`；openspec: `ls openspec/changes/`）——零個＝新題目直接進；唯一且與話題吻合＝帶名進場（spectra 帶參數、openspec 寫進話題）；多個或不確定＝跳選項一次。吻合判斷只到 change 名層級，入口保持輕；「追加既有 change vs 開新 change」是 discuss 的產出、不在進場時拍板。三案對照實錘：context 載入需求在流程開頭，而規格後端的歸屬詢問在流程末端。
+- **Tester 守則補 settle 前 lint 自查**（`skills/feat/references/tester-conventions.md`）：對自己新增／修改的測試檔跑 scoped lint（per-file，避開 pre-existing 噪音），紅燈自修後才交付——對齊 Coder 既有紀律（EOC_TV 案：Tester 產出的測試檔帶 2 個 unused-vars 出廠，comment 整理階段才被抓到）。
+- **Tester 守則補量詞 fixture 條文**（同上檔）：spec 條文帶量詞（每個／全部／各自）時，fixture 至少含複數個體、且對每個個體斷言——單元素 fixture 對「只有首則」與「每一則」兩種實作輸出相同，數學上不可區分（EOC_TV 案：「each reporting step content」CRITICAL 溜過 Tester，因既有測試僅單 step fixture）。先驗普遍盲點（LLM 寫測試偏好最小 fixture），非單案特例。
+- **retro 事件表 `guidance_*` 對齊宣告制**（`skills/retro/SKILL.md`）：`guidance_miss` 補「該進流程卻就地處理」形態；`guidance_false_trigger` 改以「escape hatch 被撤回」為行為實錘（並註明撤回率是誤觸發下界——容忍型不撤回、量不到）；`guidance_hit` 記錄去向含帶入的 change 名（宣告制成敗繫於 change 掃描準確率，掛錯 change 比誤入更有害），掛錯 change 先記 observations、再犯升格。不改則收集工具講選項制舊語言，0.19.0 成效無法量測。
+
 ## 0.18.0 — 2026-07-12
 
 對照外部 kit（multica-ai/andrej-karpathy-skills，Karpathy 四原則濃縮版 CLAUDE.md）逐條評估後，結論是其三原則（Simplicity First／Surgical Changes／Goal-Driven）均為 `guidelines` 既有超集，Think Before Coding 的「問人」模式已由 `/srun:decisions`（pipeline 層）＋自主判斷邊界（agent 層）分層承接，不採納。唯二 delta：其一，「發現無關死碼 → mention it, don't delete it」——`guidelines` §3 只說不要刪，資訊被允許靜默蒸發，與 §1「關鍵假設不靜默吞掉」精神矛盾，本版採納；其二，bug 修復的紅綠驗證（先寫重現測試確認紅燈再修——現行 Coder 修完 Tester 才補測試，測試出生即綠、從未證明抓得到原 bug）為實質缺口，**本版未採納、另案評估**（落點在 Coder 端 test-first 或 Tester 端 revert 驗紅，成本取捨未定）。
