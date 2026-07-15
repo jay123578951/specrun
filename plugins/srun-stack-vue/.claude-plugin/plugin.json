@@ -1,0 +1,26 @@
+{
+  "name": "srun-stack-vue",
+  "version": "1.0.0",
+  "description": "srun 的 Vue/Nuxt stack pack — 零內容薄 plugin，只宣告依賴，一次拉齊 vue-stack 與 web-common 兩包知識型 skills 供 srun pipeline 運行期細篩選用",
+  "author": {
+    "name": "jay123578951"
+  },
+  "homepage": "https://github.com/jay123578951/specrun",
+  "repository": "https://github.com/jay123578951/specrun",
+  "license": "MIT",
+  "keywords": [
+    "vue",
+    "nuxt",
+    "stack-pack"
+  ],
+  "dependencies": [
+    {
+      "name": "vue-stack",
+      "marketplace": "antfu-skills"
+    },
+    {
+      "name": "web-common",
+      "marketplace": "antfu-skills"
+    }
+  ]
+}

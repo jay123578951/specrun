@@ -19,5 +19,5 @@
 ## 各指令解析
 
 - **Lint**：**只掃改動檔**，不掃全專案（全專案掃會讓既有 error 淹沒你的新 error）。`pnpm exec eslint <改動檔> --fix`——沿用專案 eslint config、只限定檔案（依偵測到的 PM）。專案 lint script 若寫死全專案，改用這條 scoped 形式。
-- **Typecheck**：優先專案自己的 `typecheck` script；Nuxt 專案用 `pnpm exec nuxi typecheck`（裸跑 vue-tsc 在未 prepare 的 Nuxt 專案會炸）。
+- **Typecheck**：優先專案自己的 `typecheck` script。**下列為 Nuxt 專案適用**：無 script 時用 `pnpm exec nuxi typecheck`（裸跑 vue-tsc 在未 prepare 的 Nuxt 專案會炸）；非 Nuxt 專案 fallback 該 stack 對應的型別檢查（如 `tsc --noEmit`）。
 - **Test**：專案 test script（如 `pnpm test`）；無則 fallback `pnpm exec vitest run`。逐項失敗（`--reporter=verbose`）、scoped 用法與執行節奏（scoped 先、全量後）見 `tester-conventions.md`。

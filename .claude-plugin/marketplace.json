@@ -4,18 +4,28 @@
     "name": "jay123578951"
   },
   "metadata": {
-    "description": "Spec-Driven Development pipeline skills for Claude Code (Vue/Nuxt 專案)",
-    "version": "0.16.0"
+    "description": "Spec-Driven Development pipeline skills for Claude Code (stack-agnostic 核心 + 選裝 stack pack)",
+    "version": "0.21.0"
   },
+  "allowCrossMarketplaceDependenciesOn": ["antfu-skills"],
   "plugins": [
     {
       "name": "srun",
       "description": "Tier 1/2/3 SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + opus-reviewer agent + SessionStart intent-guidance hook (spectra/openspec backend adapter), driven by OpenSpec change artifacts",
-      "version": "0.16.0",
+      "version": "0.21.0",
       "author": {
         "name": "jay123578951"
       },
       "source": "./plugins/srun"
+    },
+    {
+      "name": "srun-stack-vue",
+      "description": "srun 的 Vue/Nuxt stack pack — 零內容薄 plugin，依賴 antfu-skills 的 vue-stack 與 web-common，一次拉齊 Vue 生態知識型 skills",
+      "version": "1.0.0",
+      "author": {
+        "name": "jay123578951"
+      },
+      "source": "./plugins/srun-stack-vue"
     }
   ]
 }

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.21.0 — 2026-07-15
+
+Stack pack 化——把 Coder/Tester 必載清單從寫死的 Vue 清單改為「偵測 stack → 對應清單 ∩ 已安裝」的運行期細篩，核心 pipeline 與 stack 解耦。安裝期由 specrun marketplace 新出零內容薄 plugin `srun-stack-vue`（依賴 fork antfu-skills 的 vue-stack ＋ web-common 兩包），Vue 開發者裝本體＋pack 一次拉齊知識型 skills；非 Vue 專案只裝 srun 本體，pipeline 偵測不到 Vue 依賴即走通用模式（只載 `guidelines`）。
+
+### Added
+
+- **薄 plugin `srun-stack-vue`**（`plugins/srun-stack-vue/.claude-plugin/plugin.json`）：零內容，只宣告依賴 `vue-stack`、`web-common`（marketplace `antfu-skills`）。specrun marketplace.json 加 `allowCrossMarketplaceDependenciesOn: ["antfu-skills"]` 與新 plugin entry。
+- **Stack 偵測 + 交集解析**（`skills/feat/references/coder-skills-map.md` 改按 stack 分節）：偵測規則＝`package.json` 的 dependencies/devDependencies 含 `vue` 或 `nuxt` → Vue stack，無命中 → 通用模式；推薦清單一律取 ∩ orchestrator context 的 available-skills，未裝的略過。
+
+### Changed
+
+- **Coder/Tester 必載清單改條件式**（`skills/feat/SKILL.md`、`skills/fix/SKILL.md`）：派發前解析 `{coderSkills}`／`{testerSkills}`（Vue stack 用 Vue 清單、通用模式 Coder 只載 `guidelines`／Tester 留空）；subagent prompt 的「必載 skill 失敗→停下回報」改為「Skill 載入失敗→略過該項繼續，不要停」（stack pack 選裝，缺項屬正常）。
+- **`.vue` 觸發條件泛化**（`skills/feat/SKILL.md`、`skills/fix/SKILL.md`、`skills/verify-flow/SKILL.md`）：Reviewer 的 `web-design-guidelines` 追加與 verify-flow 觸發由「`.vue` 的 template/style」泛化為「UI 元件檔的模板／樣式區塊（Vue 專案即 `.vue` 的 template/style）」，保留 `.vue` 為例。
+- **輕耦合泛化**：`skills/feat/references/tester-conventions.md` 的「Nuxt composable 三層策略」標為 Vue/Nuxt 專屬、vitest 指令註明以偵測到的測試框架為準；`skills/guidelines/SKILL.md` 的 composable 等 Vue 用語泛化為「composable／hook 等模組」、框架內建能力不綁 Vue；`skills/feat/references/command-conventions.md` 的 nuxi typecheck 標明僅 Nuxt 適用、非 Nuxt fallback 對應型別檢查。
+
 ## 0.20.0 — 2026-07-13
 
 t-cert Google Font 案驅動的提問入口翻轉。實錘：使用者質疑進行中 change（dashboard-overview）design.md 的兩項決策（「為什麼用 Google Font」「離線是不是過度設計」），被 0.19.0 規則 8 分類為純問答——唯讀調查答得很好，但「字型該刪」「離線是半套」這些 spec 層結論無處可落、等 /clear 蒸發。收斂關鍵：「是不是開發專案」不用逐句判斷，有規格後端＝開發專案是 hook 已偵測的環境事實（專案內開 session 九成以上綁定專案，基率直接寫成預設值）；訊息層只剩一個看得見的判斷——問題類型豁免，動機不猜（動機看不見，猜就會錯；動機若是開發，動手邊界重判兜底，豁免判錯的代價是晚點進場不是永遠漏接）。

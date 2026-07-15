@@ -13,7 +13,9 @@
 
 - TypeScript 型別/介面欄位存在性測試（typecheck gate 已保證型別正確性）
 
-## Nuxt composable 的測試策略（三層，依序）
+## Nuxt composable 的測試策略（三層，依序）— Vue/Nuxt 專屬
+
+> 本節僅適用 Vue/Nuxt 專案；非 Vue 專案跳過。第 1 條「純邏輯抽獨立模組先測」的原則本身 stack 無關，其餘 Nuxt runtime 細節不適用時略過。
 
 1. 純邏輯抽為獨立模組的規則不變（結構層優先）——能測 import 實際模組的先這樣測
 2. 殘餘的 Nuxt runtime 依賴：讀 package.json 偵測 `@nuxt/test-utils` 是否已裝——已裝即用它直接測；只在需要重環境的測試檔標 `@vitest-environment nuxt`，純邏輯測試照走輕環境。永不主動安裝依賴
@@ -21,7 +23,7 @@
 
 ## 執行測試
 
-工具用法：PM 偵測、專案 script 優先、不裸 `npx` 等指令選用通則見同目錄 `command-conventions.md`。測試特有——需逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`（依偵測到的 PM）。
+工具用法：PM 偵測、專案 script 優先、不裸 `npx` 等指令選用通則見同目錄 `command-conventions.md`。**指令以專案偵測到的測試框架為準**（優先跑專案 test script）；下列以 vitest 為預設範例——需逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`（依偵測到的 PM；其他框架換用對應指令）。
 
 **執行節奏（scoped 先、全量後）**——省的不是牆鐘是 context：全套 vitest 與 scoped 執行的牆鐘差距微不足道；成本在讀輸出——全綠幾乎免費（尾巴摘要），紅燈才貴（失敗細節灌進 context）。所以浪費點是「還有紅燈時反覆跑全量，每輪重讀大量失敗輸出」。
 
@@ -40,4 +42,4 @@
 
 - 測試檔案路徑（含補寫/修正了什麼）
 - 測試結果（通過/失敗）；若有失敗，列出每個失敗的測試名稱和錯誤原因
-- 無法測試的模組清單（模組名稱與跳過原因，如「useXxxApi — Nuxt composable，無法在單元測試中 import」；無則寫「無」）
+- 無法測試的模組清單（模組名稱與跳過原因，如「useXxxApi — 依賴框架 runtime，無法在單元測試中 import」；無則寫「無」）

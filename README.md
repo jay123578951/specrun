@@ -1,6 +1,6 @@
 # specrun
 
-> 為 Vue / Nuxt 專案打造的 Claude Code plugin，一個指令跑完開發 → 測試 → 審查的 SDD 工作流。
+> 一個指令跑完開發 → 測試 → 審查的 SDD 工作流 Claude Code plugin。核心 pipeline 與技術棧無關；知識型 skills 拆成 stack pack 選裝，裝哪包載哪包，沒有 pack 也走通用模式照跑。
 
 ## 這是什麼
 
@@ -8,7 +8,7 @@
 
 - **入口** — 附一個開場 hook。你開口講需求，它替你判斷該走哪條路。
 - **流程** — 改動分級：複雜項目走完整流程，小改動走輕量版，需求還沒想清楚就先把決策收斂完再動手。
-- **品質** — 動手前先載入 Vue / Nuxt 生態的慣例 skill 當地板，寫完交給獨立審查把關。
+- **品質** — 動手前先依專案技術棧載入對應的慣例 skill 當地板，寫完交給獨立審查把關。
 - **回饋** — 跑偏的事件會被記錄、聚類，寫回。
 
 ## 入口引導
@@ -61,7 +61,7 @@ flowchart LR
 | 指令 | 什麼時候用 | 做什麼 |
 |------|-----------|--------|
 | **`/srun:feat`** `<change-name>` | 新功能、大型重構、跨模組變更 | 跑完整 pipeline，搭配規格 artifact |
-| **`/srun:fix`** | 對話已定案、不需新 spec 的小改動（跨檔 bug、小 UI 調整、composable 微調） | 輕量 pipeline：先判斷 spec 影響 → Coder + Tester → 註解整理 |
+| **`/srun:fix`** | 對話已定案、不需新 spec 的小改動（跨檔 bug、小 UI 調整、小型模組微調） | 輕量 pipeline：先判斷 spec 影響 → Coder + Tester → 註解整理 |
 | **`/srun:decisions`** `[任務描述]` | 需求還沒完全想清楚、怕有沒定案的細節被漏掉（完整新功能、全新 UI 流程） | 動手前先把還沒想清楚的地方一個個挖出來問你，整理成決策清單交給 propose 階段（`/spectra-propose` 或 `/opsx:propose`），不產 spec、不寫 code |
 
 還有一個 kit 回饋迴路指令：**`/srun:retro`** `[--archive]` — 記錄偏離事件到跨專案收件匣；`--archive` 聚類找模式、產出 kit 優化提案。
@@ -90,7 +90,7 @@ flowchart LR
 
 - 用 `opus-reviewer` agent 派發，鎖 `model: opus`、無 Write/Edit 權限
 - 一次審完 code quality / 安全 / 慣例 / spec 對齊
-- 改到 `.vue` 樣式加載 `web-design-guidelines` 補 a11y 檢查；安全路徑或升級模式改用 adversarial prompt
+- 改到 UI 元件的模板／樣式加載 `web-design-guidelines` 補 a11y 檢查；安全路徑或升級模式改用 adversarial prompt
 - **會看走眼，所以能申辯**：被指出問題的一方可拿依據要求重審那一條（`feat` 限定），免得整條線被一個誤判卡死
 
 #### 操作流程驗證 · Sonnet · 觸及 UI 時 · `/srun:verify-flow` `[URL] [依據]`
@@ -113,37 +113,32 @@ flowchart LR
 |------|------|
 | **[spectra](https://github.com/kaochenlong/spectra-app)**（推薦） | 基於 OpenSpec 新增桌面 app 能視覺化追蹤，工作流指令優化 |
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 把「這次要改什麼」寫成規格與任務清單 |
-| [antfu/skills](https://github.com/antfu/skills) | 慣例來源 — 依改動性質自動載入對應 skill（Vue、Nuxt、Pinia、UnoCSS、Vitest、a11y…） |
 
 spectra 和 OpenSpec **挑一個裝就好**——做的是同一件事，寫出來的規格檔也通用。specrun 開場會自己認出你用哪一套，指令跟著換。
 
-### 1. 裝外部 skills
+### 1. 裝 plugin
 
-pipeline 用的 skill 全來自 antfu/skills 這一個 repo。**注意 `antfu` 只是集合裡的其中一個 skill，不等於全部** — 一定要用 `--skill='*'` 一次裝齊：
+裝 `srun` 本體＋自己技術棧的 stack pack，知識型 skills 由 pack 的依賴自動連帶安裝。目前提供的 stack pack：
+
+| Pack | 適用技術棧 | 需先 add 的 skills 來源 |
+|------|-----------|------------------------|
+| `srun-stack-vue` | Vue / Nuxt | `jay123578951/antfu-skills` |
+
+以 Vue / Nuxt 為例：
 
 ```bash
-pnpx skills add antfu/skills --skill='*' -g
+/plugin marketplace add jay123578951/specrun      # srun 本體
+/plugin marketplace add jay123578951/antfu-skills # 該 pack 的知識型 skills 來源
+/plugin install srun@specrun                      # 核心 pipeline（stack 無關）
+/plugin install srun-stack-vue@specrun            # stack pack，依賴自動連帶安裝
 ```
 
-skill 分兩層，建議一次全裝（換專案就直接受益）：
+> 還沒有對應 stack pack 的技術棧：只裝 `srun@specrun`，pipeline 走通用模式（載 `guidelines` 行為守則）照跑。
 
-- **必載**（每次都載，缺一即停下回報）：`vue`、`vue-best-practices`、`nuxt`、`antfu`、`vitest`、`vue-testing-best-practices`
-- **條件式**（依專案性質才觸發）：`pinia`、`unocss`、`antfu-design`、`vite`、`vue-router-best-practices`、`vueuse-functions`、`nitro`、`pnpm`、`turborepo`、`web-design-guidelines`
-
-> 外部 skill 缺裝或改名時，agent 會**停下回報**，不會在沒慣例約束下硬寫（preflight 紀律）。
-
-### 2. 裝 plugin
+### 2. 驗證
 
 ```bash
-/plugin marketplace add jay123578951/specrun
-/plugin install srun@specrun
-```
-
-### 3. 驗證
-
-```bash
-/plugin list          # 應看到 srun@specrun
-ls ~/.claude/skills   # 確認必載 skill 都在
+/plugin list   # 應看到 srun@specrun、你裝的 stack pack，及自動連帶安裝的依賴
 ```
 
 ## 最小範例
