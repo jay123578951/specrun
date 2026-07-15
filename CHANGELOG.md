@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.1 — 2026-07-15
+
+### Fixed
+
+- **交集比對忽略命名空間前綴**（`skills/feat/references/coder-skills-map.md`）：plugin 版 skill 在 available-skills 中帶 `<plugin>:` 前綴（如 `vue-stack:vue`），推薦清單的裸名按字面比對會全數落空、Vue 專案誤退化成通用模式。改為以冒號後名稱比對；渲染進派發字串時用完整前綴名（裸名會使 subagent 的 Skill 載入失敗）。
+
 ## 0.21.0 — 2026-07-15
 
 Stack pack 化——把 Coder/Tester 必載清單從寫死的 Vue 清單改為「偵測 stack → 對應清單 ∩ 已安裝」的運行期細篩，核心 pipeline 與 stack 解耦。安裝期由 specrun marketplace 新出零內容薄 plugin `srun-stack-vue`（依賴 fork antfu-skills 的 vue-stack ＋ web-common 兩包），Vue 開發者裝本體＋pack 一次拉齊知識型 skills；非 Vue 專案只裝 srun 本體，pipeline 偵測不到 Vue 依賴即走通用模式（只載 `guidelines`）。
