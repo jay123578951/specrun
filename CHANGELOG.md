@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.2 — 2026-07-15
+
+### Added
+
+- **載入條件**（`skills/feat/references/coder-skills-map.md`）：必載清單項目可帶載入條件（括號標註，限可觀察的偵測訊號、非開放式判斷），條件不成立視同不在清單；與交集為兩層獨立過濾。首個實例：Vue 節 `nuxt` 標註「依賴含 `nuxt` 才載」，純 Vue 專案不再載 Nuxt skill。
+
 ## 0.21.1 — 2026-07-15
 
 ### Fixed
