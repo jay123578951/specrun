@@ -1,0 +1,17 @@
+{
+  "name": "backend-common",
+  "version": "1.0.0",
+  "description": "srun 的後端語言中立知識包 — API 設計、DB 遷移、部署、容器化、安全檢查與 Postgres/MySQL/Redis 模式,供各後端 stack pack 共用(對位前端的 web-common)",
+  "author": {
+    "name": "jay123578951"
+  },
+  "homepage": "https://github.com/jay123578951/specrun",
+  "repository": "https://github.com/jay123578951/specrun",
+  "license": "MIT",
+  "keywords": [
+    "backend",
+    "api-design",
+    "database",
+    "stack-pack"
+  ]
+}

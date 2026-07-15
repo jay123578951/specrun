@@ -1,0 +1,31 @@
+{
+  "name": "srun-stack-dotnet",
+  "version": "1.0.0",
+  "description": "srun 的 .NET stack pack — 依賴官方 dotnet-agent-skills(aspnetcore/data)與 backend-common,並 vendor C# 慣例/測試/EF Core/Testcontainers 五件知識型 skills 供 srun pipeline 運行期細篩選用",
+  "author": {
+    "name": "jay123578951"
+  },
+  "homepage": "https://github.com/jay123578951/specrun",
+  "repository": "https://github.com/jay123578951/specrun",
+  "license": "MIT",
+  "keywords": [
+    "dotnet",
+    "csharp",
+    "aspnetcore",
+    "stack-pack"
+  ],
+  "dependencies": [
+    {
+      "name": "backend-common",
+      "marketplace": "specrun"
+    },
+    {
+      "name": "dotnet-aspnetcore",
+      "marketplace": "dotnet-agent-skills"
+    },
+    {
+      "name": "dotnet-data",
+      "marketplace": "dotnet-agent-skills"
+    }
+  ]
+}

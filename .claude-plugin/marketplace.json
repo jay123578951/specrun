@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Spec-Driven Development pipeline skills for Claude Code (stack-agnostic 核心 + 選裝 stack pack)",
-    "version": "0.21.2"
+    "version": "0.22.0"
   },
-  "allowCrossMarketplaceDependenciesOn": ["antfu-skills"],
+  "allowCrossMarketplaceDependenciesOn": ["antfu-skills", "dotnet-agent-skills"],
   "plugins": [
     {
       "name": "srun",
       "description": "Tier 1/2/3 SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + opus-reviewer agent + SessionStart intent-guidance hook (spectra/openspec backend adapter), driven by OpenSpec change artifacts",
-      "version": "0.21.2",
+      "version": "0.22.0",
       "author": {
         "name": "jay123578951"
       },
@@ -26,6 +26,24 @@
         "name": "jay123578951"
       },
       "source": "./plugins/srun-stack-vue"
+    },
+    {
+      "name": "backend-common",
+      "description": "srun 的後端語言中立知識包 — API 設計、DB 遷移、部署、容器化、安全檢查與 Postgres/MySQL/Redis 模式(vendor 自 ECC,MIT),各後端 stack pack 共用",
+      "version": "1.0.0",
+      "author": {
+        "name": "jay123578951"
+      },
+      "source": "./plugins/backend-common"
+    },
+    {
+      "name": "srun-stack-dotnet",
+      "description": "srun 的 .NET stack pack — 依賴官方 dotnet-agent-skills(aspnetcore/data)與 backend-common,vendor dotnet-patterns/csharp-testing/efcore-patterns/testcontainers/database-performance 五件知識型 skills",
+      "version": "1.0.0",
+      "author": {
+        "name": "jay123578951"
+      },
+      "source": "./plugins/srun-stack-dotnet"
     }
   ]
 }
