@@ -1,6 +1,6 @@
 {
   "name": "srun",
-  "version": "0.21.2",
+  "version": "0.22.0",
   "description": "Tier 1/2/3 SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + opus-reviewer agent + SessionStart intent-guidance hook (spectra/openspec backend adapter), driven by OpenSpec change artifacts",
   "author": {
     "name": "jay123578951"
