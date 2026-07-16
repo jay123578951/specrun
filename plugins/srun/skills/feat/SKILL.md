@@ -171,7 +171,7 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 工作順序（防錨定的關鍵，依序執行）：
 ① 先讀 specs/ 的 scenarios，**獨立列出應驗證行為清單**——此階段**禁止查看任何測試檔**（含 Coder 順手寫的），避免被既有斷言錨定
 ② 對照既有測試（含 Coder 本輪所寫）找缺口與錯誤斷言
-③ 補寫缺少的測試、修正錯誤的斷言——針對 spec 中的每個 scenario 撰寫，撰寫與執行依守則檔
+③ 補寫缺少的測試、修正錯誤的斷言——針對可經真實 import／掛載驗證的 scenario 撰寫，驗不到的列入無法測試清單（不硬產出，降級規則見守則檔排除規則），撰寫與執行依守則檔
 ④ 依守則檔的執行節奏跑測試（scoped 收斂、收尾全量蓋章）並輸出報告
 
 輸出：
@@ -271,6 +271,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 - **一輪的定義**：「gate 失敗回到主對話 → 派 agent 修 → 重驗」＝該 gate 一輪。各 gate 獨立計數、**各自最多 3 輪**，輪數在同一 Pipeline 內累計不因修復成功重置；達上限 → 停下來問人（問題可能較嚴重或 AI 忽略關鍵細節）
 - **不計輪**：agent 就地自修（lint／typecheck／三件套紅燈，未回主對話）、BLOCKED（回主對話是為了問人）、flaky 標註（回主對話是為了告知）、targeted re-check／re-run（驗證派發，非問題回報）
 - **修復派發 prompt 一律附**：失敗報告（依 gate：失敗測試名稱＋錯誤訊息／Review 報告／驗證報告含截圖或幾何描述）、**前一輪輸出摘要**（檔案清單＋設計決策，避免 context 斷裂）、明確修復指示。spec alignment 類 finding 已依 `review` 規範附上被違反的 spec 段落原文——orchestrator **全文轉遞**，修復 agent 不必重讀 spec 檔
+- **派給 Coder 的修復 prompt 一律載明**：不得修改測試檔（修復階段測試修改一律由 Tester 派發）；判斷失敗屬測試問題 → 依 test-defect 申辯通道回報並引驗收依據原文，不要自行改斷言
 - **免重讀**：修復 agent 不需重讀 design.md／specs/，只讀前輪摘要、失敗報告、要修改的檔案。**升級模式開啟後解除此限制**——解禁不是強制，是否重讀、讀哪份（design.md 與 specs/）由 Opus 自行判斷
 - **修復 agent settle 前自跑三件套**（lint + typecheck + 專案 test script）：紅燈就地修不計輪；就地修不掉、或判斷失敗屬測試問題 → 回報主對話（計下一輪，或走 test-defect 申辯）
 - **升級模式（全 Pipeline 單一開關，開啟後不關閉）**：任一 gate 進入第 2 輪修復即開啟——此後**所有修復派發升 Opus**（不論被派的是 Coder 或 Tester）、**Opus Reviewer 重派一律帶 `{adversarial}=true`**、免重讀限制解除。targeted re-check／re-run 是驗證派發，維持 Sonnet 不受影響；Reviewer 自身固定 Opus，無升級問題
@@ -288,7 +289,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 ### test-defect 申辯通道
 
-Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論該測試的原作者是誰），可回報 test-defect：**必須引用驗收依據原文**（spec scenario／design 段落，含來源路徑）並指出斷言不符之處，**引不出原文不受理**，乖乖修 code。受理後主對話**改派 Tester 修測試**——測試檔一律只有 Tester 能動；Tester 可反駁，同樣須引依據原文。申辯輪照計輪。
+Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論該測試的原作者是誰），可回報 test-defect：**必須引用驗收依據原文**（spec scenario／design 段落，含來源路徑）並指出斷言不符之處，**引不出原文不受理**，乖乖修 code。受理後主對話**改派 Tester 修測試**——修復階段的測試檔修改一律歸 Tester；Tester 可反駁，同樣須引依據原文。申辯輪照計輪。
 
 ### review-finding 申辯通道
 

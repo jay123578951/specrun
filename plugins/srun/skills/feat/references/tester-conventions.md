@@ -1,6 +1,6 @@
-# Tester 測試撰寫守則（feat／fix 共用）
+# 測試撰寫守則（feat Tester／fix Coder 共用）
 
-派發 prompt 以絕對路徑指向本檔，Tester subagent 開工前必讀；讀不到 → 停下回報，不要在缺守則約束的情況下繼續寫。
+派發 prompt 以絕對路徑指向本檔，寫測試的 agent（feat 的 Tester、fix 的 Coder）開工前必讀；讀不到 → 停下回報，不要在缺守則約束的情況下繼續寫。
 
 ## 撰寫測試
 
@@ -12,6 +12,7 @@
 ## 排除規則（不要撰寫以下測試）
 
 - TypeScript 型別/介面欄位存在性測試（typecheck gate 已保證型別正確性）
+- 靜態原始碼文字比對測試（以 regex／字串比對 source 內容）——驗的是程式碼字面不是行為：合法改寫會誤報回歸、真的邏輯錯誤又驗不到。無法以真實 import／掛載驗證時，唯一出口是列入「無法測試的模組清單」，不得降級為文字比對
 
 ## Nuxt composable 的測試策略（三層，依序）— Vue/Nuxt 專屬
 
