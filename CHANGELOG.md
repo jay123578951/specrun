@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.23.0 — 2026-07-16
+
+Tier 2 收掉獨立 Tester。fix pipeline 原本比照 feat 派 Coder→Tester 兩棒，但輕量改動的測試面窄，交棒成本高於分工收益；改由 Coder 兼負測試職責。同時堵住一個測試反模式：無法真實 import／掛載時，subagent 會退而求其次寫「讀原始碼比對字串」的假測試——這種測試永遠綠、驗不到行為，明文禁止並要求列入無法測試清單。
+
+### Changed
+
+- **fix pipeline 移除獨立 Tester**（`skills/fix/SKILL.md`）：改派 Coder 兼負測試職責——邏輯類修復寫重現測試、settle 前自跑三件套；stack 解析改為 Coder＋Tester 兩份清單合併載入。
+- **feat Tester 工作順序③改為只針對可驗證 scenario 撰寫**（`skills/feat/SKILL.md`）：消除逐 scenario 配額壓力，不再為湊數寫驗不到行為的測試。
+- **feat 申辯通道收窄**（`skills/feat/SKILL.md`）：「測試檔一律只有 Tester 能動」改為修復階段限定，並於 Retry 通用規格要求修復 Coder 的 prompt 載明不得改測試檔。
+- **文件同步**（`skills/retro/SKILL.md`、`docs/ai-development-pipeline.md`、`README.md`）：retro 事件表與 pipeline 文件跟上 Tier 2 的新分工。
+
+### Added
+
+- **禁止靜態原始碼文字比對測試**（`skills/feat/references/tester-conventions.md`）：排除規則新增——無法真實 import／掛載的目標一律列入無法測試清單，不得改寫成讀檔比字串的替代測試。
+
+### Fixed
+
+- **coder-skills-map 補撞名比對規則**（`skills/feat/references/coder-skills-map.md`）：同一裸名命中多個 available-skills 項時取帶 plugin 前綴的 pack 知識 skill，避免內建無前綴 skill（如 `security-review`）與 pack 同名 skill 被誤選。
+- **srun plugin manifest 版本同步**（`plugins/srun/.claude-plugin/plugin.json`）：0.22.0 只升了 marketplace.json、plugin.json 遺漏，導致 plugin update 判定已是最新而拉不到新版。
+
+## 0.22.0 — 2026-07-15
+
+後端 stack pack 開張。沿用 0.21.0 的 stack pack 架構往後端擴：先切出語言中立的 `backend-common`（對位前端的 `web-common`），再讓各後端 pack 依賴它，首發 .NET。偵測規則也從寫死的 if/else 改成註冊表制，之後加 stack 只需增節、不動解析邏輯。
+
+### Added
+
+- **`backend-common` plugin**（`plugins/backend-common/`）：8 件後端語言中立知識 skill——API 設計、DB 遷移、部署、容器化、安全檢查與 Postgres／MySQL／Redis 模式，挑件 vendor 自 ECC（MIT），`security-review` 修剪鏈上內容，附 NOTICE 載明來源。
+- **`srun-stack-dotnet` plugin**（`plugins/srun-stack-dotnet/`）：依賴官方 dotnet-agent-skills（aspnetcore／data）與 `backend-common`，vendor `dotnet-patterns`／`csharp-testing`／`efcore-patterns`／`testcontainers`／`database-performance` 五件供 pipeline 運行期細篩。
+- **coder-skills-map 的 .NET 節**（`skills/feat/references/coder-skills-map.md`）：sln／csproj 偵測訊號，含必載與額外預判清單。
+- **command-conventions 的 .NET 分節**（`skills/feat/references/command-conventions.md`）：`dotnet format`／`build`／`test`，補上 .NET 專案三個 gate 被誤跳的缺口；既有兩節標明僅 JS/TS 適用。
+
+### Changed
+
+- **偵測改註冊表制**（`skills/feat/references/coder-skills-map.md`）：每節自帶偵測訊號、首命中進場，取代寫死的判斷鏈；新增 stack 只需增節。
+- **marketplace 跨依賴白名單加 `dotnet-agent-skills`**（`.claude-plugin/marketplace.json`），README 補 pack 表與安裝範例。
+
 ## 0.21.2 — 2026-07-15
 
 ### Added
