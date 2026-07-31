@@ -57,7 +57,7 @@ Subagent 需要 **claude-in-chrome 瀏覽器工具**（`tabs_context_mcp` / `nav
 |---------|------|------|
 | **PASS** | 流程走得完、spec 明文項目都成立、無 error 級信號 | 進下一步（人工驗收） |
 | **FAIL** | 流程斷 / error 級信號 / spec 明文項目不成立（元件沒出現、跑錯區域、明顯崩版）——**且已重現確認**；視覺型 FAIL 附截圖或幾何描述 | 回 Coder 修 |
-| **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（Chrome 沒裝／沒連 claude-in-chrome）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人** |
+| **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（Chrome 沒裝／沒連 claude-in-chrome）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人**；**工具能力不足**（工具在、呼叫成功，但達不成 spec 要求的操作，如 viewport 幾何受實體螢幕限制）→ **問人**，報告寫明缺的是哪項能力 |
 
 不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。FAIL 截圖存 `.claude/debug/`（不進版控，生命週期由呼叫方管理）。
 
@@ -126,7 +126,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ### Verdict：{PASS | FAIL | BLOCKED}
 實際驗證的 URL/port：{你真正操作的位址，如 http://localhost:3000——供人工對帳 dev server 身分}
-{若 BLOCKED：}子原因：{工具未就緒 | 環境（dev server/seed） | 登入牆（缺帳密 / OAuth / SSO / CAPTCHA / 2FA / 魔術連結）}
+{若 BLOCKED：}子原因：{工具未就緒 | 環境（dev server/seed） | 登入牆（缺帳密 / OAuth / SSO / CAPTCHA / 2FA / 魔術連結） | 工具能力不足（工具在但達不成 spec 要求的操作）}
 建議動作：{例如「請人工走一遍流程」/「安裝 claude-in-chrome 後重跑」/「提供測試帳號」}
 
 ### 走過的流程

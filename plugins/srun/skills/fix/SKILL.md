@@ -54,7 +54,7 @@ Coder 必載清單與 `/srun:feat` 同步——不是固定的清單，而是派
 
 Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
 
-- **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發 Step 5 安全 review——同一訊號同款待遇）
+- **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發 Step 5 安全 review——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（Tier 2 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 Tier 2，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
 - **Retry 動態升級（統一規則，與 Tier 3 同款）**：任一迴路進入第 2 輪修復即開啟**升級模式**（全 pipeline 單一開關，開啟後不關閉）——此後**修復派發**一律升 `opus`，並解除「免重讀」限制（解禁非強制）
 
 判定保守。一般小改動維持 sonnet。

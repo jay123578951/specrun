@@ -34,7 +34,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 | `test_defect` | test-defect 仲裁通道被使用（記上訴結果：測試改了／上訴不成立） |
 | `review_defect` | review-finding 申辯通道被使用（記上訴結果：finding 撤回／維持／升級問人） |
 | `flaky` | verify-flow 標記 flaky |
-| `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆） |
+| `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆／工具能力不足） |
 | `scope_exceeded` | G7 規模超標回報（路由誤判實錘——`docs/routing-cases.md` 新題候選） |
 | `acceptance_fix` | Tier 2 場景 (ii) 驗收修正 |
 | `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
@@ -48,7 +48,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 
 **快樂路徑也記**（events 為空陣列）——統計行是日後調閾值（counter ≥ 2、3 輪停損）的分母。
 
-**條目格式**（一行 JSON append；事實不寫解讀）：
+**條目格式**（一行 JSON append；事實不寫解讀。append 前以本節格式為模板產生單行 JSON 序列化輸出，不自創欄位、不憑記憶拼格式）：
 
 ```json
 {"ts":"<ISO 時間>","project":"<專案名>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
@@ -67,7 +67,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 
 流程：
 
-1. **讀收件匣**：全量讀 `runs.jsonl`
+1. **讀收件匣**：全量讀 `runs.jsonl`；讀取、統計與聚類一律以 JSON 解析處理（各條目序列化間距不保證一致，grep 字面比對會漏樣本）
 2. **聚類找跨專案模式**：同類事件反覆出現（同一 gate 常 FAIL、同類 blocked、同一 skill 條文常被誤解）→ 候選模式；開放觀察欄反覆出現的觀察 → 提案收進事件表（自我完善迴路）
 3. **需要時深挖**：順條目的 session 指針開採 transcripts 還原細節——量大時平行派發 subagent 分片閱讀
 4. **歸因分類**：每個候選模式先歸因、再開修法——歸因決定提案型態，避免所有模式都反射性地「加一段條文」：
