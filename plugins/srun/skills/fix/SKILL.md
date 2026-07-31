@@ -1,10 +1,10 @@
 ---
 name: fix
 argument-hint: "[問題描述]"
-description: Tier 2 輕量 Pipeline — 決策已在對話收斂、且不需建立新的 OpenSpec artifact 的小改動時使用（跨檔案 bug 修復、小型 UI 調整、小型模組微調、進行中 change 的驗收修正；檔案數僅為輔助訊號）。spec-first：派發前先做 Spec 影響判斷、有影響先更新規格，再派發 Coder（自寫測試）→註解整理。需要 spec 記錄（新增 API/元件、行為值得規格化）、決策分支多或需拆批改用 feat；單行/純樣式微調直接在對話改即可。
+description: Tier 2 輕量 Pipeline — 決策已在對話收斂、且不需建立新的 OpenSpec artifact 的小改動時使用（跨檔案 bug 修復、小型 UI 調整、小型模組微調、進行中 change 的驗收修正；檔案數僅為輔助訊號）。需要 spec 記錄（新增 API/元件、行為值得規格化）、決策分支多或需拆批改用 feat；單行/純樣式微調直接在對話改即可。
 ---
 
-Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨執行、快速人工驗證」的執行品質層**——品質高於主對話直改（fresh-context Coder 載入行為守則＋自寫測試驗證＋branch 隔離），重量低於 feat 驗證鏈（無獨立 Tester、無 Reviewer 迴路、無操作流程驗證）。「設計我來、執行你來、驗收我來」分工的載體。
+Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨執行、快速人工驗證」的執行品質層**，「設計我來、執行你來、驗收我來」分工的載體。
 
 與 `/srun:feat`（Tier 3）的差異：
 - 不建立新的變更 artifact — 需求從對話定案取得（場景 (ii) 可回寫**既有** change artifact，見下方）
@@ -55,7 +55,7 @@ Coder 必載清單與 `/srun:feat` 同步——不是固定的清單，而是派
 Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
 
 - **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發 Step 5 安全 review——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（Tier 2 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 Tier 2，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
-- **Retry 動態升級（統一規則，與 Tier 3 同款）**：任一迴路進入第 2 輪修復即開啟**升級模式**（全 pipeline 單一開關，開啟後不關閉）——此後**修復派發**一律升 `opus`，並解除「免重讀」限制（解禁非強制）
+- **Retry 動態升級**：升級模式與 Tier 3 同一套，見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`
 
 判定保守。一般小改動維持 sonnet。
 
@@ -168,7 +168,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 - Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
 - **FAIL 的修復走完整靜態關卡**：Coder 修 → settle 前自跑三件套（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。計數與上限沿用下方 Retry 迴路（各 gate 最多 3 輪，達上限停下來問人）；嚴重安全問題 → 直接停下來問人
-- Subagent 派發失敗 → 停下來問人，不退化為主對話自審（獨立審查不變量）
+- Subagent 派發失敗 → 停下來問人（隔離不變量：不退化為主對話自審）
 
 ### Step 6: 註解整理（Sonnet subagent）
 
@@ -177,7 +177,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次修改的檔案清單」（Coder 產出，含其所寫測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`
-- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用由 `comment` 規範，見其引用的 command-conventions；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
+- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
 - 整理完成後 orchestrator **重跑測試**（專案 test script，如 `pnpm test`）作為安全網；失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
 
 ### Step 7: Spec 輕量複核（commit 前）
@@ -192,29 +192,15 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 顯示完成摘要（含註解整理與 Spec 同步結果），提示人工確認修復結果。
 
-**retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表與條目格式以該 skill 為單一來源，此處不複製）；收件匣 > 30 筆時在完成報告加一行提醒 `/srun:retro --archive`。append 失敗不阻斷報告，註記即可。
+**retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表、條目格式與閾值提醒以該 skill 為單一來源，此處不複製）。append 失敗不阻斷報告，註記即可。
 
 ---
 
 ## Retry 迴路
 
-### 測試失敗（Coder 就地修不掉、回報主對話）→ 修復派發
+通用規格（一輪定義、不計輪、修復派發附帶物、免重讀、三件套 settle、升級模式）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 Tier 3 同一套，任一 gate 首次失敗進入迴路時先讀。
 
-1. 將以下資訊傳給修復 Coder：
-   - 失敗的測試名稱和錯誤訊息
-   - **前一輪 Coder 的輸出摘要**（修改的檔案清單 + 修復邏輯說明）
-   - 明確的修復指示
-2. Coder prompt 須明確指示：**不需重讀 CLAUDE.md 與周邊檔案**，只讀前輪輸出摘要、失敗報告、要修改的檔案（**升 Opus 那輪解除此限制**——連兩輪修不好大概率是理解問題，Opus 自行判斷要不要重讀 spec 依據與周邊檔）
-3. **第 2 輪修復起開啟升級模式**（統一規則，見 Model 策略），後續修復派發一律升 `opus`
-4. 修復 Coder settle 前**自跑三件套**：lint + typecheck + 專案 test script；lint／型別紅燈就地修（不計 retry）；三件套全綠即 settle
-5. 最多 3 輪，修不好 → 停下來問人
-
-### Retry 計數（統一判準，與 Tier 3 同款）
-
-- **計一圈**＝品質失敗回到主對話、需要派 agent 去修
-- **不計**：ESLint / typecheck 自修、修復 Coder 三件套的就地修（未回主對話）
-- 各 gate 迴路（測試、條件性的安全 review）各自最多 3 輪
-- 3 輪修不好 → 停下來問人（問題可能較嚴重或 AI 忽略關鍵細節）
+本 tier 的 gate 迴路有二：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）。修復派發對象皆為 Coder（Tier 2 無獨立 Tester，測試檔亦歸 Coder 修）。
 
 ---
 
@@ -259,14 +245,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ## Guardrails
 
-- Coder prompt 直接描述問題（含 Step 3 更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact
+- Coder prompt 直接描述問題（含 Step 3 更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact；不在 prompt 中貼入檔案內容，讓 agent 自行讀取
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
-- 不在 prompt 中貼入檔案內容，讓 agent 自行讀取
 - Coder 的輸出（檔案清單 + 修復邏輯）由 orchestrator 保留，用於 retry
-- Retry 迴路中，附帶前一輪的輸出摘要，避免 context 斷裂導致重複犯錯
-- 任何修復完成後，修復 Coder settle 前一律自跑三件套（lint + typecheck + test）
-- 3 輪上限後必須停下來問人，不可繼續嘗試
-- 安全敏感路徑不因 Tier 2 輕量而降低把關：升 Opus 與 adversarial review 聯動觸發（同一訊號同款待遇）
-- 註解整理在所有 gate settle 後（含條件性安全 review）執行，只動註解不動 code 邏輯，整理後必重跑測試作為安全網
-- Pipeline 完成後不自動 commit，等人工確認
-- Spec 影響判斷前移至派發前（spec-first）不可跳過；commit 前輕量複核防範圍外溢 — SDD 核心原則：spec 先行，Code 和 Spec 同一個 commit
+- Spec 影響判斷前移至派發前（spec-first）不可跳過

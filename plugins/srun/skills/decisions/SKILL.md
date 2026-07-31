@@ -1,7 +1,7 @@
 ---
 name: decisions
 argument-hint: "[任務摘要或需求描述]"
-description: 動手前的決策收斂 — 在 opsx:explore 結論後、opsx:propose 之前，沿決策樹找出「Coder 動手時必須有答案、但目前未定」的分支，逐一問使用者收斂後輸出決策清單餵給 propose。用於完整新功能、全新 UI 流程設計等決策分支多的任務；既有功能的調整、需求已明確、純樣式微調不需使用。
+description: 動手前的決策收斂 — 在 opsx:explore 之後、opsx:propose 之前，找出「Coder 動手時必須有答案、但目前未定」的分支並逐一收斂成決策清單。用於完整新功能、全新 UI 流程設計等決策分支多的任務；既有功能的調整、需求已明確、純樣式微調不需使用。
 ---
 
 動手前的決策收斂閘門。explore 把方案聊開（發散），這個 skill 反過來把使用者收斂到明確（收斂）——沿著設計的決策樹走，只挑出「未定且必須定」的分支問使用者，避免模糊在 propose 被包裝成看似完整的 spec、最後在 Coder / Reviewer / retry 階段才爆出來。

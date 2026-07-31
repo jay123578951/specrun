@@ -6,9 +6,7 @@ description: Use when an agent writes or modifies code — behavioral guidelines
 
 Coder Agent 的**行為守則** skill，定義「動手寫 code 時該怎麼自我約束」的單一來源，針對 LLM 寫 code 的通病（亂假設、過度設計、亂改不該動的地方），適配本 Pipeline 自主編排；行為守則本身 stack 無關，隨 srun 出貨恆載。
 
-**定位**：本 kit 的 skill 分三類——知識型（`vue`／`antfu` 等 stack pack 的 skill，描述「怎麼寫該 stack 的 code」）、流程型（`feat`／`fix`，描述「照什麼步驟跑」）、**行為型（本 skill，描述「寫的當下怎麼自我約束」）**。Coder 在動手前載入，從生成端就避免過度設計與越界改動，而非全部留給 Reviewer 事後攔截——**預防比 retry 便宜**（少一輪 Opus review + 重跑測試）。
-
-**與 `review` 的關係**：本 skill 是「生成端自律」，`review` 是「審查端把關」，兩者檢查同一組性質（過度抽象、只改必要）。Coder 載 guidelines 先自我約束，Reviewer 載 review 獨立把關，形成同源配對。本 skill 只給 Coder 的行為指引，不取代 review 判定。
+**與 `review` 同源配對**：本 skill 是「生成端自律」，`review` 是「審查端把關」，兩者檢查同一組性質（過度抽象、只改必要）；本 skill 只給 Coder 的行為指引，不取代 review 判定。
 
 ---
 
@@ -91,10 +89,4 @@ Coder Agent 的**行為守則** skill，定義「動手寫 code 時該怎麼自�
 
 ## 與 Pipeline 的關係
 
-| 使用者 | 如何使用 |
-|--------|---------|
-| `feat` Coder（Tier 3） | Coder subagent 派發時於必載 skills 中載入 `guidelines`，連同該 stack 解析出的知識型 skill 一起（見 `coder-skills-map.md`） |
-| `fix` Coder（Tier 2） | 同上；兩個 Pipeline 共用相同行為守則，Tier 差異在流程不在守則寬鬆度 |
-| Retry Coder | retry 派發的 Coder 仍載入 `guidelines`（行為守則對每次生成都適用） |
-
-本 skill 只負責「Coder 寫 code 時的自我約束」。是否載入、在哪一步載入由呼叫方（`feat`／`fix`）管理；審查端的把關由 `review` 負責。
+本 skill 只負責「Coder 寫 code 時的自我約束」；是否載入、在哪一步載入由呼叫方（`feat`／`fix`）管理——首次與 retry 派發的 Coder 皆載入，兩個 Tier 共用同一守則，Tier 差異在流程不在守則寬鬆度。

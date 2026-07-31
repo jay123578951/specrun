@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.23.1 — 2026-07-31
+
+srun 核心 8 個 skill 去重與結構整理：行為規則一字未動，砍掉重複、身分描述與解說性論述。8 個 SKILL.md 從 1648 行減到 1506 行，另把只有特定分支才用到的內容下沉為按需載入的 reference。
+
+### Changed
+
+- **Description 瘦身**（`feat`／`fix`／`retro`／`decisions`／`verify-flow`）：description 是每 turn 都佔 context 的成本，只留觸發判準；pipeline 內部結構、檔案路徑等 body 身分內容刪除，路由判準全保留。
+- **Retry 通用規格抽共用檔**（`skills/feat/references/retry-loop.md`）：一輪定義、不計輪、修復派發附帶物、免重讀、三件套 settle、升級模式集中一處，feat／fix 各留指針；feat 另留三條 feat 限定補充規格（spec 原文轉遞、Coder 不改測試檔、adversarial 聯動）。
+- **「隔離不變量」統一詞彙**（`feat`／`fix`／`review`／`comment`／`verify-flow` 共六站點）：「派發失敗不退化為主對話自做/自審」收斂為單一術語，刪除各站點的 rationale 子句。
+- **SSOT 去重**：安全敏感路徑清單 feat 內部收斂到 Step 3 單點；功能型指令註解例舉與 retro 30 筆閾值自 feat／fix 呼叫端移除，SSOT 分別歸 `comment` 與 `retro`。
+- **「與 Pipeline 的關係」表格縮編**（`review`／`comment`／`verify-flow`／`guidelines`）：callee 端重述 caller 接線方式的表格縮成「接線歸呼叫方」一至兩句，caller（feat／fix）為 SSOT。
+- **Guardrails 清沉積**（`feat` 刪 3 條、`fix` 刪 7 條）：body 已規範的條目不再重述，保留別處沒說過的（平行派發前提、對帳重派、guidelines 恆載等）。
+- **Rationale 剪枝**：comment 的「為什麼直接修復」論證、retro 的複利論述、verify-flow 的 vitest 分工對照表、guidelines 的三類 skill 分類學等不改變 agent 行為的解說移除。
+
+### Added
+
+- **Targeted Check 下沉**（`skills/review/references/targeted-check.md`）：只有 feat WARNING re-check 分支用到的約 80 行模板自 review 本體移出，SKILL.md 留指針、執行 re-check 時再讀。
+
 ## 0.23.0 — 2026-07-16
 
 Tier 2 收掉獨立 Tester。fix pipeline 原本比照 feat 派 Coder→Tester 兩棒，但輕量改動的測試面窄，交棒成本高於分工收益；改由 Coder 兼負測試職責。同時堵住一個測試反模式：無法真實 import／掛載時，subagent 會退而求其次寫「讀原始碼比對字串」的假測試——這種測試永遠綠、驗不到行為，明文禁止並要求列入無法測試清單。

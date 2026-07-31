@@ -1,19 +1,10 @@
 ---
 name: verify-flow
 argument-hint: "[app URL] [驗收依據路徑或描述]"
-description: Use when you need to confirm a spec-designed user flow actually runs end-to-end in a real browser — drives real clicks to check the flow completes without errors/interruptions, verifies spec-stated elements exist and sit where the spec says; does NOT judge aesthetics, spacing, or data correctness (those stay with the human)
+description: Use when you need to confirm a spec-designed user flow actually runs end-to-end in a real browser — drives real clicks to check the flow completes without errors/interruptions, verifies spec-stated elements exist and sit where the spec says; aesthetics and data correctness stay with the human
 ---
 
 一個**可攜、不綁專案**的「操作流程驗證」skill。它在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍（真的點擊、真的填表、真的跳頁），確認**流程串得起來、不報錯、不中斷**，而不是驗「畫面對不對、好不好看」。透過 Task tool 派發 fresh-context subagent 執行，取得與寫 code 的 context 隔離的獨立視角——避免「自己寫的畫面自己驗」的自評盲點。
-
-**定位（跟 vitest 分工）**：
-
-| | 驗什麼 | 環境 |
-|--|-------|------|
-| 單元/元件測試（vitest 等） | 每個零件的**邏輯對不對**——函式行為、edge case、回歸 | 靜態、mock、快 |
-| **本 skill** | 零件**組起來會不會動**——真 dev server + 真點擊 + 真資料流下，spec 設計的流程走不走得通 | 真瀏覽器、真整合 |
-
-兩者互補不重疊：mock 出來的測試天生驗不到「真的把它接起來跑會不會斷」，這正是本 skill 補的那一層。
 
 **核心哲學：給北極星 + 邊界，不給檢查表。** 職責邊界（什麼該驗、什麼不該碰）訂死；怎麼走、怎麼確認、灰色地帶怎麼拿捏，留給模型判斷。
 
@@ -49,7 +40,7 @@ description: Use when you need to confirm a spec-designed user flow actually run
 
 Subagent 需要 **claude-in-chrome 瀏覽器工具**（`tabs_context_mcp` / `navigate` / `computer` / `read_page` / `read_console_messages` / `read_network_requests` 等）。若這些工具是 deferred，subagent 須先用一次 ToolSearch 批次載入再操作。
 
-**派發失敗或 app 起不來**：記錄狀況、判為 `BLOCKED` 交人，不退化為主對話自做（破壞 fresh-eyes 隔離），也不硬算 FAIL。
+**派發失敗或 app 起不來**：記錄狀況、判為 `BLOCKED` 交人（隔離不變量：不退化為主對話自做），也不硬算 FAIL。
 
 ### verdict
 
@@ -159,14 +150,6 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ## 與 Pipeline 的關係
 
-> skill 本體（上方）不綁專案。以下是**本 kit 的接線範例**，搬到別的專案時依當地流程調整。
+skill 本體不綁專案；順序、觸發、model 由呼叫方管理（本 kit 為 `feat`，接線見其 Step 6.5；Tier 2 刻意不納入，改走報告行補資訊差），本 skill 只負責「怎麼驗、驗到什麼標準、怎麼回報」。獨立使用時對正在跑的 app 執行 `/srun:verify-flow`，給它 URL + 驗收依據。
 
-| 使用者 | 如何使用 |
-|--------|---------|
-| `feat`（Tier 3） | 排在 **Reviewer 迴路完全 settle 之後**、**註解整理之前**——動態關卡永遠壓軸，驗的必是最終 code，PASS 不會過期。FAIL（重現確認後）→ 回 Coder，修復走完整靜態關卡後 targeted re-run（套 retry 上限）；flaky → 標註交人不計 retry；BLOCKED → 問人不計 retry |
-| `fix`（Tier 2） | **不納入**——Tier 2 刻意輕量（連 Reviewer 都省），流程驗證比 Reviewer 更重（需 dev server + 瀏覽器）。無法測試模組的空窗走「報告行」補資訊差（受影響頁面清單寫進人工確認報告）。小改動要驗流程 → 獨立跑 `/srun:verify-flow` 或升 Tier 3 |
-| 獨立使用 | 任何時候對正在跑的 app 執行 `/srun:verify-flow`，給它 URL + 驗收依據 |
-
-**觸發條件（本 kit）**：改動觸及 user-facing 流程或畫面（UI 元件的畫面結構變更，或頁面/路由/互動流程變更）才跑；或 Tester「無法測試清單」非空且模組被頁面使用（Tier 3 的 OR 觸發，受影響頁面做 targeted 驗證）。純樣式 changeset、純後端/純邏輯改動、Tier 1 微調跳過。
-
-**它不取代人工驗收**：它是 Phase 3 的**前置過濾器**——擋掉「流程根本走不通」這種低級問題，讓開發者專注在它碰不了的判斷題（美感、資料合理性、體驗）。順序、觸發、model 由呼叫方（本 kit 為 `feat`）管理，本 skill 只負責「怎麼驗、驗到什麼標準、怎麼回報」。
+**它不取代人工驗收**：它是 Phase 3 的**前置過濾器**——擋掉「流程根本走不通」這種低級問題，讓開發者專注在它碰不了的判斷題（美感、資料合理性、體驗）。

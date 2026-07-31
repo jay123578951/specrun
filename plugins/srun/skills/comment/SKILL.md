@@ -10,7 +10,7 @@ description: Use when tidying code comments at the end of development — remove
 
 **Model 策略**：整理 Agent 走 Sonnet subagent。註解判定屬機械性偏多的工作，不需 Opus 深度推理；subagent context 與主對話隔離取得 fresh eyes，又成本低。
 
-**為什麼是「直接修復」而非「只回報」**：本 skill 的目標是開發收尾自動清乾淨。與 `review`（report-only + STOP 規則）不同，整理 Agent 依守則**直接套用 Edit**，完成後回報它改了什麼。理由：註解改動不動 code 邏輯、風險低；但**刪除是危險方向**，故守則對「不可刪」與「拿不準就留」訂得很死（見下方）。
+與 `review`（report-only + STOP 規則）不同，整理 Agent 依守則**直接套用 Edit**，完成後回報它改了什麼；但**刪除是危險方向**，故守則對「不可刪」與「拿不準就留」訂得很死（見下方）。
 
 ---
 
@@ -51,7 +51,7 @@ description: Use when tidying code comments at the end of development — remove
 
 Subagent 自行讀檔、自行依守則套用 Edit、自行跑 lint --fix（指令依專案偵測），最後直接輸出本 skill 定義的「輸出格式」報告。主對話收到後直接呈現。
 
-**Subagent 派發失敗時**：記錄錯誤並停下來問人，不退化為主對話自做（破壞 fresh-eyes 隔離初衷）。
+**Subagent 派發失敗時**：記錄錯誤並停下來問人（隔離不變量：不退化為主對話自做）。
 
 ### Step 3: 呈現結果 + 安全網
 
@@ -193,10 +193,4 @@ build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防�
 
 ## 與 Pipeline 的關係
 
-| 使用者 | 如何使用 |
-|--------|---------|
-| `feat`（Tier 3）收尾 | Reviewer PASS 後，orchestrator 派發 Sonnet 整理 Agent subagent，載入此 skill 取得規範；整理後重跑 lint + 測試，再進交付 |
-| `fix`（Tier 2）收尾 | Coder/Tester settle 後、Spec 影響檢查前，orchestrator 派發整理 Agent |
-| 獨立使用 | 任何時候對任意 diff 執行 `/srun:comment` |
-
-此 skill 只負責「怎麼判斷與整理註解」與「派發給誰」。在 Pipeline 中的位置、重跑測試的時機由呼叫方（`feat`／`fix`）管理。
+此 skill 只負責「怎麼判斷與整理註解」與「派發給誰」；在 Pipeline 中的位置、重跑測試的時機由呼叫方（`feat`／`fix`）管理。獨立使用時任何時候對任意 diff 執行 `/srun:comment`。

@@ -1,10 +1,10 @@
 ---
 name: retro
 argument-hint: "[--archive]"
-description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時對照事件表，把偏離快樂路徑的事件與統計 append 進 ~/.claude/specrun-feedback/runs.jsonl 跨專案收件匣（手動呼叫＝臨時補記，含入口引導漏接／誤觸發事件）；歸檔模式（--archive）：聚類收件匣找跨專案模式、必要時順 session 指針開採 transcripts，產出附證據的 kit 優化提案，徵求同意後歸檔。受益對象是 kit 不是專案——教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
+description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時把偏離快樂路徑的事件記進跨專案收件匣，手動呼叫＝臨時補記（含入口引導漏接／誤觸發）；歸檔模式（--archive）：聚類收件匣、產出附證據的 kit 優化提案。教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
 ---
 
-Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 kit 的 prompt 決定、跨專案同一套）——寫進單一專案的 CLAUDE.md 等於埋掉。本 skill 在源頭（orchestrator 事發時在場）做語義記錄，比事後開採 transcripts 的關鍵字偵測召回率高得多；歸檔模式再把收件匣消化成 kit 優化提案。這是唯一能讓 pipeline 隨使用次數變便宜的複利投資。
+Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 kit 的 prompt 決定、跨專案同一套），故在源頭（orchestrator 事發時在場）做語義記錄，歸檔模式再把收件匣消化成 kit 優化提案。
 
 **設計原則**：迴路必須自我維護，否則死於運維疲勞——記錄自動（內建在 feat/fix 完成報告尾端）、消化手動但有閾值提醒。自動 append 點**只進不出**；歸檔是唯一出口且需人同意。
 

@@ -1,7 +1,7 @@
 ---
 name: feat
 argument-hint: "[change-name]"
-description: Tier 3 完整 Pipeline — 實作完整功能、大型重構、架構變更，或需要 spec 記錄的變更（新增 API/元件、行為值得規格化、決策分支多、需拆批；通常 5+ 檔或跨模組，檔案數僅輔助訊號）時使用；前提是已有 OpenSpec change（openspec/changes/<name>/ 含 tasks.md）。派發 Coder→Tester→Reviewer∥操作流程驗證→註解整理。決策已在對話收斂的小改動改用 fix。
+description: Tier 3 完整 Pipeline — 實作完整功能、大型重構、架構變更，或需要 spec 記錄的變更（新增 API/元件、行為值得規格化、決策分支多、需拆批；通常 5+ 檔或跨模組，檔案數僅輔助訊號）時使用；前提是已有 OpenSpec change（openspec/changes/<name>/ 含 tasks.md）。決策已在對話收斂的小改動改用 fix。
 ---
 
 Tier 3 完整版 Agent Pipeline，適用於需要設計決策的完整功能（新功能、大型重構、架構變更）。透過 OpenSpec 變更 artifact 驅動，派發三個專職 agent 分工執行。
@@ -9,8 +9,6 @@ Tier 3 完整版 Agent Pipeline，適用於需要設計決策的完整功能（�
 小改動請改用 `/srun:fix`（Tier 2）。
 
 **Input**: 可選指定變更名稱（e.g., `/srun:feat add-auth`）。未指定時從對話推斷或提示選擇。
-
-**依賴**：無外部 plugin 依賴。Reviewer 透過 Task tool 以本 plugin 出貨的 `opus-reviewer` agent 派發（鎖 model 與工具白名單），與主對話 Sonnet 隔離以避免自評自審。
 
 ---
 
@@ -77,7 +75,7 @@ Coder／Tester 的必載清單**不是固定的清單**，而是 orchestrator �
 
 依賴判斷優先從 task 描述推斷。**若無法明確判斷，預設為串行執行（保守策略）。** 只有在 orchestrator 確信無依賴時才平行派發。
 
-Task 大項本身對應 spec 的模組邊界，天然適合作為分批單位。不以 checkbox 數量切分，避免把同一模組的邏輯拆散到不同 agent。
+不以 checkbox 數量切分，避免把同一模組的邏輯拆散到不同 agent。
 
 **跨批 Context 注意事項**
 
@@ -195,7 +193,7 @@ Orchestrator 根據 Coder 修改的檔案清單判斷 Reviewer 除了必載的 `
 
 Step 6 **首次**派發 Reviewer 前，下列任一條件成立則設 `{adversarial}` 為 `true`，否則為 `false`：
 
-- 改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）
+- 改動觸及安全敏感路徑（清單同 Step 3 的升級判定）
 - 改動含資料庫 schema 變更或生產資料遷移
 
 Retry 後續輪次的 adversarial 升級由「Retry 迴路」的升級模式管理，不在此處重複判斷。
@@ -212,7 +210,7 @@ prompt 由 orchestrator 依 `srun:review` 的「Reviewer Subagent Prompt 模板�
 
 Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後續包裝或補檢；只負責呈現給使用者並依判定進入 retry 迴路或下一步。
 
-**Subagent 派發失敗時**：記錄錯誤並停下來問人。不要退化為主對話 Sonnet 自做 review（會破壞「獨立審查」的設計初衷）。
+**Subagent 派發失敗時**：記錄錯誤並停下來問人（隔離不變量：不退化為主對話自審）。
 
 **Review 不通過時**：進入 Retry 迴路（見下方）。
 
@@ -240,7 +238,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
   - **工具未就緒**（Chrome 沒裝 / 沒連 claude-in-chrome）→ **跳過本步、退回純人工驗收**，報告註明「未能自動驗證，請人工走一遍」。**不當 FAIL**（別打回 Coder）、**不靜默放行**，不阻斷交付
   - **環境**（dev server / seed data / 連不上）或 **登入牆**（缺測試帳號 / 第三方 OAuth / SSO / CAPTCHA / 2FA / 魔術連結）→ 停下來問人
 
-**Subagent 派發失敗時**：判為 BLOCKED（工具未就緒）處理——跳過本步、退回人工驗收，不退化為主對話自做。
+**Subagent 派發失敗時**：判為 BLOCKED（工具未就緒）處理——跳過本步、退回人工驗收（隔離不變量：不退化為主對話自做）。
 
 ### Step 6.7: 註解整理（Sonnet subagent）
 
@@ -249,8 +247,8 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次 Pipeline 修改的檔案清單」（即 Coder 各批產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`，subagent 不需自行偵測 diff
-- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用由 `comment` 規範，見其引用的 command-conventions；不可刪除功能型指令註解，如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`、`v-html` 安全註記）
-- 整理完成後，**orchestrator 重跑一次測試**（專案 test script，如 `pnpm test`）作為安全網——純註解改動不該破壞行為，失敗多半是誤刪到功能型註解，回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人。注意此安全網接不住 build-time pragma（`@__PURE__`、`webpackChunkName` 等）的誤刪——測試驗不到，靠 `comment` 保護清單防守
+- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
+- 整理完成後，**orchestrator 重跑一次測試**（專案 test script，如 `pnpm test`）作為安全網——失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人。測試驗不到的 build-time pragma 誤刪由 `comment` 的保護清單計數防守
 
 整理後**不需**重跑 Opus Reviewer 或操作流程驗證（純註解改動不動 code 邏輯）；ESLint + 測試即為安全網。
 
@@ -258,7 +256,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
 
-**retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表與條目格式以該 skill 為單一來源，此處不複製）；收件匣 > 30 筆時在完成報告加一行提醒 `/srun:retro --archive`。append 失敗不阻斷報告，註記即可。
+**retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表、條目格式與閾值提醒以該 skill 為單一來源，此處不複製）。append 失敗不阻斷報告，註記即可。
 
 報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔）——檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
 
@@ -266,15 +264,15 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 ## Retry 迴路
 
-### 通用規格（所有 gate 共用）
+### 通用規格（feat／fix 共用）
 
-- **一輪的定義**：「gate 失敗回到主對話 → 派 agent 修 → 重驗」＝該 gate 一輪。各 gate 獨立計數、**各自最多 3 輪**，輪數在同一 Pipeline 內累計不因修復成功重置；達上限 → 停下來問人（問題可能較嚴重或 AI 忽略關鍵細節）
-- **不計輪**：agent 就地自修（lint／typecheck／三件套紅燈，未回主對話）、BLOCKED（回主對話是為了問人）、flaky 標註（回主對話是為了告知）、targeted re-check／re-run（驗證派發，非問題回報）
-- **修復派發 prompt 一律附**：失敗報告（依 gate：失敗測試名稱＋錯誤訊息／Review 報告／驗證報告含截圖或幾何描述）、**前一輪輸出摘要**（檔案清單＋設計決策，避免 context 斷裂）、明確修復指示。spec alignment 類 finding 已依 `review` 規範附上被違反的 spec 段落原文——orchestrator **全文轉遞**，修復 agent 不必重讀 spec 檔
+見 `${CLAUDE_SKILL_DIR}/references/retry-loop.md`（一輪定義、不計輪、修復派發附帶物、免重讀、三件套 settle、升級模式）：任一 gate 首次失敗進入迴路時先讀。
+
+### feat 補充規格
+
+- **修復派發 prompt**：spec alignment 類 finding 已依 `review` 規範附上被違反的 spec 段落原文——orchestrator **全文轉遞**，修復 agent 不必重讀 spec 檔
 - **派給 Coder 的修復 prompt 一律載明**：不得修改測試檔（修復階段測試修改一律由 Tester 派發）；判斷失敗屬測試問題 → 依 test-defect 申辯通道回報並引驗收依據原文，不要自行改斷言
-- **免重讀**：修復 agent 不需重讀 design.md／specs/，只讀前輪摘要、失敗報告、要修改的檔案。**升級模式開啟後解除此限制**——解禁不是強制，是否重讀、讀哪份（design.md 與 specs/）由 Opus 自行判斷
-- **修復 agent settle 前自跑三件套**（lint + typecheck + 專案 test script）：紅燈就地修不計輪；就地修不掉、或判斷失敗屬測試問題 → 回報主對話（計下一輪，或走 test-defect 申辯）
-- **升級模式（全 Pipeline 單一開關，開啟後不關閉）**：任一 gate 進入第 2 輪修復即開啟——此後**所有修復派發升 Opus**（不論被派的是 Coder 或 Tester）、**Opus Reviewer 重派一律帶 `{adversarial}=true`**、免重讀限制解除。targeted re-check／re-run 是驗證派發，維持 Sonnet 不受影響；Reviewer 自身固定 Opus，無升級問題
+- **升級模式開啟後**，Opus Reviewer 重派一律帶 `{adversarial}=true`；Reviewer 自身固定 Opus，無升級問題
 
 ### 各 gate 差異
 
@@ -347,7 +345,4 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - Coder 的輸出（檔案清單 + 設計決策）由 orchestrator 保留，用於傳遞給後續 agent 和 retry
 - 獨立的修復任務可平行派發，**前提是修復檔案集不相交**（如 Coder 與 Tester 各修不同檔案的 WARNING）；檔案相交或無法確定 → 串行
 - Coder / Tester 派發本身失敗或中途中斷 → 以 `git status` 對照 tasks.md checkbox **對帳實際完成度**後再重派（磁碟優先，不憑對話記憶推測進度）
-- 各 gate 3 輪上限後必須停下來問人，不可繼續嘗試
-- Pipeline 開始前確保在功能分支上，不直接在主要分支開發
-- 操作流程驗證是人工驗收的前置過濾器，不取代人工驗收
 - Pipeline 完成後不自動 commit，等人工驗收通過後再走交付流程
