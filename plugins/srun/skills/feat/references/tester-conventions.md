@@ -30,16 +30,7 @@
 
 工具用法：PM 偵測、專案 script 優先、不裸 `npx` 等指令選用通則見同目錄 `command-conventions.md`。**指令以專案偵測到的測試框架為準**（優先跑專案 test script）；下列以 vitest 為預設範例——需逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`（依偵測到的 PM；其他框架換用對應指令）。
 
-**執行節奏（scoped 先、全量後）**——省的不是牆鐘是 context：全套 vitest 與 scoped 執行的牆鐘差距微不足道；成本在讀輸出——全綠幾乎免費（尾巴摘要），紅燈才貴（失敗細節灌進 context）。所以浪費點是「還有紅燈時反覆跑全量，每輪重讀大量失敗輸出」。
-
-1. **收斂階段**：只跑正在改的那幾個改動檔的測試（scoped）——回饋快、紅燈輸出小、省 token
-2. **收尾階段**：全部綠了、**且不再動 code 之後**，跑一次全量當回歸安全網
-
-**必守順序**：全量必須在「最後一次改動之後」。先跑全量再改 code，那次全量就過期作廢。正確流程是：scoped 收斂到全綠 → 停止改 code → 全量蓋章。
-
-**收尾全量的例外**（判準：改動會不會波及改動檔以外）：
-- **會波及**（共用型別、跨模組邊界、AI prompt/schema、共用 fixture）→ 收尾全量非跑不可——typecheck 擋得住編譯期，擋不住 fixture/runtime 行為回歸
-- **不波及**（完全孤立的單一模組，無他處 import）→ scoped 到底即可，連收尾全量都可省
+**執行節奏**：收斂階段 scoped 到改動檔，全綠後跑一次全量當回歸蓋章；節奏自行拿捏，唯一硬規則是**蓋章用的全量必須在最後一次改動之後執行**——先跑全量再改 code，那次全量即過期作廢。
 
 **Settle 前 lint 自查**：對自己新增／修改的測試檔跑 scoped lint（per-file——全量 lint 會被 pre-existing error 淹沒而漏報；指令選用依 `command-conventions.md`），紅燈自修後才交付。
 

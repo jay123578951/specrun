@@ -56,7 +56,7 @@ Subagent 需要 **claude-in-chrome 瀏覽器工具**（`tabs_context_mcp` / `nav
 
 ## Subagent Prompt 模板
 
-本章節是判準精神與輸出格式的 **single source of truth**。展開規則：`{變數}` 換成實際值；`{若…：}` 條件區塊成立時留內文、不成立整段刪除；派發前目視確認不留 `{...}`。
+本章節是判準精神與輸出格式的 **single source of truth**。模板語法：`{變數}` 代入實際值；`{若…：}` 區塊成立留內文、不成立整段刪。
 
 ```
 你是操作流程驗證 Agent。用 fresh-eyes 視角，在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍，確認流程串得起來、不報錯、不中斷。你**回報事實**，不當畫面裁判。

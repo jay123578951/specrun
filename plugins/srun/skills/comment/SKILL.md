@@ -10,7 +10,7 @@ description: Use when tidying code comments at the end of development — remove
 
 **Model 策略**：整理 Agent 走 Sonnet subagent。註解判定屬機械性偏多的工作，不需 Opus 深度推理；subagent context 與主對話隔離取得 fresh eyes，又成本低。
 
-與 `review`（report-only + STOP 規則）不同，整理 Agent 依守則**直接套用 Edit**，完成後回報它改了什麼；但**刪除是危險方向**，故守則對「不可刪」與「拿不準就留」訂得很死（見下方）。
+與 `review`（report-only + STOP 規則）不同，整理 Agent 依守則**直接套用 Edit**，完成後回報它改了什麼。真正危險的刪除只有一種：功能型指令註解，已由保護清單計數機械防守；判斷層對複述／敘述類註解**預設刪**，不必保守。
 
 ---
 
@@ -59,7 +59,7 @@ Subagent 自行讀檔、自行依守則套用 Edit、自行跑 lint --fix（指�
 
 - **保護清單前後計數**：subagent 於整理前後對功能型指令保護清單**逐 pattern** regex 計數並核對（見 prompt 模板）——任一 pattern 變少即誤刪，補回才 settle。這是 build-time pragma（測試驗不到）的機械防線
 - **Lint --fix**：由 subagent 在收尾時執行（指令選用見下方安全網引用的 `command-conventions.md`）
-- **重跑測試**：純註解改動理論上不影響行為，但仍應重跑既有測試——**大多數誤刪**功能型指令註解（如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`）**會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外**——它們只影響打包結果，測試驗不到，靠保護清單防守。被 Pipeline 載入時，由 orchestrator 在整理後重跑測試；獨立模式由 subagent 跑專案 test script 並回報。
+- **重跑 scoped 測試**：重跑改動檔的既有測試——**大多數誤刪**功能型指令註解（如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`）**會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外**——它們只影響打包結果，測試驗不到，靠保護清單防守。純註解改動不需全量。被 Pipeline 載入時，由 orchestrator 在整理後重跑；獨立模式由 subagent 自跑並回報。
 
 ---
 
@@ -67,12 +67,7 @@ Subagent 自行讀檔、自行依守則套用 Edit、自行跑 lint --fix（指�
 
 本章節是註解判準、修正方式、輸出格式的 **single source of truth**——所有規範均內嵌於下方 prompt 模板。
 
-**模板展開規則**（派發前必做，與 `review` 一致）：
-
-1. `{變數}`（如 `{auto | staged | branch:<name>}`、`{changedFiles}`）一律以實際值替換為單一具體字串
-2. `{scanRange}` 依模式填：獨立模式且無 `--whole-file` → 填「僅 diff 改動區及其鄰近註解」；`--whole-file` 或 Pipeline 模式 → 填「整個改動檔案」
-3. `{若...：}` 條件區塊：條件成立時刪掉標頭、保留內文；不成立時整段刪除（直到下一個 `---` 或下一個 `{若...：}` 標頭）
-4. 派發前目視確認模板已展開乾淨，不留任何 `{...}` 字串
+**模板語法**：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪。`{scanRange}` 依模式填：獨立模式且無 `--whole-file` → 「僅 diff 改動區及其鄰近註解」；`--whole-file` 或 Pipeline 模式 → 「整個改動檔案」。
 
 ```
 你是註解整理 Agent，使用 fresh-eyes 視角整理本次開發產生的程式碼註解。
@@ -102,7 +97,9 @@ Scope：{auto | staged | branch:<name> | files}
 
 ## 核心判準
 
-註解的價值在於補充「code 無法自我表達」的資訊——以「功能完成後、不知道開發過程的讀者」視角評估：凡是讀 code 本身（含語意化命名、結構，必要時對照鄰近檔案如 CSS／型別）就能在合理成本內看懂的 → 冗餘；唯有說明意圖／原因／陷阱、跨越開發期仍成立的 why → 保留。判準不是「寫的當下有沒有價值」，而是「留在成品裡對未來讀者有沒有增益」。**刪除是危險方向，拿不準就保留並列入保留決策覆核。**
+註解的價值在於補充「code 無法自我表達」的資訊——以「功能完成後、不知道開發過程的讀者」視角評估：凡是讀 code 本身（含語意化命名、結構，必要時對照鄰近檔案如 CSS／型別）就能在合理成本內看懂的 → 冗餘；唯有說明意圖／原因／陷阱、跨越開發期仍成立的 why → 保留。判準不是「寫的當下有沒有價值」，而是「留在成品裡對未來讀者有沒有增益」。
+
+**立場：複述、敘述、開發過程類註解一律預設刪，放手清**——它們對現在的模型讀 code 沒有增益，過時後反而是誤導源。「拿不準就保留（列入保留決策覆核）」**只適用**於可能含 why／限制／陷阱價值的候選；功能型指令註解另有保護清單計數防守，判斷層不必為此縮手。
 
 ### 要清除／修正的註解（bad patterns）
 
@@ -151,7 +148,7 @@ build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防�
 
 1. Lint：跑專案 lint script（需要時帶 `--fix`），確保被你動過的檔案通過 lint
 {若獨立模式（非 Pipeline 載入）：}
-2. 測試：跑專案 test script 確認純註解改動未破壞既有測試——大多數誤刪功能型指令註解會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外，測試驗不到，靠上方保護清單防守
+2. 測試：跑改動檔的 scoped 測試，確認純註解改動未破壞既有測試——大多數誤刪功能型指令註解會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外，測試驗不到，靠上方保護清單防守
 
 ---
 

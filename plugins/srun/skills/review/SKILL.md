@@ -90,11 +90,7 @@ Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的�
 - `subagent_type`: `opus-reviewer`（plugin agent——frontmatter 已鎖 `model: opus` 與工具白名單；報告第一行自報實際 model）
 - `prompt`: 下方模板展開後的字串（**不可原樣帶入**）
 
-**模板展開規則**（派發前必做）：
-
-1. `{變數}` 佔位符（如 `{changeName}`、`{coderOutputFiles}`、`{standard | adversarial}`、`{auto | staged | branch:<name> | change:<changeName>}`）一律以實際值替換為單一具體字串
-2. `{若...：}` 條件區塊：條件成立時刪掉條件標頭、保留下方內文；條件不成立時整段刪除（含底下所有內容，直到遇到下一個 `---` 分隔線或下一個 `{若...：}` 標頭為止）
-3. 未展開的條件標頭被字面送進 subagent 會導致 review 邏輯混淆——派發前必須目視確認模板已展開乾淨，不應留下任何 `{若...：}` 或 `{a | b}` 字串
+**模板語法**：`{變數}` 代入實際值（如 `{standard | adversarial}` → `adversarial`）；`{若...：}` 區塊成立留內文、不成立整段刪（至下一個 `---` 或 `{若...：}` 標頭）。
 
 通用 prompt 模板：
 

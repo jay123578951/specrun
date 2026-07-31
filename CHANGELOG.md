@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.24.0 — 2026-07-31
+
+設計哲學調整：模型的進步把 kit 的價值從「知識層」擠到「結構層」。教模型怎麼判斷的條文（預判表、程序教學、成本細則）放權給模型自行判斷；保留模型自己給不了自己的東西——context 隔離、verdict 與停損紀律、資訊流邊界、機械不變量。刪減判準：刪一條規則前問「這種失敗會被哪個機械 gate 接住」，接得住的條文即冗餘。
+
+### Removed
+
+- **coder-skills-map 整檔退役**（`skills/feat/references/coder-skills-map.md`）：stack 偵測註冊表、必載清單、額外 skills 預判表全數移除。Coder／Tester 派發 prompt 改為「`srun:guidelines` 必載＋subagent 自行從 available-skills 挑選知識型 skill」，`feat`／`fix` 同步改寫；慣例品質是否下滑由 retro 數據觀察。
+- **模板展開規則去重複**（`review`／`comment`／`verify-flow`）：三步程序教學與「目視確認」叮嚀刪除，各留一行語法圖例。
+- **retry 免重讀限制**（`skills/feat/references/retry-loop.md`）：改為一句預設傾向（修復派發附帶物通常足以定位，重讀與否由修復 agent 自行判斷），升級模式的「解除限制」句連帶刪除。
+- **tester-conventions 執行節奏教學**：經濟學論證與收尾全量豁免表刪除，壓成一句；唯一硬規則保留（蓋章用全量必須在最後一次改動之後執行）。
+
+### Changed
+
+- **feat 判定表壓縮**（`skills/feat/SKILL.md`）：Coder 升級判定、Step 6.5 觸發判定各壓成一句原則，grep 手把手與跨步驟信號辨析註解刪除；安全敏感路徑清單、動態關卡壓軸順序、無法測試清單必有消費者原則不動。
+- **驗證型 task 綁定 gate**（`skills/feat/SKILL.md` Step 3）：tasks.md 中規格後端或模型自發寫入的驗證型 task 不派 Coder（避免同 context 假自驗），綁定對應 gate、綠燈後代勾並註記「由 gate 覆蓋」；綁不上的列入人工驗收提示。gate 觸發永遠錨在 srun 端，後端寫不寫驗證 task 都不影響可靠性。
+- **Pipeline 進度曝光**（`feat`／`fix`）：起跑時用原生 task 清單（TaskCreate）建 gate 序列、每關 settle 更新狀態，retry／BLOCKED 註記一句；跨 session 極端情況仍走既有對帳 guardrail，暫不做 tasks.md 落盤區段。
+- **comment 立場反轉**（`skills/comment/SKILL.md`）：「刪除是危險方向、拿不準就留」窄化為 why 候選限定；複述、敘述、開發過程類註解預設刪（功能型指令另有保護清單計數防守，判斷層不必保守）。測試安全網全量降 scoped；`feat`／`fix` 收尾改條件派發，diff 註解乾淨即跳過。
+- **guidelines 生成端註解紀律**（`skills/guidelines/SKILL.md`）：新增守則——註解只寫 code 無法自我表達的約束與 why，不敘述開發過程、不複述 code；源頭少產垃圾，下游整理變輕。
+
 ## 0.23.1 — 2026-07-31
 
 srun 核心 8 個 skill 去重與結構整理：行為規則一字未動，砍掉重複、身分描述與解說性論述。8 個 SKILL.md 從 1648 行減到 1506 行，另把只有特定分支才用到的內容下沉為按需載入的 reference。

@@ -38,11 +38,11 @@ Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨�
 
 ### Agent Knowledge Skills
 
-Coder 必載清單與 `/srun:feat` 同步——不是固定的清單，而是派發前依 `${CLAUDE_SKILL_DIR}/../feat/references/coder-skills-map.md` 解析：偵測 stack → 取對應清單 ∩ orchestrator context 的 available-skills。偵測規則與各 stack 的具體清單見該表；Coder 兼寫測試，故解析表中該 stack 的 Coder 與 Tester 清單**合併載入**；通用模式下只載 `guidelines`。
+與 `/srun:feat` 同步：orchestrator 不預判知識型 skill 清單，派發 prompt 只強制 `srun:guidelines`，其餘由 Coder 自行從 available-skills 挑選與 stack、本次改動相關的知識型 skill 載入（Coder 兼寫測試，測試框架類 skill 一併自取）。
 
 | Agent | Skills（必載） | 可選 Skills | 用途 |
 |-------|---------------|------------|------|
-| Coder | `srun:guidelines` ＋依 stack 解析（Coder＋Tester 清單合併，見 `coder-skills-map.md`） | 由 orchestrator 根據問題內容預判並寫入 prompt（依解析出的 stack 而定） | `guidelines` 為行為守則（最小可行、外科手術式改動、自主判斷邊界；stack 無關恆載）；其餘知識型 skill 依 stack 解析注入（開發慣例、程式碼風格、元件拆分守則、測試框架用法；與 `/srun:feat` 同步） |
+| Coder | `srun:guidelines` | 自行從 available-skills 挑選 | `guidelines` 為行為守則（最小可行、外科手術式改動、自主判斷邊界；stack 無關恆載）；知識型 skill（開發慣例、程式碼風格、元件拆分守則、測試框架用法）由 Coder 自取 |
 
 ### Model 策略
 
@@ -74,13 +74,7 @@ Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` �
 
 宣告：「Tier 2 srun:fix：{問題摘要}」
 
-**Stack 偵測與 Coder Skills 解析**
-
-Orchestrator 依共用解析表（`feat` skill 目錄下的 `references/coder-skills-map.md`，自本 skill 目錄為 `${CLAUDE_SKILL_DIR}/../feat/references/coder-skills-map.md`；兩個 pipeline 同一張表，不走出不同風格）：
-
-1. 偵測 stack（規則見解析表）
-2. 取必載清單 ∩ 自身 context 的 available-skills，渲染 `{coderSkills}`（`srun:guidelines` 打頭＋該 stack 的 Coder 與 Tester 清單合併——Coder 兼寫測試；通用模式僅 `srun:guidelines`）
-3. 依問題描述和相關檔案判斷額外 skills（該 stack 節有預判表才做），過交集後寫入 `{additionalSkills}` 變數（含前導 `, `；無則留空）
+**進度曝光（原生 task 清單）**：用 TaskCreate 把本次步驟序列建成 harness task（Coder、條件性安全 review、註解整理、Spec 複核），每步 settle 即更新狀態，retry 或 BLOCKED 在對應 task 註記一句。
 
 ### Step 2: 建立工作分支
 
@@ -112,19 +106,15 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 4: 派發 Coder Agent（含測試職責）
 
-依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/` 下 `command-conventions.md` 與 `tester-conventions.md` 的**絕對路徑**分別代入 `{commandConventionsPath}` 與 `{testerConventionsPath}`。使用 Task tool 派發 subagent（model: {coderModel}）。模板展開規則：`{變數}` 以實際值替換；`{若...：}` 條件區塊成立時留內文、不成立整段刪除：
+依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/` 下 `command-conventions.md` 與 `tester-conventions.md` 的**絕對路徑**分別代入 `{commandConventionsPath}` 與 `{testerConventionsPath}`。使用 Task tool 派發 subagent（model: {coderModel}）。模板語法：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪：
 
 ```
 你是 Coder Agent，兼負本次修復的測試職責（Tier 2 不派獨立 Tester）。
 
 開始工作前：
-1. 用 Skill tool 載入以下 skills：{coderSkills}{additionalSkills}
-   （`srun:guidelines` 是寫 code 的行為守則，其餘為知識型；務必先讀 `guidelines` 再動手）
-   Skill 載入失敗（缺裝／改名）→ 略過該項繼續，不要停；`guidelines` 隨 srun 出貨恆在，其餘為 stack pack 選裝
+1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手），再從你 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入（開發慣例、程式碼風格、測試框架用法等）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 2. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、排除規則、執行節奏、輸出必含皆在其中；讀不到 → 停下回報）
 3. 讀取專案的 CLAUDE.md 了解專案慣例
-
-注意：若修復過程中發現需要用到上方未列出的 skill，可自行載入補充。
 
 問題描述：
 {從對話擷取的問題描述}
@@ -172,13 +162,13 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 6: 註解整理（Sonnet subagent）
 
-所有 gate settle 後（Coder，含條件性的 Step 5 安全 review）、Spec 輕量複核前，派發一次註解整理 Agent 清除本次修復累積的過時／思考流程／冗餘註解。
+所有 gate settle 後（Coder，含條件性的 Step 5 安全 review）、Spec 輕量複核前，orchestrator 先掃一眼本次 diff 的註解量：**明顯偏多（複述、敘述、開發過程類垃圾可見）才派發**註解整理 Agent；diff 乾淨就跳過本步，報告註明「跳過（diff 註解乾淨）」。
 
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次修改的檔案清單」（Coder 產出，含其所寫測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`
 - 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
-- 整理完成後 orchestrator **重跑測試**（專案 test script，如 `pnpm test`）作為安全網；失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
+- 整理完成後 orchestrator **重跑改動檔的 scoped 測試**作為安全網（誤刪指令註解由保護清單計數防守、手滑動到 code 由 scoped 測試接住，不需全量）；失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
 
 ### Step 7: Spec 輕量複核（commit 前）
 
@@ -198,7 +188,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ## Retry 迴路
 
-通用規格（一輪定義、不計輪、修復派發附帶物、免重讀、三件套 settle、升級模式）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 Tier 3 同一套，任一 gate 首次失敗進入迴路時先讀。
+通用規格（一輪定義、不計輪、修復派發附帶物、三件套 settle、升級模式）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 Tier 3 同一套，任一 gate 首次失敗進入迴路時先讀。
 
 本 tier 的 gate 迴路有二：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）。修復派發對象皆為 Coder（Tier 2 無獨立 Tester，測試檔亦歸 Coder 修）。
 
@@ -214,7 +204,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 ### Agent Pipeline 結果
 - Coder: ✓ 完成（N 個檔案，M 個測試通過／純樣式無新測試）
 - 安全 review: ✓ PASS（僅 {securityReview}=true 時列出）
-- 註解整理: ✓ 清除 X 處 / 改寫 Y 處（測試重跑通過）
+- 註解整理: ✓ 清除 X 處 / 改寫 Y 處（scoped 測試重跑通過）（或「跳過（diff 註解乾淨）」）
 
 ### Pipeline 統計
 - Coder 派發次數：{coderCalls}（含 retry）

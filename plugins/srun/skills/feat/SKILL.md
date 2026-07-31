@@ -16,12 +16,12 @@ Tier 3 完整版 Agent Pipeline，適用於需要設計決策的完整功能（�
 
 ### Agent Knowledge Skills
 
-Coder／Tester 的必載清單**不是固定的清單**，而是 orchestrator 派發前依 `${CLAUDE_SKILL_DIR}/references/coder-skills-map.md` 解析：偵測專案 stack → 取對應清單 ∩ orchestrator context 的 available-skills。偵測規則與各 stack 的具體清單見該表；通用模式下 Coder 只載 `guidelines`、Tester 不強制載知識型 skill。
+Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:guidelines`（行為守則，stack 無關、隨 srun 出貨恆載），其餘由 subagent 自行從自己 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入。慣例品質是否因此下滑，由 retro 數據觀察。
 
 | Agent | Skills（必載） | 可選 Skills | 用途 |
 |-------|---------------|------------|------|
-| Coder | `srun:guidelines` ＋依 stack 解析（見 `coder-skills-map.md`） | 由 orchestrator 根據 task 內容預判並寫入 prompt（依解析出的 stack 而定） | `guidelines` 為行為守則（最小可行、外科手術式改動、自主判斷邊界；stack 無關、隨 srun 出貨恆載）；其餘知識型 skill 依 stack 解析注入（開發慣例、程式碼風格、元件拆分守則） |
-| Tester | 依 stack 解析 | — | 測試框架用法、元件測試慣例（依 stack 解析） |
+| Coder | `srun:guidelines` | 自行從 available-skills 挑選 | `guidelines` 為行為守則（最小可行、外科手術式改動、自主判斷邊界）；知識型 skill（開發慣例、程式碼風格、元件拆分守則）由 Coder 依 stack 與 task 內容自取 |
+| Tester | — | 自行從 available-skills 挑選 | 測試框架用法、元件測試慣例由 Tester 自取 |
 | Reviewer | `review` | 改動含 UI 元件的畫面結構／樣式或純樣式檔時加 `web-design-guidelines` | Reviewer Opus subagent 使用；同時負責 code quality + 安全性 + 慣例 + spec alignment + 整合輸出 |
 | 操作流程驗證 | `verify-flow` | 需 claude-in-chrome 瀏覽器工具 | 觸及 UI/流程時才派發；真點擊走完 spec 流程，驗流程不斷 + spec 明文元件/位置 |
 
@@ -87,23 +87,17 @@ Coder／Tester 的必載清單**不是固定的清單**，而是 orchestrator �
 
 Retry 修復時，若修改涉及跨批共用的介面（如共用模組的回傳結構），orchestrator 應重跑受影響批次的測試。
 
-**Stack 偵測與 Coder Skills 解析**
+**驗證型 task 綁定 gate**
 
-Orchestrator 依 `${CLAUDE_SKILL_DIR}/references/coder-skills-map.md`：
+tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項目）**不派給 Coder 實作**——它們已由 pipeline 的對應 gate 覆蓋。將其綁定到對應 gate（畫面走查 → 操作流程驗證、完整性／review 類 → Reviewer、測試類 → Tester），該 gate 綠燈後由 orchestrator 代為勾掉並在該行註記「由 gate 覆蓋」；綁不上任何 gate 的驗證型 task 列入 Step 7 報告的人工驗收提示。
 
-1. 偵測專案 stack（規則見解析表）
-2. 取該 stack 的必載清單 ∩ 自身 context 的 available-skills，渲染成派發字串——`{coderSkills}`（Coder，`srun:guidelines` 打頭＋該 stack 清單；通用模式僅 `srun:guidelines`）與 `{testerSkills}`（Tester，該 stack 的 Tester 清單；通用模式留空）；推薦到但未裝的略過
-3. 依 tasks.md 內容判斷額外 skills（該 stack 節有預判表才做），同樣過交集後寫入 `{additionalSkills}` 變數（含前導 `, ` 分隔；無則留空）
+**Pipeline 進度曝光（原生 task 清單）**
+
+起跑時用 TaskCreate 把本次 gate 序列建成 harness task（Coder 各批次、Tester、Reviewer、操作流程驗證、註解整理），每個 gate settle 即更新狀態；retry 或 BLOCKED 在對應 task 註記一句。目的：人隨時看得到 pipeline 進行到哪，session 內中斷也有現成進度可續。
 
 **Coder Model 升級判定**
 
-Step 4 **首次**派發 Coder 前，下列任一條件成立則設 `{coderModel}` 為 `opus`，否則為 `sonnet`：
-
-- **架構變更 / 大型重構**：改動跨多個模組邊界，或修改既有公開 interface（共用模組回傳結構、store API、共用型別）
-- **安全敏感路徑**：改動觸及 auth、payment、API key 處理、session 管理（與 Step 6 adversarial 判定共用條件）
-- **設計決策密集**：design.md 將較多實作方式留給 Coder 自行決定，而非 spec 已寫死
-
-判定保守：只在「先驗上即可預期需要深度推理」時升 opus，一般功能（spec 已明確、單模組、無安全顧慮）維持 sonnet。
+Step 4 **首次**派發 Coder 前判定 `{coderModel}`：先驗上即可預期需要深度推理才升 `opus`——跨模組邊界的架構變更／大型重構、安全敏感路徑（auth、payment、API key 處理、session 管理；與 Step 6 adversarial 判定共用清單）、design.md 把較多實作方式留給 Coder 自行決定。其餘維持 `sonnet`，判定保守。
 
 Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 
@@ -119,13 +113,9 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 實作範圍：{taskList}（若為分批模式，僅列本批 task）
 
 開始工作前：
-1. 用 Skill tool 載入以下 skills：{coderSkills}{additionalSkills}
-   （`srun:guidelines` 是寫 code 的行為守則，其餘為知識型；務必先讀 `guidelines` 再動手）
-   Skill 載入失敗（缺裝／改名）→ 略過該項繼續，不要停；`guidelines` 隨 srun 出貨恆在，其餘為 stack pack 選裝
+1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手），再從你 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入（開發慣例、程式碼風格、元件拆分守則等）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 2. 讀取專案的 CLAUDE.md 了解專案慣例
 3. 讀取變更目錄下的 design.md、tasks.md 和 specs/ 下的 delta spec 檔案
-
-注意：若實作過程中發現需要用到上方未列出的 skill，可自行載入補充。
 
 依照指定的 task 逐項實作：
 - 遵循專案設計系統與慣例
@@ -159,8 +149,7 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 {coderTestFiles，無則寫「無」}
 
 開始工作前：
-1. 用 Skill tool 載入以下 skills：{testerSkills}
-   Skill 載入失敗（缺裝／改名）→ 略過該項繼續，不要停（stack pack 選裝；通用模式下本行可能為空，依測試框架自行運用）
+1. 從你 context 的 available-skills 挑選與本專案測試框架／stack 相關的知識型 skill 載入（無合適項就不載）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 2. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、排除規則、框架專屬測試策略、執行指令、輸出必含皆在其中；讀不到 → 停下回報）
 3. 讀取變更目錄下的 specs/ 目錄（了解預期行為的 scenarios）
 4. 讀取變更目錄下的 design.md（了解設計意圖，使測試貼近實作決策而非僅驗表面行為）
@@ -216,12 +205,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 ### Step 6.5: 操作流程驗證（Sonnet subagent，觸及 UI/流程時才跑）
 
-**觸發判斷**（本步驟自己的信號，與 Step 6 的 `web-design-guidelines` 偵測信號不同——後者含純樣式改動，本步驟不含）：
-
-- **派發**：改動含 UI 元件的畫面結構變更，或有頁面 / 路由 / 互動流程變更
-- **派發（OR 條件——無法測試清單的消費者）**：Tester 的「無法測試的模組清單」非空、且模組被頁面使用（orchestrator grep 模組名稱於頁面／元件原始碼，一條指令）→ 即使按上述檔案類型本會跳過（如純邏輯模組改動）也**強制派發**，並把 grep 命中的受影響頁面清單注入 prompt 做 targeted 驗證——讓 Tester 的警訊有人接
-- **跳過**：純後端 / 純邏輯改動（且不觸發上述 OR 條件）→ 直接進 Step 6.7 註解整理
-- **跳過**：**純樣式 changeset**（只動元件內樣式或純樣式檔）→ 不觸發本步驟——樣式改動驗不出「流程斷裂」這類信號，UI/UX 面向交給 Step 6 Reviewer 的 `web-design-guidelines` 把關
+**觸發判斷**：改動觸及使用者流程（畫面結構、頁面／路由、互動）才派發；純後端、純邏輯、純樣式改動跳過（樣式驗不出流程斷裂，UI/UX 面向由 Step 6 Reviewer 把關）。例外：Tester 的「無法測試的模組清單」有模組被頁面使用時，即使純邏輯改動也**強制派發**，並把受影響頁面清單注入 prompt 做 targeted 驗證——讓 Tester 的警訊有人接（怎麼確認模組被哪些頁面使用，自行判斷）。
 
 **與 Reviewer 的關係（序列，不平行）**：統一原則——**靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（本步驟）永遠壓軸，驗的必是最終 code**。Step 6 Reviewer 迴路**完全 settle**（含 targeted re-check 通過）後才派發本步驟，故本步驟的 PASS 不會過期。本步驟 FAIL 的修復走完整靜態關卡後才 targeted re-run（見 Retry 迴路）。
 
@@ -242,13 +226,13 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 ### Step 6.7: 註解整理（Sonnet subagent）
 
-Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 gate 已綠（PASS 或因工具未就緒而跳過）後、報告結果前，派發一次註解整理 Agent，清除本次 Pipeline 累積的過時／疊加／思考流程註解。
+Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 gate 已綠（PASS 或因工具未就緒而跳過）後、報告結果前，orchestrator 先掃一眼本次 diff 的註解量：**明顯偏多（複述、敘述、開發過程類垃圾可見）才派發**註解整理 Agent；diff 乾淨就跳過本步，報告註明「跳過（diff 註解乾淨）」。
 
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次 Pipeline 修改的檔案清單」（即 Coder 各批產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`，subagent 不需自行偵測 diff
 - 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
-- 整理完成後，**orchestrator 重跑一次測試**（專案 test script，如 `pnpm test`）作為安全網——失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人。測試驗不到的 build-time pragma 誤刪由 `comment` 的保護清單計數防守
+- 整理完成後，**orchestrator 重跑改動檔的 scoped 測試**作為安全網——純註解改動的風險面就兩種：誤刪指令註解由 `comment` 的保護清單計數防守、手滑動到 code 由 scoped 測試接住，不需全量。失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
 
 整理後**不需**重跑 Opus Reviewer 或操作流程驗證（純註解改動不動 code 邏輯）；ESLint + 測試即為安全網。
 
@@ -266,7 +250,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 ### 通用規格（feat／fix 共用）
 
-見 `${CLAUDE_SKILL_DIR}/references/retry-loop.md`（一輪定義、不計輪、修復派發附帶物、免重讀、三件套 settle、升級模式）：任一 gate 首次失敗進入迴路時先讀。
+見 `${CLAUDE_SKILL_DIR}/references/retry-loop.md`（一輪定義、不計輪、修復派發附帶物、三件套 settle、升級模式）：任一 gate 首次失敗進入迴路時先讀。
 
 ### feat 補充規格
 
@@ -314,7 +298,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - Tester: ✓ 通過（M 個測試）
 - Reviewer: ✓ PASS
 - 操作流程驗證: ✓ PASS（或「跳過（未觸及 UI）」/「跳過（claude-in-chrome 未就緒，請人工驗證）」）
-- 註解整理: ✓ 清除 X 處 / 改寫 Y 處（測試重跑通過）
+- 註解整理: ✓ 清除 X 處 / 改寫 Y 處（scoped 測試重跑通過）（或「跳過（diff 註解乾淨）」）
 
 ### Pipeline 統計
 - 分批：{batchCount} 批（或「單批」）
