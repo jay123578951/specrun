@@ -57,12 +57,11 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 
 **`.claude/debug/` lazy cleanup（備援）**：掃 `.claude/debug/` 目錄，凡對應的 `openspec/changes/<name>/` 已不存在者（change 已歸檔或放棄）刪除其殘留檔；change 仍在者不刪——那可能是上次中斷要接手的線索。
 
-### Step 2.5: 建立工作分支
+### Step 2.5: 基準分支與工作分支
 
-確認當前 git 分支狀態：
+判定基準分支 `{baseBranch}`（`git symbolic-ref refs/remotes/origin/HEAD`；偵測不到看本地主幹慣例，fallback `main`），供後續步驟使用（Reviewer 派發的 diff 基準等）。
 
-- 若在 `main`、`develop` 等主要分支上 → `git checkout -b feat/{changeName}`
-- 若已在功能分支上 → 跳過
+分支策略依專案慣例判斷（git 歷史與 CLAUDE.md），需開分支時命名 `feat/{changeName}`；慣例看不出來時預設開分支。
 
 ### Step 3: 評估任務規模與分批策略
 
@@ -93,7 +92,7 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 
 **Pipeline 進度曝光（原生 task 清單）**
 
-起跑時用 TaskCreate 把本次 gate 序列建成 harness task（Coder 各批次、Tester、Reviewer、操作流程驗證、註解整理），每個 gate settle 即更新狀態；retry 或 BLOCKED 在對應 task 註記一句。目的：人隨時看得到 pipeline 進行到哪，session 內中斷也有現成進度可續。
+harness 有原生 task 工具（TaskCreate）時，起跑時把本次 gate 序列建成 harness task（Coder 各批次、Tester、Reviewer、操作流程驗證、註解整理），每個 gate settle 即更新狀態；retry 或 BLOCKED 在對應 task 註記一句。目的：人隨時看得到 pipeline 進行到哪，session 內中斷也有現成進度可續。
 
 **Coder Model 升級判定**
 
@@ -209,7 +208,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **與 Reviewer 的關係（序列，不平行）**：統一原則——**靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（本步驟）永遠壓軸，驗的必是最終 code**。Step 6 Reviewer 迴路**完全 settle**（含 targeted re-check 通過）後才派發本步驟，故本步驟的 PASS 不會過期。本步驟 FAIL 的修復走完整靜態關卡後才 targeted re-run（見 Retry 迴路）。
 
-**前置**：orchestrator 確保 dev server 正在跑（或在 prompt 告知啟動方式）；功能在登入牆後時，提供「已驗證入口」（dev session / seeded cookie / auth bypass），或（登入本身是被測流程時）測試帳號。
+**前置**：orchestrator 確保被驗的 dev server 跑的是本次 code（長跑中的舊實例會報假 PASS），必要時另起、驗完關閉，不動使用者既有的實例；把實際 URL 告知 agent。功能在登入牆後時，提供「已驗證入口」（dev session / seeded cookie / auth bypass），或（登入本身是被測流程時）測試帳號。
 
 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**。載入 `srun:verify-flow` skill，由其 subagent prompt 模板驅動；orchestrator 注入：變更名稱、app URL / 啟動方式、驗收依據（`openspec/changes/{changeName}/specs/`）、已知的重點元件 / 位置、必要時的已驗證入口或測試帳密。判準、輸出格式、preflight、登入牆與反 rabbit-hole 規則皆見 `verify-flow` skill，此處不重複。
 
@@ -264,8 +263,12 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 |----------|------|-------------|
 | 測試 | Coder（判斷屬測試問題 → 走申辯通道） | 三件套全綠即 settle，**不重派 Tester**——修復後防的是機械回歸，跑套件即可；Tester 的獨立價值在首輪設計測試 |
 | Review FAIL（有 CRITICAL） | 依歸屬：實作代碼 → Coder、測試代碼 → Tester；嚴重安全問題 → 直接停下來問人（認為 finding 不成立 → 走 review-finding 申辯通道） | 重派 Opus Reviewer |
-| Review PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（認為 finding 不成立 → 走 review-finding 申辯通道） | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
+| Review PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（SUGGESTION 併入方式見下方處置；認為 finding 不成立 → 走 review-finding 申辯通道） | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
 | 操作流程驗證 FAIL | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 完整靜態關卡再壓軸重驗：三件套 → Sonnet targeted re-check（只審修復 diff）→ **verify-flow targeted re-run**（只重走受影響流程） |
+
+歸屬 `spec`（規格 artifact 內容本身的問題，見 `review` 的歸屬定義）的 finding，FAIL 與 WARNING 同一路由：**決策級**（需推翻 design 決策或改變規格語意）→ 直接停下來問人，不進 Coder retry；**機械級**（殘留、漏掃、跨載體同步遺漏）→ 派 Coder 修 artifact 檔案，照常計輪。
+
+**SUGGESTION 處置**：只在 Reviewer **最終報告**處理一次：有 WARNING 修復批就併入同批，沒有（PASS 乾淨）則單獨派一次收尾批；同樣走 targeted re-check，**不計輪**、不影響 verdict。Coder 對會擴 scope 或推翻既定取捨的項目回報不修並附理由，其餘修完。
 
 操作流程驗證的 BLOCKED（工具未就緒 → 跳過退回人工驗收；環境／登入牆 → 問人）與 flaky 標註不進迴路、不計輪（見 Step 6.5）。
 
@@ -312,7 +315,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 ### 下一步
 進入 Phase 3 人工驗收。請啟動 dev server 測試功能。
 驗收通過後，依專案後端執行（SessionStart 交界圖已標明後端）：
-- openspec：/opsx:verify → /opsx:sync → /opsx:archive
+- openspec：/opsx:sync → /opsx:archive
 - spectra：/spectra-verify → /spectra-archive（spectra 無 sync 對應）
 ```
 

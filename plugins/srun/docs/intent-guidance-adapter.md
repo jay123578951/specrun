@@ -25,7 +25,7 @@
 | 實作（交界 3，前置：人工審過 spec） | `/srun:feat` | `/srun:feat` | — |
 | 規格層問題（交界 4b，岔路） | `/spectra-ingest` | 先更新 spec 再處理 | — |
 | 實作層小問題（交界 4b） | `/srun:fix` | `/srun:fix` | — |
-| 收尾（驗收通過） | `/spectra-archive`（一步） | `/opsx:verify` → `/opsx:sync` → `/opsx:archive`（打包宣告一次） | — |
+| 收尾（驗收通過） | `/spectra-archive`（一步） | `/opsx:sync` → `/opsx:archive`（打包宣告一次） | — |
 | 回顧（archive 完，順帶一句） | `/srun:retro` | `/srun:retro` | — |
 
 分級支援：spectra 行為主線一級公民（考卷與 dogfood 全覆蓋）；openspec 行 best-effort（措辭保證正確、不主動驗證）。`spectra-debug`／`spectra-apply` 原則性不進選項（前者繞過診斷停點、後者被 `/srun:feat` 取代），escape hatch 手動可用。

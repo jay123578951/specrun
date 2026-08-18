@@ -27,7 +27,7 @@ description: Use when reviewing code changes for quality, security, and project 
 ```
 /srun:review                     → 自動偵測：git diff 未 commit 的變更
 /srun:review --staged            → 只看 staged changes
-/srun:review --branch feat/xxx   → 整個 branch 相對 main 的 diff
+/srun:review --branch feat/xxx   → 整個 branch 相對基準分支的 diff
 /srun:review --change xxx        → 讀取 OpenSpec 變更 artifact 作為 review 基準
 ```
 
@@ -40,10 +40,11 @@ description: Use when reviewing code changes for quality, security, and project 
 ### Step 1: 準備
 
 1. 讀取專案的 CLAUDE.md 了解專案慣例
-2. 依 review 模式確認變更範圍：
+2. 判定基準分支 `{baseBranch}`：呼叫方（`feat`／`fix`）已注入則沿用；獨立使用時以 `git symbolic-ref refs/remotes/origin/HEAD` 偵測，偵測不到 fallback `main`
+3. 依 review 模式確認變更範圍：
    - 自動偵測：`git diff` + `git diff --staged`
    - `--staged`：`git diff --staged`
-   - `--branch`：`git diff main...<branch>`
+   - `--branch`：`git diff {baseBranch}...<branch>`
    - `--change`：讀取 `openspec/changes/<name>/` 下的所有 artifacts
 
 ### Step 2: 判斷是否升級為 adversarial 模式
@@ -114,8 +115,8 @@ Scope：{auto | staged | branch:<name> | change:<changeName>}
 2. 取得變更內容：
    - auto: `git diff` 與 `git diff --staged`
    - staged: `git diff --staged`
-   - branch: `git diff main...<branch>`
-   - change: 先讀取 openspec/changes/{changeName}/ 下的 proposal.md、design.md、tasks.md、specs/ 全部 artifacts，再讀取 git diff（working tree 對 main）
+   - branch: `git diff {baseBranch}...<branch>`
+   - change: 先讀取 openspec/changes/{changeName}/ 下的 proposal.md、design.md、tasks.md、specs/ 全部 artifacts，再讀取 git diff（working tree 對 {baseBranch}）
 3. 讀取被修改的檔案：
    - 預設：所有改動檔案讀完整內容（不只看 diff，需要 context 才能判斷重複邏輯、過度抽象、結構性問題）
    - 改動大到一次讀不下時，優先完整讀結構性改動最大的檔案，其餘只看 diff 與函式定義列表（自行拿捏，見 context budget 守則）
@@ -204,17 +205,18 @@ Grounding rules：
 嚴重度定義：
 - CRITICAL：會導致功能錯誤、安全漏洞、或資料遺失 → 必須修復
 - WARNING：違反專案慣例、影響可維護性、或潛在風險 → 需要修復
-- SUGGESTION：可改善但不影響正確性 → 僅記錄
+- SUGGESTION：可改善但不影響正確性 → 不影響 verdict 與計輪；如何消費由呼叫方定義（`feat` 內為最終報告後收尾修復，獨立使用時僅記錄）
 
 歸屬：
 - coder：實作代碼問題
 - tester：測試代碼問題
+- spec：規格 artifact 內容本身的問題（delta 與來源規格矛盾、artifact 之間互相矛盾、design 決策與 baseline spec 衝突）——非「實作或測試未對齊規格」（那是 coder／tester）
 
 按嚴重度排序（CRITICAL → WARNING）。
 
 ### SUGGESTION
 
-（僅記錄，不要求修復）
+（不影響 verdict 與計輪；pipeline 內由呼叫方依其規範消費，獨立使用時僅記錄）
 
 - foo.vue:15 — ...
 - bar.ts:30 — ...

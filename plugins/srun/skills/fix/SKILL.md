@@ -9,7 +9,7 @@ Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨�
 與 `/srun:feat`（Tier 3）的差異：
 - 不建立新的變更 artifact — 需求從對話定案取得（場景 (ii) 可回寫**既有** change artifact，見下方）
 - 只派發 Coder（測試由 Coder 自寫，不派獨立 Tester 與 Reviewer）
-- Spec 同步走「派發前 Spec 影響判斷＋commit 前輕量複核」（非完整 change 歸檔流程，如 /opsx:verify / sync / archive）
+- Spec 同步走「派發前 Spec 影響判斷＋commit 前輕量複核」（非完整 change 歸檔流程，如 /opsx:sync / archive）
 
 **Input**: 對話中已描述問題或需求。未描述清楚時，先釐清再啟動。
 
@@ -74,14 +74,11 @@ Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` �
 
 宣告：「Tier 2 srun:fix：{問題摘要}」
 
-**進度曝光（原生 task 清單）**：用 TaskCreate 把本次步驟序列建成 harness task（Coder、條件性安全 review、註解整理、Spec 複核），每步 settle 即更新狀態，retry 或 BLOCKED 在對應 task 註記一句。
+**進度曝光（原生 task 清單）**：harness 有原生 task 工具（TaskCreate）時，把本次步驟序列建成 harness task（Coder、條件性安全 review、註解整理、Spec 複核），每步 settle 即更新狀態，retry 或 BLOCKED 在對應 task 註記一句。
 
 ### Step 2: 建立工作分支
 
-確認當前 git 分支狀態：
-
-- 若在 `main`、`develop` 等主要分支上 → `git checkout -b fix-<描述>`
-- 若已在功能分支上 → 跳過（場景 ii 通常已在該 change 的功能分支上）
+分支策略依專案慣例判斷（git 歷史與 CLAUDE.md），需開分支時命名 `fix-<描述>`；慣例看不出來時預設開分支（場景 ii 通常已在該 change 的功能分支上，直接沿用）。
 
 ### Step 3: Spec 影響判斷（spec-first，派發前）
 

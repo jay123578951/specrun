@@ -55,7 +55,7 @@ MAP
 - propose 完 → 確認使用者已人工審過 proposal，再跑 /srun:feat
 - feat 完 → 把 spec 驗收點攤成清單，交人工驗收
 - 驗收發現問題、或診斷根因確認 → 跳選項：規格層問題（先更新 spec 再處理）｜實作層小問題（/srun:fix）｜瑣碎（對話直改）
-- 驗收通過 → 打包宣告一次，依序 /opsx:verify → /opsx:sync → /opsx:archive；archive 完順帶提一句 /srun:retro
+- 驗收通過 → 打包宣告一次，依序 /opsx:sync → /opsx:archive；archive 完順帶提一句 /srun:retro
 - pipeline／skill 流程內部 → 靜默，流程自身紀律優先
 MAP
     ;;

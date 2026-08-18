@@ -40,6 +40,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 | `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
 | `security_review` | W4 安全 review 被觸發（記結果） |
 | `untestable_modules` | 無法測試清單非空（feat=Tester、fix=Coder 回報；記模組數與消費路徑：verify-flow OR 觸發／報告行） |
+| `artifact_drift` | tasks／design／proposal 記載與現場不符（指名檔案不存在、驗收判準與既有規格或測試衝突、驗證方法實測不可執行、量測數字失準）；記不符類型與處置（自行對正／回報問人／照字面硬做） |
 | `guidance_miss` | 入口／交界引導漏接：意圖已浮現卻未宣告、未跳選項、該進流程卻就地處理，或 AI 越線動手（記漏在哪個交界、當時句式） |
 | `guidance_false_trigger` | 引導誤觸發：純討論或三錨全中的小改被宣告制帶進流程（使用者以 escape hatch 撤回＝行為實錘；撤回率是誤觸發的下界——容忍型不撤回，量不到）、被逼問模式（記觸發位置與當時語境） |
 | `guidance_hit` | 引導正確出現且被採用：宣告制進線未撤回，或選項被採納（記交界與去向，含帶入的 change 名或新題目）——漏接率的分母，沒有它只有分子算不出率；掛錯 change 先記 observations，再犯升格 |
