@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.25.0 — 2026-08-19
+
+Pipeline 迴路補洞與收尾流程調整。新增的規範沿用 0.24.0 刪減判準：只寫模型推不出來的結構資訊與護欄，可自行判斷的（分支策略、達成手段）放權；同批新增條文經逐項精簡後落地，約砍半。
+
+### Changed
+
+- **收尾流程移除 /opsx:verify**（adapter、intent-guidance.sh、`feat` 報告模板）：openspec 後端收尾改為 `/opsx:sync` → `/opsx:archive` 兩步。
+- **verify-flow 前置不變量化**（`skills/feat/SKILL.md` Step 6.5）：規則從「另起乾淨 dev server 實例」改寫為不變量「確保被驗的 server 跑的是本次 code（舊實例會報假 PASS）」，達成手段由 orchestrator 自行判斷；驗完關閉自起實例、不動使用者既有 server 的衛生規則保留。
+- **分支策略放權專案慣例**（`feat` Step 2.5、`fix` Step 2）：砍掉主幹判斷枚舉，改一句「依 git 歷史與 CLAUDE.md 判斷，慣例看不出來時預設開分支」，只保留分支命名約定。
+- **基準分支去寫死**（`review`、`feat`）：`main` 改為 `{baseBranch}`，feat Step 2.5 以 `git symbolic-ref` 偵測後注入，review 獨立使用時自行偵測。
+- **Pipeline 進度曝光條件化**（`feat`、`fix`）：TaskCreate 改為 harness 有此工具才建 task 清單。
+
+### Added
+
+- **review spec 歸屬**（`review`、`feat`）：finding 歸屬新增 `spec`（規格 artifact 內容本身的問題）；feat retry 路由分決策級（停下來問人）與機械級（派 Coder 修 artifact、照常計輪）。
+- **SUGGESTION 處置**（`review`、`feat`）：SUGGESTION 不影響 verdict 與計輪，消費方式由呼叫方定義；feat 內只在 Reviewer 最終報告處理一次，併入 WARNING 修復批或單獨收尾批，Coder 可拒修擴 scope 項目。
+- **機制型 finding 同型排查**（`retry-loop.md`）：同一機制多處出現的 finding，修復指示須要求排查本次 diff 內的同構位置並一次修完。
+- **task 前提實質矛盾停止條件**（`guidelines`）：artifact 記載與現場不符且照字面做會做錯 → 回報不硬做；筆誤級（正確對應唯一明確）自行對正並記入設計決策摘要。
+- **retro `artifact_drift` 訊號**：記錄 tasks／design／proposal 與現場不符的類型與處置。
+- **verify-flow SPA 導覽提醒**：SPA 內優先用畫面連結按鈕移動，網址列 navigate 會整頁重整、可能重置前置狀態。
+
 ## 0.24.0 — 2026-07-31
 
 設計哲學調整：模型的進步把 kit 的價值從「知識層」擠到「結構層」。教模型怎麼判斷的條文（預判表、程序教學、成本細則）放權給模型自行判斷；保留模型自己給不了自己的東西——context 隔離、verdict 與停損紀律、資訊流邊界、機械不變量。刪減判準：刪一條規則前問「這種失敗會被哪個機械 gate 接住」，接得住的條文即冗餘。
