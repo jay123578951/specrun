@@ -36,7 +36,7 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 | `flaky` | verify-flow 標記 flaky |
 | `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆／工具能力不足） |
 | `scope_exceeded` | G7 規模超標回報（路由誤判實錘——`docs/routing-cases.md` 新題候選） |
-| `acceptance_fix` | Tier 2 場景 (ii) 驗收修正 |
+| `acceptance_fix` | `fix` 場景 (ii) 驗收修正 |
 | `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
 | `security_review` | W4 安全 review 被觸發（記結果） |
 | `untestable_modules` | 無法測試清單非空（feat=Tester、fix=Coder 回報；記模組數與消費路徑：verify-flow OR 觸發／報告行） |

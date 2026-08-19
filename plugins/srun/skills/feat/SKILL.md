@@ -1,12 +1,12 @@
 ---
 name: feat
 argument-hint: "[change-name]"
-description: Tier 3 完整 Pipeline — 實作完整功能、大型重構、架構變更，或需要 spec 記錄的變更（新增 API/元件、行為值得規格化、決策分支多、需拆批；通常 5+ 檔或跨模組，檔案數僅輔助訊號）時使用；前提是已有 OpenSpec change（openspec/changes/<name>/ 含 tasks.md）。決策已在對話收斂的小改動改用 fix。
+description: 完整 Pipeline：實作完整功能、改變模組邊界的重構（抽出共用介面、調整依賴方向）、架構變更，或需要 spec 記錄的變更時使用；需 spec 記錄＝新增 API/元件（介面契約本身即規格，與行為簡繁無關）、行為值得規格化、決策收斂成本高（分支彼此相依，一題的答案會改變另一題的選項）、需拆批。決策已在對話收斂且不動模組邊界的小改動改用 fix。
 ---
 
-Tier 3 完整版 Agent Pipeline，適用於需要設計決策的完整功能（新功能、大型重構、架構變更）。透過 OpenSpec 變更 artifact 驅動，派發三個專職 agent 分工執行。
+完整版 Agent Pipeline，適用於需要設計決策的完整功能（新功能、改變模組邊界的重構、架構變更）。透過 OpenSpec 變更 artifact 驅動，派發三個專職 agent 分工執行。
 
-小改動請改用 `/srun:fix`（Tier 2）。
+小改動請改用 `/srun:fix`（輕量版）。
 
 **Input**: 可選指定變更名稱（e.g., `/srun:feat add-auth`）。未指定時從對話推斷或提示選擇。
 

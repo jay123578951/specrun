@@ -48,5 +48,5 @@ Orchestrator 宣告阻塞時展開。`{變數}` 以實際值替換；debug 檔�
 
 ### 選項
 feat：1. 人工介入修復 2. 調整 spec/design 後重跑 3. 其他
-fix： 1. 人工介入修復 2. 重新描述問題後重跑 3. 升級為 Tier 3（建立 OpenSpec change，走 /srun:feat）
+fix： 1. 人工介入修復 2. 重新描述問題後重跑 3. 升級走完整 Pipeline（建立 OpenSpec change，走 /srun:feat）
 ```

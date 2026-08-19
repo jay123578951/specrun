@@ -1,12 +1,12 @@
 ---
 name: fix
 argument-hint: "[問題描述]"
-description: Tier 2 輕量 Pipeline — 決策已在對話收斂、且不需建立新的 OpenSpec artifact 的小改動時使用（跨檔案 bug 修復、小型 UI 調整、小型模組微調、進行中 change 的驗收修正；檔案數僅為輔助訊號）。需要 spec 記錄（新增 API/元件、行為值得規格化）、決策分支多或需拆批改用 feat；單行/純樣式微調直接在對話改即可。
+description: 輕量 Pipeline：決策已在對話收斂、不動模組邊界、且不需建立新的 OpenSpec artifact 的小改動時使用（跨檔案 bug 修復、小型 UI 調整、模組微調、進行中 change 的驗收修正）。需要 spec 記錄（新增 API/元件、行為值得規格化）、改變模組邊界、決策收斂成本高（分支彼此相依）或需拆批改用 feat；單行/純樣式微調直接在對話改即可。
 ---
 
-Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨執行、快速人工驗證」的執行品質層**，「設計我來、執行你來、驗收我來」分工的載體。
+輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨執行、快速人工驗證」的執行品質層**，「設計我來、執行你來、驗收我來」分工的載體。
 
-與 `/srun:feat`（Tier 3）的差異：
+與 `/srun:feat`（完整版）的差異：
 - 不建立新的變更 artifact — 需求從對話定案取得（場景 (ii) 可回寫**既有** change artifact，見下方）
 - 只派發 Coder（測試由 Coder 自寫，不派獨立 Tester 與 Reviewer）
 - Spec 同步走「派發前 Spec 影響判斷＋commit 前輕量複核」（非完整 change 歸檔流程，如 /opsx:sync / archive）
@@ -21,16 +21,16 @@ Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨�
 
 | 判準 | 走向 |
 |------|------|
-| 決策已在對話收斂 ＋ 不需建立**新的** OpenSpec artifact | **Tier 2（本 skill）** |
-| 需要 spec 記錄（新增 API/元件、行為值得規格化）、決策分支多到需完整收斂流程、或變更需拆批 | Tier 3（`/srun:feat`） |
-| 瑣碎微調（單行修正、純樣式、文案） | Tier 1（主對話直改） |
+| 決策已在對話收斂 ＋ 不動模組邊界 ＋ 不需建立**新的** OpenSpec artifact | **本 skill（`/srun:fix`）** |
+| 需要 spec 記錄（新增 API/元件，介面契約本身即規格）、改變模組邊界（抽出共用介面、調整依賴方向）、決策收斂成本高（分支彼此相依）需完整收斂流程、或變更需拆批 | `/srun:feat` |
+| 瑣碎微調（單行修正、純樣式、文案） | 主對話直改 |
 
-**微決策路徑**：需求帶著 1-2 個未定小決策時，不必升 Tier 3——在對話中把這幾題收斂定案後即可派發。判斷軸是「決策是否已收斂」，不是「有沒有做過決策」。
+**微決策路徑**：需求帶著 1-2 個彼此獨立的未定小決策時，不必升 `/srun:feat`——在對話中把這幾題收斂定案後即可派發。判斷軸是「決策是否已收斂」，不是「有沒有做過決策」。
 
 **兩種進入場景**：
 
 1. **場景 (i) 獨立小功能／改動**：主對話討論定案後派發。
-2. **場景 (ii) 進行中 change 的驗收修正**：Tier 3 人工驗收發現的問題，不大到重跑 `/srun:feat`、但有決策且要執行品質。此場景當作全新的 Tier 2 run 起跑——不繼承 Tier 3 的 retry 次數或已升級的 model（Coder 從 sonnet 重起，升級條件照常適用）。
+2. **場景 (ii) 進行中 change 的驗收修正**：`/srun:feat` 人工驗收發現的問題，不大到重跑 `/srun:feat`、但有決策且要執行品質。此場景當作全新的 `fix` run 起跑——不繼承 `feat` 的 retry 次數或已升級的 model（Coder 從 sonnet 重起，升級條件照常適用）。
 
 ---
 
@@ -52,10 +52,10 @@ Tier 2 輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨�
 | 安全 review（條件性，見 Step 5） | opus（adversarial） |
 | 註解整理 | sonnet |
 
-Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
+Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
 
-- **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發 Step 5 安全 review——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（Tier 2 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 Tier 2，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
-- **Retry 動態升級**：升級模式與 Tier 3 同一套，見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`
+- **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發 Step 5 安全 review——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（本 skill 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 `fix`，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
+- **Retry 動態升級**：升級模式與 `/srun:feat` 同一套，見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`
 
 判定保守。一般小改動維持 sonnet。
 
@@ -72,7 +72,7 @@ Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` �
 3. **可能影響的檔案**：根據問題描述搜尋定位
 4. **場景判定**：獨立小功能／改動（場景 i），或進行中 change 的驗收修正（場景 ii——記下 change 名稱，供 Step 3 讀取該 change 的 artifacts）
 
-宣告：「Tier 2 srun:fix：{問題摘要}」
+宣告：「srun:fix：{問題摘要}」
 
 **進度曝光（原生 task 清單）**：harness 有原生 task 工具（TaskCreate）時，把本次步驟序列建成 harness task（Coder、條件性安全 review、註解整理、Spec 複核），每步 settle 即更新狀態，retry 或 BLOCKED 在對應 task 註記一句。
 
@@ -97,7 +97,7 @@ Coder 預設 sonnet。Tier 2 為決策已收斂的小改動，故 `/srun:feat` �
 3. 更新後的 spec 段落作為驗收依據注入 Coder 派發 prompt（見 Step 4）
 ```
 
-判斷中若發現其實需要**新的** spec（新增 API/元件、行為值得規格化）→ 這不是 Tier 2 該做的事，停下建議升 Tier 3。
+判斷中若發現其實需要**新的** spec（新增 API/元件、行為值得規格化）→ 這不是本 skill 該做的事，停下建議升 `/srun:feat`。
 
 Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 commit 交付（SDD 不變量）。
 
@@ -106,7 +106,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/` 下 `command-conventions.md` 與 `tester-conventions.md` 的**絕對路徑**分別代入 `{commandConventionsPath}` 與 `{testerConventionsPath}`。使用 Task tool 派發 subagent（model: {coderModel}）。模板語法：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪：
 
 ```
-你是 Coder Agent，兼負本次修復的測試職責（Tier 2 不派獨立 Tester）。
+你是 Coder Agent，兼負本次修復的測試職責（本流程不派獨立 Tester）。
 
 開始工作前：
 1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手），再從你 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入（開發慣例、程式碼風格、測試框架用法等）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
@@ -147,11 +147,11 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 **Coder 回報測試修不掉／settle 後測試仍紅時**：進入 Retry 迴路（見下方）。
 
-**無法測試清單的消費者（Tier 2 報告行）**：Coder 回報的「無法測試的模組清單」非空、且模組被頁面使用時（grep 模組名稱於頁面／元件原始碼，一條指令），把**受影響頁面清單寫進完成報告的「人工確認提示」段**（例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」）。Tier 2 **不派** verify-flow——洞的本質是「人工確認時不知道爆炸半徑」，給人 grep 清單即補上資訊差，要看多細由人決定。
+**無法測試清單的消費者（報告行）**：Coder 回報的「無法測試的模組清單」非空、且模組被頁面使用時（grep 模組名稱於頁面／元件原始碼，一條指令），把**受影響頁面清單寫進完成報告的「人工確認提示」段**（例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」）。本流程 **不派** verify-flow——洞的本質是「人工確認時不知道爆炸半徑」，給人 grep 清單即補上資訊差，要看多細由人決定。
 
 ### Step 5: 安全 review（`{securityReview}=true` 時才跑，adversarial Opus）
 
-改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder settle 後、註解整理之前，自動補派一次 **adversarial Opus review**——與 Tier 3 同款訊號同款待遇。安全殺傷力與改動行數無關（兩行 session 邏輯的爆炸半徑可大於二十檔 UI 重構）；分級管的是流程重量，不該分掉安全底線。
+改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder settle 後、註解整理之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。安全殺傷力與改動行數無關（兩行 session 邏輯的爆炸半徑可大於二十檔 UI 重構）；分級管的是流程重量，不該分掉安全底線。
 
 - Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
 - **FAIL 的修復走完整靜態關卡**：Coder 修 → settle 前自跑三件套（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。計數與上限沿用下方 Retry 迴路（各 gate 最多 3 輪，達上限停下來問人）；嚴重安全問題 → 直接停下來問人
@@ -185,9 +185,9 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ## Retry 迴路
 
-通用規格（一輪定義、不計輪、修復派發附帶物、三件套 settle、升級模式）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 Tier 3 同一套，任一 gate 首次失敗進入迴路時先讀。
+通用規格（一輪定義、不計輪、修復派發附帶物、三件套 settle、升級模式）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 `/srun:feat` 同一套，任一 gate 首次失敗進入迴路時先讀。
 
-本 tier 的 gate 迴路有二：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）。修復派發對象皆為 Coder（Tier 2 無獨立 Tester，測試檔亦歸 Coder 修）。
+本流程的 gate 迴路有二：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）。修復派發對象皆為 Coder（本流程無獨立 Tester，測試檔亦歸 Coder 修）。
 
 ---
 
@@ -196,7 +196,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 ### 完成
 
 ```
-## Tier 2 完成：{問題摘要}
+## srun:fix 完成：{問題摘要}
 
 ### Agent Pipeline 結果
 - Coder: ✓ 完成（N 個檔案，M 個測試通過／純樣式無新測試）

@@ -1,6 +1,6 @@
 # Retry 迴路通用規格（feat／fix 共用）
 
-兩個 tier 共用的迴路規則，gate 首次失敗進入迴路時讀取；各 pipeline 的 gate 差異（誰修、修完重驗什麼）與申辯通道見各自 SKILL.md。
+`feat`／`fix` 共用的迴路規則，gate 首次失敗進入迴路時讀取；各 pipeline 的 gate 差異（誰修、修完重驗什麼）與申辯通道見各自 SKILL.md。
 
 - **一輪的定義**：「gate 失敗回到主對話 → 派 agent 修 → 重驗」＝該 gate 一輪。各 gate 獨立計數、**各自最多 3 輪**，輪數在同一 Pipeline 內累計不因修復成功重置；達上限 → 停下來問人（問題可能較嚴重或 AI 忽略關鍵細節）
 - **不計輪**：agent 就地自修（lint／typecheck／三件套紅燈，未回主對話）、BLOCKED（回主對話是為了問人）、flaky 標註（回主對話是為了告知）、targeted re-check／re-run（驗證派發，非問題回報）
