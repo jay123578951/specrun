@@ -90,10 +90,6 @@ Retry 修復時，若修改涉及跨批共用的介面（如共用模組的回�
 
 tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項目）**不派給 Coder 實作**——它們已由 pipeline 的對應 gate 覆蓋。將其綁定到對應 gate（畫面走查 → 操作流程驗證、完整性／review 類 → Reviewer、測試類 → Tester），該 gate 綠燈後由 orchestrator 代為勾掉並在該行註記「由 gate 覆蓋」；綁不上任何 gate 的驗證型 task 列入 Step 7 報告的人工驗收提示。
 
-**Pipeline 進度曝光（原生 task 清單）**
-
-harness 有原生 task 工具（TaskCreate）時，起跑時把本次 gate 序列建成 harness task（Coder 各批次、Tester、Reviewer、操作流程驗證、註解整理），每個 gate settle 即更新狀態；retry 或 BLOCKED 在對應 task 註記一句。目的：人隨時看得到 pipeline 進行到哪，session 內中斷也有現成進度可續。
-
 **Coder Model 升級判定**
 
 Step 4 **首次**派發 Coder 前判定 `{coderModel}`：先驗上即可預期需要深度推理才升 `opus`——跨模組邊界的架構變更／大型重構、安全敏感路徑（auth、payment、API key 處理、session 管理；與 Step 6 adversarial 判定共用清單）、design.md 把較多實作方式留給 Coder 自行決定。其餘維持 `sonnet`，判定保守。

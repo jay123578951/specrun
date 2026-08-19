@@ -74,8 +74,6 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 
 宣告：「srun:fix：{問題摘要}」
 
-**進度曝光（原生 task 清單）**：harness 有原生 task 工具（TaskCreate）時，把本次步驟序列建成 harness task（Coder、條件性安全 review、註解整理、Spec 複核），每步 settle 即更新狀態，retry 或 BLOCKED 在對應 task 註記一句。
-
 ### Step 2: 建立工作分支
 
 分支策略依專案慣例判斷（git 歷史與 CLAUDE.md），需開分支時命名 `fix-<描述>`；慣例看不出來時預設開分支（場景 ii 通常已在該 change 的功能分支上，直接沿用）。
