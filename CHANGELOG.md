@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.27.0 — 2026-08-24
+
+新增 roadmap 開發項追蹤層：大功能要分好幾次做的時候，切分、順序、動工前必知這些規劃層資訊在第一個 change 開出來之前沒有家，只能留在對話裡，session 一換就沒了。這層補的就是那段空窗。設計核心是**暫存區不是存放處**：每則筆記都有保證出口（開 change 時遷進 design.md、全交付時整檔刪除），所以它不會愈長愈大，也不會退化成第二份 spec。不在 pipeline 上、不佔指令名，磁碟狀態即開關，不用的專案問過一次就永久靜默。
+
+### Added
+
+- **`roadmap` skill**（`skills/roadmap/SKILL.md`）：一項一檔的格式規範。標題行右欄只有三種值（空＝可以挑、`卡著`、`N/M` 進度），關係欄位七種（`規格`／`為什麼這樣拆`／`前置`／`阻斷`／`順位`／`相關`／`屬於`），區塊標題固定四個。多段項有拆分表、單段項沒有，不強迫統一。另定三層分組（大項檔的列指子項檔、子項檔的列只准指 change，更深即代表上層切分過寬）與其出口鏈（rm 子項檔前先回上層打勾、更新 `N/M`）。紅線三條：單向依賴（spec 不得引用 roadmap）、不當 changelog、不重述 design.md。
+- **本 kit 第一個 description 觸發型 skill**：無 slash command，載不載入全由 description 決定。判斷點 A（該不該載入）以 10 題考卷實測後把 description 收窄為寫入規範，明寫「純查詢開發規劃不需載入，檔案自明」。理由不是不 fire，是不需要 fire：兩組 fixture、六次開放查詢，未載入的回答六次全對。
+- **`roadmap-guard.sh`**（PostToolUse，matcher `Bash|Skill`）：出口鏈的強制層，無 `openspec/roadmap/` 目錄則靜默 exit 0。四個攔截點為 propose skill 名（提醒遷出並填 change 名）、`archive` 指令（抽 change 名 grep roadmap 提醒打勾）、`spectra new`（流程外手動建 change 的保險）、路徑含 `openspec/roadmap/` 的 `rm`（提醒回上層檔更新）。走 PostToolUse 而非 PreToolUse 是因為後者不支援 additionalContext；propose 那點攔在 skill 指令剛載入、尚未寫檔時，等同事前備料。
+- **roadmap 路由 evals**（`skills/roadmap/evals/`）：10 題、三組 fixture（平面啟用／未啟用／三層分組）與自製 runner。`claude plugin eval` 的 `--ablation with-without` 正對這個問題但被 early access 閘住，改用 `claude -p --plugin-dir`，判定條件為 transcript 出現 `Skill` tool_use 且值含 roadmap，機械判定不需 LLM grader。`--plugin-dir` 另有一個好處：測得到未 commit 的版本，不必先發版。
+- **案例第三類 observational**（`docs/evals-runs.md` Iteration 8）：載不載入都做得對的行為只記 fire 率、不計分。對兩向皆可接受的行為下斷言只會製造 flaky FAIL 與假信心。同批記錄三個 harness 坑（`claude` 會讀 stdin 吸走後續題目、`--allowedTools` 是預先授權不是白名單、全形括號會被 bash 吃進變數名）與一條教訓：value 類掉分先讀 transcript 判成因，別直接歸給改動。
+
+### Changed
+
+- **`intent-guidance.sh` 加入 roadmap 注入**：確定性三態，不進 backend case 分支（兩套後端通用）。`openspec/roadmap/` 存在＝注入四句規則（進場讀檔兼校正、切分／外溢徵詢、propose 遷出、歸檔打勾）並枚舉各檔標題行當清單；`openspec/roadmap.off` 存在＝靜默；皆無＝廣告一句，三選項（記錄並啟用／這次不用／這專案不用）。注入文本與 hook 提醒只寫觸發規則，格式細節一律指向 skill，SSOT 不分裂。
+- **分支策略回收判斷**（`feat` Step 2.5、`fix` Step 2）：0.25.0 的「依專案慣例判斷（git 歷史與 CLAUDE.md），慣例看不出來時預設開分支」改為一律開工作分支，當前在主幹則開、已在 topic 分支則沿用。原措辭把二元事實包裝成需要考據的判斷，實測會讓 pipeline 直接改在主幹上。
+- **`plugin.json` 與 `marketplace.json` description** 補上 roadmap skill 與 PostToolUse hook。
+- **`.gitignore` 排除 `plugins/srun/skills/*/evals/results/`**：eval 原始 transcript 是過程不是產物，與既有 `comment`／`review` 只追蹤定義與 fixture 的慣例一致。
+
 ## 0.26.0 — 2026-08-19
 
 Skill description 判準重寫。起點是「Tier 3／Tier 2 這種編號 AI 讀得懂嗎、讀懂了有幫助嗎」的質疑：模型選 skill 時手上只有各 skill 的 name + description 並排，沒有任何 SKILL.md 內文被載入，所以編號在那個當下沒有定義來源，能做的只有從序數推「3 比 2 重」，而那件事後半句判準已經講完。清掉編號後拿路由考卷校準，暴露出三個更根本的措辭缺陷，逐一收斂後重寫三份 description。六次 clean-room 考卷全數滿分。
