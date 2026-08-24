@@ -30,6 +30,26 @@
 
 分級支援：spectra 行為主線一級公民（考卷與 dogfood 全覆蓋）；openspec 行 best-effort（措辭保證正確、不主動驗證）。`spectra-debug`／`spectra-apply` 原則性不進選項（前者繞過診斷停點、後者被 `/srun:feat` 取代），escape hatch 手動可用。
 
+## roadmap 開發項追蹤層（0.27.0，兩套後端通用）
+
+觸發＝`intent-guidance.sh` case 後的共用區塊（確定性三態）＋強制＝`roadmap-guard.sh`（PostToolUse，matcher `Bash|Skill`）；格式與操作細節的 SSOT 是 `skills/roadmap/SKILL.md`，注入文本與 hook 提醒只寫觸發規則、一律指向該 skill。
+
+| 磁碟狀態 | 注入 |
+|----------|------|
+| `openspec/roadmap/` 存在 | 四句規則（進場讀檔兼校正、切分／外溢徵詢、propose 遷出、歸檔打勾）＋開發項清單（各檔標題行枚舉） |
+| `openspec/roadmap.off` 存在 | 靜默 |
+| 皆無（後端存在） | 廣告一句：多段切分收斂時問一次，三選項（記錄並啟用／這次不用／這專案不用＝建 off 檔） |
+| 後端 none | 靜默 |
+
+| guard 攔截（皆 PostToolUse；無 roadmap/ 目錄靜默 exit 0） | 行為 |
+|------|------|
+| Skill 名中 `(spectra-propose\|opsx:propose)` | 提醒遷出＋填 change 名（skill 指令剛載入、尚未寫檔，等同事前備料；PreToolUse 不支援 additionalContext 故不可用） |
+| Bash 中 `(spectra\|openspec) archive` | 抽 change 名 grep roadmap：命中指名檔案提醒打勾／全交付確認後 rm；未命中一行短提醒 |
+| Bash 中 `spectra new` | 保險：流程外手動建 change 時提醒填名 |
+| Bash 中 `rm` 且路徑含 `openspec/roadmap/` | 三層分組出口鏈保底：提醒回上層檔（`屬於` 欄位）打勾、更新 N/M；上層全勾則確認後一併 rm |
+
+設計裁定（含 TCERT 側討論脈絡）見決策 doc `docs/roadmap-tracking-2026-08.md`（維護者本機，不隨 repo 發佈）。
+
 ## 行為紀律（與注入規則同源）
 
 - **入口宣告制**（0.19.0，收件匣三案對照實驗驅動）：開發／修改意圖（含求建議、求評估的開發話題）預設宣告一句進規格討論流程，不跳選項、不徵求同意；宣告尾帶「要我直接動手就說一聲」當 escape hatch。依據：discuss 唯讀、誤入成本近零，誤直改不可逆——錯誤成本不對稱，預設倒向 fail-safe 側。

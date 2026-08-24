@@ -1,0 +1,97 @@
+{
+  "skill_name": "roadmap",
+  "_note": "判斷點 A：description 路由。測的是「該不該載入 srun:roadmap skill」，不是載入後做得好不好。claude plugin eval 目前被 early access 閘住，故用 run.sh 自製 runner（claude -p --plugin-dir 直接載工作目錄的 plugin，不必發版）。",
+  "cases": [
+    {
+      "id": "A1",
+      "fixture": "enabled",
+      "expect": "fire",
+      "prompt": "接下來要做什麼？",
+      "why": "description「查詢開發規劃（下一項做什麼）」的字面正例",
+      "class": "observational",
+      "needs_write": false
+    },
+    {
+      "id": "A2",
+      "fixture": "enabled",
+      "expect": "fire",
+      "prompt": "標章申請這塊還剩什麼沒做？",
+      "why": "同上，換成「還剩什麼沒做」句式，且指名某開發項",
+      "class": "observational",
+      "needs_write": false
+    },
+    {
+      "id": "A3",
+      "fixture": "enabled",
+      "expect": "fire",
+      "prompt": "本部審查鏈那段我開好 change 了，名字是 badge-ministry-review，幫我更新一下。",
+      "why": "description「要對 roadmap/ 目錄做任何讀寫」；誘餌在於模型可能逕自編輯檔案而不載入規範",
+      "class": "value",
+      "needs_write": true
+    },
+    {
+      "id": "A4",
+      "fixture": "enabled",
+      "expect": "fire",
+      "prompt": "維運補助為什麼現在還不能動？",
+      "why": "讀 roadmap（開始的條件）；不含「規劃」「roadmap」等關鍵字，測語意而非字串匹配",
+      "class": "observational",
+      "needs_write": false
+    },
+    {
+      "id": "A5",
+      "fixture": "enabled",
+      "expect": "no-fire",
+      "prompt": "composables/useAuth.ts 的 can() 是在做什麼？",
+      "why": "純程式查詢。roadmap 目錄存在但與本題無關，測誤觸發",
+      "class": "sanity",
+      "needs_write": false
+    },
+    {
+      "id": "A6",
+      "fixture": "enabled",
+      "expect": "no-fire",
+      "prompt": "README 裡「兩軌」這個說法有點含糊，幫我改清楚一點。",
+      "why": "文件雜務。標的明確、與開發規劃無關，測誤觸發",
+      "class": "sanity",
+      "needs_write": false
+    },
+    {
+      "id": "A7",
+      "fixture": "disabled",
+      "expect": "no-fire",
+      "prompt": "接下來要做什麼？",
+      "why": "關鍵誘餌：與 A1 同一句話，但專案未啟用（無 openspec/roadmap/）。description 末句「專案未啟用且非正在討論啟用時不需使用」的直接考點。**Iter 8 後降為 sanity**：原設計為 A1 的對照組（同句話不同磁碟狀態、期望相反），但 A1 實測本身就不 fire，對照失效；保留為未啟用專案的誤觸發防線",
+      "class": "sanity",
+      "needs_write": false
+    },
+    {
+      "id": "A8",
+      "fixture": "disabled",
+      "expect": "no-fire",
+      "prompt": "useAuth 的權限點清單是從哪裡來的？",
+      "why": "未啟用專案的一般程式查詢，負例下界對照組",
+      "class": "sanity",
+      "needs_write": false
+    },
+    {
+      "id": "A9",
+      "fixture": "nested",
+      "expect": "fire",
+      "prompt": "接下來要做什麼？",
+      "why": "與 A1 同句，但 fixture 改為三層分組。考點不只 fire 與否：徒手讀會不會把子項檔 權限設定（2/5、屬於 會員子選單）誤當成第三條並行線，以及會不會把依出口鏈已刪除的 會員資料維護.md 誤報成檔案遺失",
+      "class": "observational",
+      "needs_write": false
+    },
+    {
+      "id": "A10",
+      "fixture": "nested",
+      "expect": "fire",
+      "prompt": "會員子選單這塊做到哪了？",
+      "why": "直接問大項進度。正確讀法是大項 1/4 指完成的子項數，子項 權限設定 自己的 2/5 是段數，兩者不可相加或混報",
+      "class": "observational",
+      "needs_write": false
+    }
+  ],
+  "_class_note": "value＝skill 不載入一定做錯，必須 fire。sanity＝regression guard，誤觸發才是警報，必須 no-fire。observational＝讀取類，載不載入都答得對（Iter 8 實測 6/6 正確），故只記錄 fire 率不計分：對兩向皆可接受的行為下斷言只會製造 flaky FAIL 與假信心。"
+}

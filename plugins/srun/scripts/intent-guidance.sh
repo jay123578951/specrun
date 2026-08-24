@@ -69,4 +69,35 @@ MAP
     ;;
 esac
 
+# roadmap 開發項追蹤（兩套後端通用，故不進 case 分支）：目錄＝啟用、roadmap.off＝永久停用、
+# 皆無＝廣告態。規則用節點措辭不用指令名，細節與格式一律指向 srun:roadmap skill。
+if [ "$backend" != "none" ]; then
+  if [ -d "$dir/openspec/roadmap" ]; then
+    cat << 'ROADMAP'
+
+本專案已啟用 roadmap 開發項追蹤（openspec/roadmap/，一項一檔；格式與操作見 srun:roadmap skill）：
+- 進場話題命中下列開發項、或使用者問規劃類問題（下一項做什麼、還剩什麼）→ 先讀對應檔帶 context；發現拆分與現況不符，提出調整。要開的新工作與清單項目有前置／阻斷／相關關係才提一句，無關不提
+- 討論收斂出多段切分、或結論超出當前 change 範圍 → 問使用者要不要記錄進 roadmap/：要，則新開發項建檔、既有項寫進對應段落
+- 開 change（propose）時 → 該段「動工前必知」遷入 design.md 並自 roadmap 刪除；change 名填進拆分表該列
+- 歸檔後 → grep -rl "<change 名>" openspec/roadmap/ 找到該列打勾；該項全交付則確認拆分表全勾、說一聲再 rm 整檔；rm 的檔帶「屬於」欄位就回上層大項檔打勾、更新 N/M（上層全勾則確認後一併 rm）
+ROADMAP
+    items=""
+    for f in "$dir/openspec/roadmap/"*.md; do
+      [ -e "$f" ] || continue
+      items="${items}$(head -1 "$f" | sed 's/^#[[:space:]]*/- /')
+"
+    done
+    if [ -n "$items" ]; then
+      printf '\n現有開發項（標題行含狀態）：\n%s' "$items"
+    else
+      printf '\n（roadmap/ 目前無開發項）\n'
+    fi
+  elif [ ! -e "$dir/openspec/roadmap.off" ]; then
+    cat << 'ROADMAP'
+
+（本專案未啟用 roadmap 開發項追蹤。討論收斂出多段切分時問一次要不要記錄，三選項：記錄並啟用＝建 openspec/roadmap/ 寫入首檔，格式見 srun:roadmap skill；這次不用＝本 session 不再提；這專案不用＝建空檔 openspec/roadmap.off，之後永久靜默。）
+ROADMAP
+  fi
+fi
+
 exit 0

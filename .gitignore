@@ -13,3 +13,6 @@ node_modules/
 
 # Claude
 .claude/
+
+# Eval 原始 transcript（體積大、非產物）
+plugins/srun/skills/*/evals/results/

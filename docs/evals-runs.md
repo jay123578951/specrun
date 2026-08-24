@@ -380,3 +380,87 @@ baseline **miss-rate = 100%**：4 次全部照字面「一行都別留」清空�
 - **判斷力型 discriminator 累計 4 個負結果 + 1 個部分訊號**：負結果＝過度升級（Iter 3）、fail-open under-detection（Iter 4）、機制性慣例合規（Iter 5/6）、decisions 決策守規（Iter 7）——全部因強 agentic baseline 本就會做而 both-pass 或 miss-rate≈0。**部分訊號＝嚴重度 drift（Iter 7 去污染後）**：baseline 在模糊 finding 上有真實嚴重度漂移、固定 rubric 部分壓得下（cookie-secure、enumeration），但非全面、非壓到 0、不改 review 結果——最接近 discriminate 卻不乾淨。Iter 1→7 一致收斂：**skill 對這代模型的可量測增量＝把 baseline「穩定犯錯」的地方壓到 0（格式不一致、壓力下誤刪保護清單），不在 baseline 本就做對的地方（判斷、探索、surface 決策）；嚴重度一致性是唯一露出微弱增量的判斷力型軸，但要坐實需專門設計。**
 - **有效 discriminator 增至 3 個**：review 格式（Iter 1/6）、comment 壓力守規 c3（Iter 2/6）、**comment 壓力守規 c4 交錯泛化（Iter 7）**。三者同結構：baseline miss-rate 高且穩、skill 壓到 0。
 - **本輪倉庫變更**：`comment/evals.json`（+c4、value/sanity 前綴、model_tier）、`review/evals.json`（value/sanity 前綴、model_tier）、`comment/evals/files/pressure-interleaved.ts`（新增）、`comment/SKILL.md`＋`review/SKILL.md`（保守壓縮，eval-gated）、`docs/evals.md`（四象限例外、70% 澄清、看成本瘦身推論）、`docs/evals-runs.md`（本節）。所有探測 fixture 在 scratchpad。
+
+---
+
+## Iteration 8 — 2026-08-24（roadmap description 路由：第一個 description 觸發型 skill，72 session）
+
+前七輪測的都是「載入之後做得好不好」。`roadmap` 是本 kit 第一個**沒有 slash command、只靠 description 決定載不載入**的 skill，`evals.md` 當初「本 kit 的 skill 皆為 slash command 顯式呼叫，無此需求」那條前提自此不成立。本輪只測判斷點 A：**該不該載入**。
+
+### 設定
+
+`claude plugin eval` 有內建的 `--ablation with-without` 與 `tool_used: Skill` 判定，正對這個問題，但實測被 early access 閘住（`init` 與實跑皆回 `plugin eval is currently in early access`）。改用自製 runner `skills/roadmap/evals/run.sh`：`claude -p --plugin-dir <工作目錄的 plugin>`，判定條件為 transcript 出現 `Skill` tool_use 且 `skill` 值含 roadmap。
+
+`--plugin-dir` 有個額外好處：**測得到未 commit 的版本，不必先發版**。init 事件確認 `srun:roadmap` 確實在該 session 的 63 個 skill 清單內，排除「沒載入所以不可能 fire」的解釋。
+
+兩個 fixture：`enabled/`（平面三檔，右欄涵蓋 `2/6`／`卡著`／空）與 `disabled/`（無 `openspec/roadmap/`，其餘相同）。
+
+### ① 改動前：漏接全部集中在讀取側，誤觸發為零
+
+| 題 | 形態 | fire 率 |
+|---|---|:--:|
+| A3 填 change 名進拆分表 | 寫入 | 3/3 |
+| A10 「會員子選單這塊做到哪了」 | 指名項讀取 | 3/3 |
+| A2 「還剩什麼沒做」 | 開放查詢 | 1/3 |
+| A1 「接下來要做什麼」 | 開放查詢 | 0/3 |
+| A4 「維運補助為什麼不能動」 | 讀取 | 0/3 |
+| A5～A8（程式查詢／文件雜務／未啟用專案 ×2） | 負例 | **0/12 誤觸發** |
+
+**觸發與否跟提問形態相關，不跟內容相關**：句中指名一個只存在於 roadmap 的實體（「會員子選單」）就 fire，開放式掃描型提問一律不 fire。
+
+### ② 關鍵發現：查詢類徒手就答對，skill 是零增量
+
+A1 六次未觸發的回答**全部正確**：判出標章刀 3 是下一段、`卡著` 的維運補助要排除、基線歸零不擋動工。skill 裡的 `grep -h '^# '` 掃法、`N/M` 判讀、`卡著` 排除這些條文，對這代模型量不出增量。
+
+懷疑是 fixture 太簡單（平面三檔），故補 `nested/` fixture 加測：大項檔 `會員子選單`（1/4，列指向子項檔）＋子項檔 `權限設定`（2/5，`屬於` 回指、自身另有 `N/M`）＋`稽核軌跡`（`卡著`，前置為權限設定第 3 段），並刻意讓已交付刪檔的 `會員資料維護.md` 不存在而大項檔的列仍留檔名。三個陷阱：把子項誤當第三條並行線、把兩層 `N/M` 混報、把已刪檔誤報為遺失。
+
+**A9（三層分組同 A1 句）0/3 fire、3/3 答對，三個陷阱一個都沒踩**。兩次 run 明寫「屬於會員子選單」，一次還額外指出 `匯出報表` 標的是「未細分」。**fixture 加難沒有救回 discriminator，反而坐實了讀取側零增量。**
+
+### ③ 改動：description 收窄為寫入規範
+
+拿掉「查詢開發規劃（下一項做什麼、還剩什麼沒做）...時載入」，改為明寫 `純查詢開發規劃不需載入，檔案自明`。理由不只是「不 fire」，而是**不需要 fire**（兩種 fixture、六次開放查詢、六次全對）。
+
+| 題 | 改動前 | 改動後 |
+|---|:--:|:--:|
+| A10 指名項讀取 | 3/3 | **0/3** |
+| A2 開放查詢 | 1/3 | 0/3 |
+| A1／A4／A9 | 0/3 | 0/3 |
+| A3 寫入（value） | 3/3 | **5/5**（開放寫入工具後，見下） |
+| A5～A8（sanity） | 0/12 誤觸發 | 0/12 誤觸發 |
+
+A3 首輪重跑掉到 2/3，逐份看 transcript 發現是 **fixture 缺陷不是退化**：prompt 說「我開好 change 了」但 `openspec/changes/` 裡沒有該 change，模型去找、找不到、停下來問路徑，行為完全正確。補上 `changes/badge-ministry-review/` 讓前提為真後重跑 5/5，但再跑一輪又出現 1 次未觸發，**修正後累計 7/8**。
+
+那 1 次的成因與前一次又不同，且屬 harness confound：模型先載入了 `opsx:explore`（使用者全域安裝的另一個 plugin，該 prompt 在語意上確實像 openspec 的 change 更新任務），接著因為 runner 把 `Write`／`Edit`／`Bash` 全數 disallow，它改用 `ToolSearch` 找寫檔工具，`--max-turns 6` 燒完、最終回答為空。**寫入題在寫入工具被禁時走不完，模型的軌跡因此被扭曲**——這量到的是「roadmap 有沒有在前六個 turn 內贏過其他 skill」，不是純粹的 description 路由。
+
+**兩項處置已定案並落地**：
+
+- **寫入類開放 `Write`／`Edit`（`Bash` 仍禁）**。fixture 是 `mktemp` 拋棄式副本、每次 run 完即刪，不碰真實檔案。改後 A3 **5/5**，變異消失：先前的 miss 全出在「任務走不完 → 模型拿 ToolSearch 亂找 → 燒完 max-turns」，不是路由。
+- **不隔離其他 plugin**。使用者真實環境就是數十個 skill 並存並競爭路由，隔離後數字好看但高估可靠度。`--settings` 只關掉已安裝的 `srun@specrun`，那是避免與 `--plugin-dir` 這份重複載入，性質不同。
+
+開放寫入後另有一項驗證：A3 觸發後的實際寫入**完整符合遷出條文**，不只填欄位。逐 transcript 核對為：change 名填進拆分表第 3 列、清掉該列 `⬅ 接下來`、**該段「動工前必知」整組自 roadmap 刪除並寫入 change 的 `design.md`**。判斷點 A 的 fixture 因此順帶證實可用於後續判斷點 C（遷出正確性）的量測。
+
+**教訓：value 類掉分先讀 transcript 判成因，別直接歸給改動。**同一題連續兩次掉分是兩個完全不同的成因（前提為假、寫入工具被禁），兩者都不是 description 的問題；逐次讀才分得出來，看聚合數字只會誤判成 skill 退化。
+
+### ④ 案例改分三類，讀取類不再計分
+
+依 `evals.md` 的 value／sanity 框架再加一類：
+
+- **value**（A3）：skill 不載入一定做錯，必須 fire
+- **sanity**（A5～A8）：regression guard，誤觸發才是警報
+- **observational**（A1／A2／A4／A9／A10）：讀取類，載不載入都答得對，只記錄 fire 率不計分
+
+第三類是本輪新增的必要性。對兩向皆可接受的行為下斷言，只會製造 flaky FAIL 與假信心，正是 `evals.md`「弱 assertion 上的 PASS 比沒測更糟」那條的延伸。
+
+A7（未啟用專案問 A1 同句）原設計為 A1 的對照組（同句話、不同磁碟狀態、期望相反），**A1 翻成 observational 後對照失效**，降為 sanity 保留，職責改為未啟用專案的誤觸發防線。真正該補的對照組是「在未啟用專案上要求寫入」，屬判斷點 E（廣告態），不在 A 範圍。
+
+### harness 教訓（三個坑，已寫進 `run.sh` 檔頭）
+
+- **`claude` 會讀 stdin**。while 迴圈餵題時不接 `< /dev/null`，第一題的 `claude` 會把剩下的題目全吸走，整輪只跑第一題，而且那批殘料等於被當成額外輸入餵進 prompt。
+- **`--allowedTools` 是預先授權不是白名單**。沒加 `--disallowedTools` 時模型跑去 `ls ~/.claude/`，run 不封閉。
+- **全形括號會被 bash 吃進變數名**。`"$cls）"` 報 `cls?: unbound variable`，要寫 `"${cls}）"`。
+
+### 跨 Iteration 8 結論
+
+- **description 路由是可測的，且測法與前七輪不同**：前七輪比 with/without skill 的產出品質，本輪比 skill 有沒有被叫起來，判定是機械的（transcript 有無 Skill tool_use），不需要 LLM grader。
+- **本輪與 Iter 1→7 的收斂一致**：skill 的可量測增量在「baseline 穩定犯錯」處。寫入側沒規範必錯格式與出口鏈（A3 5/5 載入），讀取側 baseline 本就做對（A1／A9 六次全對），**description 不該替後者宣告觸發條件**。這是第一次用路由數據而非產出品質數據得到同一結論。
+- **本輪倉庫變更**：`skills/roadmap/SKILL.md`（description 收窄）、`skills/roadmap/evals/`（新增 `cases.json` 10 題、`run.sh`、三個 fixture）、`docs/evals-runs.md`（本節）、`docs/evals.md` 待補（「皆為 slash command 顯式呼叫」前提已失效，且新增 observational 類）。
