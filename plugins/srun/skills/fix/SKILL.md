@@ -76,7 +76,7 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 
 ### Step 2: 建立工作分支
 
-分支策略依專案慣例判斷（git 歷史與 CLAUDE.md），需開分支時命名 `fix-<描述>`；慣例看不出來時預設開分支（場景 ii 通常已在該 change 的功能分支上，直接沿用）。
+一律開工作分支：當前在主幹（main／dev 這類長期分支）→ 開 `fix-<描述>`；已在 topic 分支 → 沿用不另開（場景 ii 通常已在該 change 的功能分支上）。
 
 ### Step 3: Spec 影響判斷（spec-first，派發前）
 

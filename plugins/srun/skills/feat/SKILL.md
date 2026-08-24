@@ -61,7 +61,7 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 
 判定基準分支 `{baseBranch}`（`git symbolic-ref refs/remotes/origin/HEAD`；偵測不到看本地主幹慣例，fallback `main`），供後續步驟使用（Reviewer 派發的 diff 基準等）。
 
-分支策略依專案慣例判斷（git 歷史與 CLAUDE.md），需開分支時命名 `feat/{changeName}`；慣例看不出來時預設開分支。
+一律開工作分支：當前在主幹（`{baseBranch}` 或 dev 這類長期分支）→ 開 `feat/{changeName}`；已在 topic 分支 → 沿用不另開。
 
 ### Step 3: 評估任務規模與分批策略
 
