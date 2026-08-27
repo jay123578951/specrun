@@ -204,7 +204,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **與 Reviewer 的關係（序列，不平行）**：統一原則——**靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（本步驟）永遠壓軸，驗的必是最終 code**。Step 6 Reviewer 迴路**完全 settle**（含 targeted re-check 通過）後才派發本步驟，故本步驟的 PASS 不會過期。本步驟 FAIL 的修復走完整靜態關卡後才 targeted re-run（見 Retry 迴路）。
 
-**前置**：orchestrator 確保被驗的 dev server 跑的是本次 code（長跑中的舊實例會報假 PASS），必要時另起、驗完關閉，不動使用者既有的實例；把實際 URL 告知 agent。功能在登入牆後時，提供「已驗證入口」（dev session / seeded cookie / auth bypass），或（登入本身是被測流程時）測試帳號。
+**前置**：orchestrator 確保被驗的 dev server 跑的是本次 code（長跑中的舊實例會報假 PASS），必要時另起、驗完關閉，不動使用者既有的實例；起 server 後以啟動 log 或 lsof 確認實際監聽 port 再注入 URL（get-port 類工具在指定 port 被占用時會靜默改聽他 port），注入的入口路徑先實測可達；把實際 URL 告知 agent。功能在登入牆後時，提供「已驗證入口」（dev session / seeded cookie / auth bypass），或（登入本身是被測流程時）測試帳號。
 
 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**。載入 `srun:verify-flow` skill，由其 subagent prompt 模板驅動；orchestrator 注入：變更名稱、app URL / 啟動方式、驗收依據（`openspec/changes/{changeName}/specs/`）、已知的重點元件 / 位置、必要時的已驗證入口或測試帳密。判準、輸出格式、preflight、登入牆與反 rabbit-hole 規則皆見 `verify-flow` skill，此處不重複。
 
@@ -232,6 +232,8 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 整理後**不需**重跑 Opus Reviewer 或操作流程驗證（純註解改動不動 code 邏輯）；ESLint + 測試即為安全網。
 
 ### Step 7: 報告結果
+
+**蓋章前抽驗**：報告前對 tasks.md 與 design.md 的量化判準（條目數、指標數）與「全綠／無 diff」類判準逐條實測對照後才勾（含 Step 3 綁定 gate 的代勾項）。判準失準且正確值唯一明確 → 對正 artifact 後勾；實作未達正確判準 → 回對應 gate 的 retry 迴路；落差會改變驗收語意 → 問人。實作中途調整作法造成的判準漂移亦由此攔截。
 
 顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
 
