@@ -25,7 +25,7 @@ description: Use when you need to confirm a spec-designed user flow actually run
 
 呼叫方（Pipeline 或人）提供：
 
-1. **App 進入點**：正在跑的 app URL（dev server 位址），或啟動方式。**功能在登入牆後面時，優先提供「已驗證的入口」**——dev 已登入 session / seeded cookie / 測試帳號自動登入 / dev 環境的 auth bypass——讓驗證直接從 app 內部開始（用 UI 真的打帳密每次跑都脆弱，能免則免）
+1. **App 進入點**：正在跑的 app URL（dev server 位址），或啟動方式。**功能在登入牆後面時，優先提供「已驗證的入口」**——驗證瀏覽器已登入的持久化 session / seeded cookie / 測試帳號自動登入 / dev 環境的 auth bypass——讓驗證直接從 app 內部開始（用 UI 真的打帳密每次跑都脆弱，能免則免）
 2. **驗收依據**：要走的流程從哪來——依專案手上有什麼，優先序：
    - 正式 spec / scenario（如 OpenSpec `specs/`、Gherkin、驗收條件文件）
    - 沒有正式 spec 時 → fallback 到 task 描述 / PR 描述 / 需求敘述
@@ -38,7 +38,7 @@ description: Use when you need to confirm a spec-designed user flow actually run
 
 用 Task tool 派發 fresh-context subagent（預設 `subagent_type: general-purpose` + `model: sonnet`；走瀏覽器流程屬操作性工作，Sonnet 足夠，且與主對話隔離取得獨立視角）。prompt 用下方模板展開。
 
-Subagent 需要 **claude-in-chrome 瀏覽器工具**（`tabs_context_mcp` / `navigate` / `computer` / `read_page` / `read_console_messages` / `read_network_requests` 等）。若這些工具是 deferred，subagent 須先用一次 ToolSearch 批次載入再操作。
+Subagent 需要 **playwright 瀏覽器工具**（`browser_navigate` / `browser_snapshot` / `browser_click` / `browser_fill_form` / `browser_console_messages` / `browser_network_requests` / `browser_take_screenshot` 等，由 srun 隨附的 playwright MCP server 提供）。若這些工具是 deferred，subagent 須先用一次 ToolSearch 批次載入再操作。
 
 **派發失敗或 app 起不來**：記錄狀況、判為 `BLOCKED` 交人（隔離不變量：不退化為主對話自做），也不硬算 FAIL。
 
@@ -48,7 +48,7 @@ Subagent 需要 **claude-in-chrome 瀏覽器工具**（`tabs_context_mcp` / `nav
 |---------|------|------|
 | **PASS** | 流程走得完、spec 明文項目都成立、無 error 級信號 | 進下一步（人工驗收） |
 | **FAIL** | 流程斷 / error 級信號 / spec 明文項目不成立（元件沒出現、跑錯區域、明顯崩版）——**且已重現確認**；視覺型 FAIL 附截圖或幾何描述 | 回 Coder 修 |
-| **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（Chrome 沒裝／沒連 claude-in-chrome）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人**；**工具能力不足**（工具在、呼叫成功，但達不成 spec 要求的操作，如 viewport 幾何受實體螢幕限制）→ **問人**，報告寫明缺的是哪項能力 |
+| **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（playwright MCP server 沒起／瀏覽器工具載不到）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人**；**工具能力不足**（工具在、呼叫成功，但達不成 spec 要求的操作）→ **問人**，報告寫明缺的是哪項能力 |
 
 不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。FAIL 截圖存 `.claude/debug/`（不進版控，生命週期由呼叫方管理）。
 
@@ -80,22 +80,22 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ## 開始前
 
-1. 若 claude-in-chrome 工具是 deferred，先用一次 ToolSearch 批次載入需要的（tabs_context_mcp, navigate, computer, read_page, read_console_messages, read_network_requests，需要時加 find / form_input）。
-2. **Preflight——確認瀏覽器工具就緒**：用 list_connected_browsers / tabs_context_mcp 確認 claude-in-chrome 已安裝且有連線的瀏覽器。**連不上 → 立刻判 BLOCKED（子原因：工具未就緒），不進任何流程**；報告寫「未安裝/未連線，請人工走流程或裝套件」。這不是 FAIL（別打回 Coder），也別靜默放行。
+1. 若 playwright 瀏覽器工具是 deferred，先用一次 ToolSearch 批次載入需要的（browser_navigate, browser_snapshot, browser_click, browser_console_messages, browser_network_requests，需要時加 browser_fill_form / browser_take_screenshot / browser_wait_for）。
+2. **Preflight——確認瀏覽器工具就緒**：ToolSearch 找不到上述 playwright 工具，或第一次 browser_navigate 就起不了瀏覽器。**此時立刻判 BLOCKED（子原因：工具未就緒），不進任何流程**；報告寫「playwright MCP 未就緒，請人工走流程或檢查 srun plugin 安裝」。這不是 FAIL（別打回 Coder），也別靜默放行。
 3. 讀驗收依據，抓出：(a) 要走的流程路徑（從哪進、依序做什麼、到哪算完成）；(b) spec 點名的關鍵元件；(c) spec 明文寫出的位置要求（有才驗）。
-4. 開新 tab 連到 app（不要重用別的 session 的 tab id）。連不上/起不來 → 判 BLOCKED（子原因：環境）停下回報。
+4. 用 browser_navigate 連到 app。連不上/起不來 → 判 BLOCKED（子原因：環境）停下回報。
 
 ## 怎麼驗（方法自選，以下是精神不是死步驟）
 
 **導覽方式**：SPA 內優先用畫面上的連結與按鈕移動；網址列 navigate 會整頁重整，可能重置 session／角色／mock 狀態——用了之後先確認前置狀態還在，再繼續驗。
 
-**工具怪癖（已知情報）**：座標點擊對部分元件（下拉選單項、FAB 等）可能完全無反應，accessibility ref 或 form_input／JS `element.click()` 可繞過；resize_window 常套用到舊值，讀 `window.innerWidth` 可確認實際生效值。
+**工具怪癖（已知情報）**：操作以 browser_snapshot 回傳的元素 ref 為準，不用座標；點擊內建等待元素可互動，逾時失敗代表真的點不到（先看元素在不在 snapshot 裡、有沒有被 overlay 蓋住），別改用座標亂點。表單多欄用 browser_fill_form 一次填完。
 
 **流程層**——實際操作走到終點，途中盯這些「明顯撞牆」信號（命中才 FAIL）：
 - 走不到終點（點了沒反應、跳頁卡住、下一步元素不出現）
 - 卡死 / 白畫面 / 無限 loading
-- console `error` 或未捕捉 exception（走完流程後用 read_console_messages 檢查）
-- 未預期的 network 4xx/5xx（用 read_network_requests 檢查該成功卻失敗的請求）
+- console `error` 或未捕捉 exception（走完流程後用 browser_console_messages 檢查）
+- 未預期的 network 4xx/5xx（用 browser_network_requests 檢查該成功卻失敗的請求）
 
 **判 FAIL 前必須重現一次**：命中失敗信號後，把同一步驟再走一遍——再次出現才正式 FAIL；重現不出 → 記進輸出的「flaky」段（不判 FAIL、也不當沒看見），交人工驗收確認。
 
@@ -108,8 +108,8 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 **console warning**：抓得到但分級——error/exception/5xx = FAIL 信號；warning = 回報但不 block。跟本次流程相關的 warning 值得標記，框架/第三方噪音（deprecation、favicon 404、source-map）略過。
 
 ## 擋路情境
-- **登入牆**：有已驗證入口就從 app 內部開始，別打登入 UI；登入本身是被測流程且有測試帳密才實際走（絕不自創帳密、不用開發者本人帳號、帳密不寫進報告）；過不去（沒帳密 / 第三方 OAuth / SSO / CAPTCHA / 2FA / 魔術連結）→ 判 BLOCKED（子原因：登入牆），寫明卡在哪類。
-- **反 rabbit-hole**：同一道牆試 2-3 次不成就停，別無限重試或亂點繞路；不主動觸發 alert/confirm/prompt 等 dialog（會凍結瀏覽器）、不解 CAPTCHA。
+- **登入牆**：驗證瀏覽器的登入狀態跨次保留（持久化設定檔），人登過一次就不再撞牆。有已驗證入口就從 app 內部開始，別打登入 UI；登入本身是被測流程且有測試帳密才實際走（絕不自創帳密、不用開發者本人帳號、帳密不寫進報告）；過不去（沒帳密 / 第三方 OAuth / SSO / CAPTCHA / 2FA / 魔術連結）→ 判 BLOCKED（子原因：登入牆），寫明卡在哪類，**瀏覽器留著別關**：建議動作寫「請在驗證瀏覽器視窗完成登入後重跑」。
+- **反 rabbit-hole**：同一道牆試 2-3 次不成就停，別無限重試或亂點繞路；遇 alert/confirm 等 dialog 用 browser_handle_dialog 處理；不解 CAPTCHA。
 
 ## 灰色地帶
 - 驗收依據含糊、或「算不算壞」模稜兩可 → 描述現象、標「待人確認」，別自己放行也別自己 block。
@@ -123,7 +123,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 ### Verdict：{PASS | FAIL | BLOCKED}
 實際驗證的 URL/port：{你真正操作的位址，如 http://localhost:3000——供人工對帳 dev server 身分}
 {若 BLOCKED：}子原因：{工具未就緒 | 環境（dev server/seed） | 登入牆（缺帳密 / OAuth / SSO / CAPTCHA / 2FA / 魔術連結） | 工具能力不足（工具在但達不成 spec 要求的操作）}
-建議動作：{例如「請人工走一遍流程」/「安裝 claude-in-chrome 後重跑」/「提供測試帳號」}
+建議動作：{例如「請人工走一遍流程」/「檢查 srun plugin 的 playwright MCP 後重跑」/「在驗證瀏覽器視窗完成登入後重跑」/「提供測試帳號」}
 
 ### 走過的流程
 （條列實際操作步驟與結果，例如）

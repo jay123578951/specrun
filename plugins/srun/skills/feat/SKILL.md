@@ -23,7 +23,7 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 | Coder | `srun:guidelines` | 自行從 available-skills 挑選 | `guidelines` 為行為守則（最小可行、外科手術式改動、自主判斷邊界）；知識型 skill（開發慣例、程式碼風格、元件拆分守則）由 Coder 依 stack 與 task 內容自取 |
 | Tester | — | 自行從 available-skills 挑選 | 測試框架用法、元件測試慣例由 Tester 自取 |
 | Reviewer | `review` | 改動含 UI 元件的畫面結構／樣式或純樣式檔時加 `web-design-guidelines` | Reviewer Opus subagent 使用；同時負責 code quality + 安全性 + 慣例 + spec alignment + 整合輸出 |
-| 操作流程驗證 | `verify-flow` | 需 claude-in-chrome 瀏覽器工具 | 觸及 UI/流程時才派發；真點擊走完 spec 流程，驗流程不斷 + spec 明文元件/位置 |
+| 操作流程驗證 | `verify-flow` | 需 playwright 瀏覽器工具（srun 隨附 MCP server） | 觸及 UI/流程時才派發；真點擊走完 spec 流程，驗流程不斷 + spec 明文元件/位置 |
 
 ### Model 策略
 
@@ -214,7 +214,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 - **FAIL**（流程斷 / console error / spec 明文元件或位置不成立；判 FAIL 前 agent 已依 `verify-flow` 做過重現確認）→ 進 Retry 迴路回 Coder 修（見下方）
 - **flaky 標註**（一次性錯誤、重現不出）→ 不打回 Coder、不計 retry；orchestrator 把標註原樣帶進 Step 7 報告，交人工驗收確認
 - **BLOCKED**（不計 retry，報告須註明子原因）：
-  - **工具未就緒**（Chrome 沒裝 / 沒連 claude-in-chrome）→ **跳過本步、退回純人工驗收**，報告註明「未能自動驗證，請人工走一遍」。**不當 FAIL**（別打回 Coder）、**不靜默放行**，不阻斷交付
+  - **工具未就緒**（playwright MCP server 沒起 / 瀏覽器工具載不到）→ **跳過本步、退回純人工驗收**，報告註明「未能自動驗證，請人工走一遍」。**不當 FAIL**（別打回 Coder）、**不靜默放行**，不阻斷交付
   - **環境**（dev server / seed data / 連不上）或 **登入牆**（缺測試帳號 / 第三方 OAuth / SSO / CAPTCHA / 2FA / 魔術連結）→ 停下來問人
 
 **Subagent 派發失敗時**：判為 BLOCKED（工具未就緒）處理——跳過本步、退回人工驗收（隔離不變量：不退化為主對話自做）。
@@ -298,7 +298,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - Coder: ✓ 完成（N 個檔案）
 - Tester: ✓ 通過（M 個測試）
 - Reviewer: ✓ PASS
-- 操作流程驗證: ✓ PASS（或「跳過（未觸及 UI）」/「跳過（claude-in-chrome 未就緒，請人工驗證）」）
+- 操作流程驗證: ✓ PASS（或「跳過（未觸及 UI）」/「跳過（playwright 瀏覽器工具未就緒，請人工驗證）」）
 - 註解整理: ✓ 清除 X 處 / 改寫 Y 處（scoped 測試重跑通過）（或「跳過（diff 註解乾淨）」）
 
 ### Pipeline 統計

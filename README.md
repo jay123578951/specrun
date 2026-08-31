@@ -124,6 +124,7 @@ flowchart LR
 | ----------------------------------------------------------------- | ------------------------------------------------------- |
 | **[spectra](https://github.com/kaochenlong/spectra-app)**（推薦） | 基於 OpenSpec 新增桌面 app 能視覺化追蹤，工作流指令優化 |
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec)                | 把「這次要改什麼」寫成規格與任務清單                    |
+| [Playwright](https://playwright.dev) 的 Chromium                  | 操作流程驗證（verify-flow）實際開的瀏覽器：`npx playwright install chromium` 裝一次即可。沒裝的話該關會跳過、退回人工驗證，不擋交付 |
 
 spectra 和 OpenSpec **挑一個裝就好**：做的是同一件事，寫出來的規格檔也通用。specrun 開場會自己認出你用哪一套，指令跟著換。
 
