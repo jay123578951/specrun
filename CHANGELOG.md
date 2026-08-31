@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.29.0 — 2026-08-31
+
+verify-flow 瀏覽器層整包換掉：claude-in-chrome 換為 playwright MCP。動機是實測 verify-flow 常佔單一項目開發總時長一半以上，根因在截圖驅動互動：每步操作夾整頁截圖給模型看、座標點擊對部分元件點空要繞路重試。playwright 以頁面元素清單（文字）互動、按元素 ref 點擊、內建可互動等待，單步成本與重試率同時降。已用 `--plugin-dir` 起 fresh session 做端到端驗證：MCP server 隨 plugin 載入、24 個工具就緒、迷你流程（開頁／點擊／驗元素／讀 console 分級）全數通過。
+
+### Added
+
+- **srun 隨附 playwright MCP server**（`plugins/srun/.mcp.json`）：`npx @playwright/mcp` 一行宣告，裝 srun 即有。零參數，即預設 Chromium、有頭、持久化設定檔。三個取捨：掛 plugin 而非環境前提（verify-flow 是 feat 正式關卡，關卡工具讓 kit 自己帶）；預設 Chromium 而非正式 Chrome（可攜與版本配對優先，正式 Chrome 唯一實益是過第三方反自動化偵測，而該場景本就判 BLOCKED 交人，輪不到瀏覽器核心出場）；有頭而非無頭（撞登入牆時人要能在視窗親手登入）。
+
+### Changed
+
+- **`verify-flow` 瀏覽器工具全面換為 playwright**：工具清單、preflight（工具載不到或首次開瀏覽器失敗即 BLOCKED 工具未就緒）、console／network 檢查換名。判準核心全數不動：重現才判 FAIL、flaky 分流、灰色地帶、職責邊界、輸出格式；description 亦不動（觸發判準與工具無關）。
+- **`verify-flow` 工具怪癖段換血**：座標點空與 resize 套舊值兩條隨 claude-in-chrome 退場刪除；新情報為操作以 browser_snapshot 元素 ref 為準不用座標、點擊逾時代表真的點不到（先查元素在不在 snapshot、有無 overlay 蓋住）、表單多欄用 browser_fill_form 一次填完。維持純情報不立規範的寫法。
+- **`verify-flow` 登入牆補持久化 session 約定**：登入狀態跨次保留，人登過一次不再撞牆；撞牆判 BLOCKED（登入牆）時瀏覽器留著別關，建議動作寫「請在驗證瀏覽器視窗完成登入後重跑」。dialog 由「不准觸發（會凍結瀏覽器）」改為用 browser_handle_dialog 處理：playwright 對話框不凍結、有正規管道。
+- **claude-in-chrome 備援不留**：其能救的場景（第三方 OAuth／SSO 反自動化）現行設計本就判 BLOCKED 交人，留備援換不到實益，卻讓 skill 長期背兩套工具說明。日後實跑若第三方登入牆頻繁到值得自動繞路再評估加回。
+- **`feat` 對照表與 BLOCKED 文案同步換名**：工具未就緒維持跳過退人工的優雅退化。Chromium 缺件屬一次性可修，源頭改由 README 前置依賴承接而非 runtime 停問：漏裝時報告行有註明非無聲失敗，無實證不立 runtime 條文。
+- **README 前置依賴補 Chromium 一次性安裝**：`npx playwright install chromium`，並註明沒裝時該關跳過退人工、不擋交付。
+
 ## 0.28.0 — 2026-08-28
 
 retro 迴路第一次完整歸檔。收件匣 33 筆（TCERT／MRIS／specrun-app，feat 24、fix 8、guidance 1）聚類為 10 項提案，逐項討論後 8 項落地、1 項以「orchestrator 已能自行處理好」撤回、1 項（spectra parked 分支）擱置。討論過程另收斂出消化規則本身的門檻並寫回 retro：條文只補「實際失敗且 AI 無法自我導正」的缺口，不為 AI 本來做得到的事立規範。
