@@ -132,18 +132,20 @@ Scope：{auto | staged | branch:<name> | change:<changeName>}
 
 | 維度 | 檢查項目 |
 |------|---------|
-| 程式碼品質 | 命名一致性、函式/元件結構、可讀性、重複邏輯、過度抽象 |
+| 程式碼品質 | 命名一致性、函式/元件結構、可讀性、重複邏輯、過度抽象、新增註解是否合白名單（見下） |
 | 安全性 | API key 暴露、XSS、注入風險、敏感資料洩漏 |
 | 專案慣例 | CLAUDE.md 定義的 UI 語言慣例、CSS 變數使用（不硬編碼顏色/間距/字體大小）、遵循專案設計系統慣例、CLAUDE.md 中定義的其他規則 |
 
 過度設計類 finding（過度抽象、投機功能、重造輪子）在描述中標註違反七階梯第幾階——階梯序（與 Coder 守則 `guidelines` 同源）：1 需要存在嗎 → 2 codebase 已有 → 3 標準庫 → 4 平台原生 → 5 已裝依賴 → 6 一行解 → 7 最小實作。例：「違反第 2 階：重造既有共用模組」。改動處若帶合格的 `TODO(debt):` 註記（含上限與升級條件），視為有記錄的刻意取捨，不以過度簡化立 finding——除非升級條件已明顯兌現。
+
+註解白名單（與 Coder 守則 `guidelines` 守則 2 同源）：diff 新增的註解只允許四種——程式碼層陷阱／workaround、合格的 `TODO(debt):`、功能型指令（`eslint-disable`、`@ts-expect-error` 等）、CLAUDE.md 要求的公開 API 文件。不在白名單的（複述 code、敘述開發過程、寫商業規則）**合併成一條 WARNING**、歸屬 coder，描述寫「不合白名單註解 N 處」並列出各行號與類型，不逐條開 finding。
 
 ### 條件檢查
 
 | 維度 | 觸發條件 | 檢查項目 |
 |------|---------|---------|
 | 測試品質 | 變更含測試檔案 | 測試是否有效驗證行為（非複製邏輯自測）、排除規則是否遵守 |
-| Spec 一致性 | change 模式 | 所有 requirements 是否實作、所有 scenarios 是否覆蓋、設計決策是否遵循 design.md |
+| Spec 一致性 | change 模式 | 所有 requirements 是否實作、所有 scenarios 是否覆蓋、設計決策是否遵循 design.md；反向：code 實作了 spec 未規定的商業規則（邊界值、空狀態、重複操作、錯誤路徑的處理）→ 記入報告「規格缺口」段，不立 finding |
 
 ### 不檢查
 
@@ -220,6 +222,10 @@ Grounding rules：
 
 - foo.vue:15 — ...
 - bar.ts:30 — ...
+
+### 規格缺口（僅 change 模式；不影響 verdict 與計輪）
+
+（code 實作了 spec 未規定的商業規則：每條寫 capability／requirement、spec 沒寫什麼、code 怎麼做、檔案:行號。Coder 摘要已自報的條目也列，方便呼叫方合併；無則寫「無」。呼叫方消費方式見 `feat` Step 6.7）
 
 ### 摘要
 

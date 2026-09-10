@@ -53,7 +53,7 @@ MAP
 - explore 完 → 跳選項：先收斂設計決策（/srun:decisions；功能複雜或分支多時建議）｜直接產出規格（/opsx:propose）｜再討論一下
 - decisions 完 → 宣告一句，跑 /opsx:propose
 - propose 完 → 確認使用者已人工審過 proposal，再跑 /srun:feat
-- feat 完 → 把 spec 驗收點攤成清單，交人工驗收
+- feat 完 → 攤兩張清單交人工驗收：spec 驗收點、規格缺口（feat 報告列的 AI 拍板商業規則，已寫入 delta spec；不接受的走驗收修正改 code 並自 delta 刪該 scenario）
 - 驗收發現問題、或診斷根因確認 → 跳選項：規格層問題（先更新 spec 再處理）｜實作層小問題（/srun:fix）｜瑣碎（對話直改）
 - 驗收通過 → 打包宣告一次，依序 /opsx:sync → /opsx:archive；archive 完順帶提一句 /srun:retro
 - pipeline／skill 流程內部 → 靜默，流程自身紀律優先

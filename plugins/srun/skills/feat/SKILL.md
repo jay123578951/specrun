@@ -34,7 +34,6 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 | Reviewer | opus | 經 `opus-reviewer` plugin agent 派發——frontmatter 鎖 model 與工具白名單（無 Write/Edit），報告首行自報實際 model。Code quality + 安全性 + 慣例 + spec alignment 全包；Opus 深度推理 + subagent context 隔離，與主對話 Sonnet 互為獨立視角 |
 | Reviewer (WARNING re-check) | sonnet | 小範圍 re-check 不需 Opus，由 Sonnet subagent 跑 `review` 的 targeted check |
 | 操作流程驗證 | sonnet | 走瀏覽器流程屬操作性工作，Sonnet 足夠；fresh-context subagent 與主對話隔離避免自評自審 |
-| 註解整理 | sonnet | 收尾清理註解，載入 `comment`；機械性偏多不需 Opus，subagent 隔離取得 fresh eyes |
 
 ---
 
@@ -81,6 +80,7 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 串行執行時，後續批次的 Coder prompt 須額外包含：
 - 前批產出的檔案清單
 - 前批 Coder 的關鍵設計決策摘要（來自 Step 4 的輸出）
+- 前批 Coder 回報的規格缺口（後批遇到同一情境沿用同一選擇，不各批各選）
 
 目的：確保後批 agent 沿用前批建立的介面與慣例，而非僅靠讀取原始碼推斷。
 
@@ -123,8 +123,9 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 輸出：
 1. 列出你建立/修改/刪除的所有檔案路徑
 2. 簡述每個 task 的關鍵設計決策（供 retry 時參考）
-3. 若有順手寫測試，列出測試檔路徑（供 Tester 稽核）
-4. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
+3. 規格缺口（必填）：依 guidelines 守則 1 回報 spec 沒交代、你自行拍板的商業規則，每條寫「所屬 capability／requirement、spec 沒寫什麼、你選了什麼、code 位置」；確認沒有就寫「無」，不可省略
+4. 若有順手寫測試，列出測試檔路徑（供 Tester 稽核）
+5. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
 ```
 
 ### Step 5: 派發 Tester Agent
@@ -190,7 +191,7 @@ prompt 由 orchestrator 依 `srun:review` 的「Reviewer Subagent Prompt 模板�
 
 - Scope 代入 `change:{changeName}` 模式；`{adversarial}` 依上方判定代入
 - `{reviewerAdditionalSkills}` 依上方預判代入（如 `web-design-guidelines`），由模板的追加 skills 條件區塊指示 subagent 載入
-- 「{若 feat 載入：}」條件區塊成立：prompt 末段附上 Coder 產出摘要（檔案清單＋設計決策）與 Tester 產出摘要（測試檔案＋測試結果）
+- 「{若 feat 載入：}」條件區塊成立：prompt 末段附上 Coder 產出摘要（檔案清單＋設計決策＋規格缺口）與 Tester 產出摘要（測試檔案＋測試結果）
 
 Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後續包裝或補檢；只負責呈現給使用者並依判定進入 retry 迴路或下一步。
 
@@ -224,25 +225,26 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **Subagent 派發失敗時**：判為 BLOCKED（工具未就緒）處理——跳過本步、退回人工驗收（隔離不變量：不退化為主對話自做）。
 
-### Step 6.7: 註解整理（Sonnet subagent）
+### Step 6.7: 規格缺口回寫＋新增註解清單（orchestrator 自做，不派 agent）
 
-**進場先收驗證環境（不論是否派發整理 agent）**：用 Step 6.5 記下的 PID 關掉自己起的 dev server（不比對程序名），刪除 playwright 寫在專案根的 `.playwright-mcp/`；此後沒有步驟再驗畫面。
+**進場先收驗證環境**：用 Step 6.5 記下的 PID 關掉自己起的 dev server（不比對程序名），刪除 playwright 寫在專案根的 `.playwright-mcp/`；此後沒有步驟再驗畫面。
 
-Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 gate 已綠（PASS 或因工具未就緒而跳過）後、報告結果前，orchestrator 先掃一眼本次 diff 的註解量：**明顯偏多（複述、敘述、開發過程類垃圾可見）才派發**註解整理 Agent；diff 乾淨就跳過本步，報告註明「跳過（diff 註解乾淨）」。
+Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 gate 已綠（PASS 或因工具未就緒而跳過）後、報告結果前執行。
 
-- 載入 `srun:comment` skill 取得整理規範與輸出格式
-- 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
-- scope 為「本次 Pipeline 修改的檔案清單」（即 Coder 各批產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`，subagent 不需自行偵測 diff
-- 整理 Agent 依守則**直接套用 Edit**並自跑 scoped lint（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
-- 整理完成後，**orchestrator 重跑改動檔的 scoped 測試**作為安全網——純註解改動的風險面就兩種：誤刪指令註解由 `comment` 的保護清單計數防守、手滑動到 code 由 scoped 測試接住，不需全量。失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
+**規格缺口回寫**：彙整本次 run 所有批次 Coder 回報的「規格缺口」與 Reviewer 報告「規格缺口」段的條目（同一情境只留一份），寫進本 change 的 delta spec：
 
-整理後**不需**重跑 Opus Reviewer 或操作流程驗證（純註解改動不動 code 邏輯）；ESLint + 測試即為安全網。
+- 缺口為零 → 跳過，報告註明「無」
+- 路徑與格式從 openspec 讀（`openspec status --change {changeName} --json`、`openspec instructions specs --change {changeName} --json`），不自己猜；寫完跑 `openspec validate {changeName}`
+- 只寫 delta spec，不動主規格：合併由驗收通過後的 `/opsx:sync` 照舊處理
+- spectra 後端：不回寫（artifact 結構另議），缺口只列進報告
+
+**新增註解清單（機械）**：用 `git diff {baseBranch}` 撈出本次 diff 新增行裡的註解（`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 7 報告。零判斷、不派 agent；註解好壞的判斷已由 Reviewer 檢核表的註解白名單覆蓋（不合者已作 WARNING 走修復迴路），此處只列給人掃。
 
 ### Step 7: 報告結果
 
 **蓋章前抽驗**：報告前對 tasks.md 與 design.md 的量化判準（條目數、指標數）與「全綠／無 diff」類判準逐條實測對照後才勾（含 Step 3 綁定 gate 的代勾項）。判準失準且正確值唯一明確 → 對正 artifact 後勾；實作未達正確判準 → 回對應 gate 的 retry 迴路；落差會改變驗收語意 → 問人。實作中途調整作法造成的判準漂移亦由此攔截。
 
-顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
+顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項、Step 6.7 的規格缺口與新增註解清單；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
 
 **retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表、條目格式與閾值提醒以該 skill 為單一來源，此處不複製）。append 失敗不阻斷報告，註記即可。
 
@@ -252,17 +254,15 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 ## Retry 迴路
 
-### 通用規格（feat／fix 共用）
+通用規格（一輪定義、不計輪、修復派發附帶物、三件套 settle、升級模式）見 `${CLAUDE_SKILL_DIR}/references/retry-loop.md`：任一 gate 首次失敗進入迴路時先讀。
 
-見 `${CLAUDE_SKILL_DIR}/references/retry-loop.md`（一輪定義、不計輪、修復派發附帶物、三件套 settle、升級模式）：任一 gate 首次失敗進入迴路時先讀。
-
-### feat 補充規格
+### 修復派發 prompt 規則
 
 - **修復派發 prompt**：spec alignment 類 finding 已依 `review` 規範附上被違反的 spec 段落原文——orchestrator **全文轉遞**，修復 agent 不必重讀 spec 檔
 - **派給 Coder 的修復 prompt 一律載明**：不得修改測試檔（修復階段測試修改一律由 Tester 派發）；判斷失敗屬測試問題 → 依 test-defect 申辯通道回報並引驗收依據原文，不要自行改斷言
 - **升級模式開啟後**，Opus Reviewer 重派一律帶 `{adversarial}=true`；Reviewer 自身固定 Opus，無升級問題
 
-### 各 gate 差異
+### 各 gate 失敗誰修、重驗什麼
 
 | Gate 失敗 | 誰修 | 修完重驗什麼 |
 |----------|------|-------------|
@@ -306,7 +306,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - Tester: ✓ 通過（M 個測試）
 - Reviewer: ✓ PASS
 - 操作流程驗證: ✓ PASS（或「跳過（未觸及 UI）」/「跳過（playwright 瀏覽器工具未就緒，請人工驗證）」）
-- 註解整理: ✓ 清除 X 處 / 改寫 Y 處（scoped 測試重跑通過）（或「跳過（diff 註解乾淨）」）
+- 規格缺口回寫: ✓ N 條已寫入 delta spec（或「無」／「spectra 後端，僅列出」）
 
 ### Pipeline 統計
 - 分批：{batchCount} 批（或「單批」）
@@ -317,8 +317,18 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 ### Retry 記錄
 （若有 retry，列出每輪的問題與修復摘要）
 
+### 規格缺口（AI 拍板的商業規則，驗收時逐條確認）
+| # | capability / requirement | spec 沒寫什麼 | Coder 選了什麼 | code 位置 |
+|---|--------------------------|---------------|----------------|-----------|
+（無則寫「無」）
+
+### 新增註解（本次 diff 新增的註解行，機械撈出供掃視）
+- foo.ts:42 — `// ...`
+（無則寫「無」）
+
 ### 下一步
 進入 Phase 3 人工驗收。請啟動 dev server 測試功能。
+規格缺口每一條請一併確認：不接受 → 走驗收修正（/srun:fix 場景 (ii)）改 code，並自 delta spec 刪該 scenario。
 驗收通過後，依專案後端執行（SessionStart 交界圖已標明後端）：
 - openspec：/opsx:sync → /opsx:archive
 - spectra：/spectra-verify → /spectra-archive（spectra 無 sync 對應）
@@ -334,7 +344,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 - 每個 agent 的 prompt 只傳變更名稱和目錄，讓 agent 自行讀取 artifacts；不在 prompt 中貼入檔案內容
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
-- Coder 的輸出（檔案清單 + 設計決策）由 orchestrator 保留，用於傳遞給後續 agent 和 retry
+- Coder 的輸出（檔案清單 + 設計決策 + 規格缺口）由 orchestrator 保留，用於傳遞給後續 agent、retry 與 Step 6.7 回寫；規格缺口跨批累積，run 結束前只回寫一次
 - 獨立的修復任務可平行派發，**前提是修復檔案集不相交**（如 Coder 與 Tester 各修不同檔案的 WARNING）；檔案相交或無法確定 → 串行
 - Coder / Tester 派發本身失敗或中途中斷 → 以 `git status` 對照 tasks.md checkbox **對帳實際完成度**後再重派（磁碟優先，不憑對話記憶推測進度）
 - Pipeline 完成後不自動 commit，等人工驗收通過後再走交付流程

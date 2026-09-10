@@ -50,7 +50,6 @@ description: 輕量 Pipeline：決策已在對話收斂、不動模組邊界、�
 |-------|-------|
 | Coder | sonnet（預設）/ opus |
 | 安全 review（條件性，見 Step 5） | opus（adversarial） |
-| 註解整理 | sonnet |
 
 Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
 
@@ -140,7 +139,8 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 2. 修復邏輯的簡要說明（供 retry 時作為上下文參考）
 3. 測試檔路徑與測試結果（無新測試則說明原因，如「純樣式改動」）
 4. 無法測試的模組清單（依守則檔格式；無則寫「無」）
-5. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
+5. 規格缺口（必填）：依 guidelines 守則 1 回報 spec 沒交代、你自行拍板的商業規則，每條寫「spec 沒寫什麼、你選了什麼、code 位置」；確認沒有就寫「無」，不可省略
+6. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
 ```
 
 **Coder 回報測試修不掉／settle 後測試仍紅時**：進入 Retry 迴路（見下方）。
@@ -149,33 +149,28 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 5: 安全 review（`{securityReview}=true` 時才跑，adversarial Opus）
 
-改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder settle 後、註解整理之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。安全殺傷力與改動行數無關（兩行 session 邏輯的爆炸半徑可大於二十檔 UI 重構）；分級管的是流程重量，不該分掉安全底線。
+改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder settle 後、Spec 輕量複核之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。安全殺傷力與改動行數無關（兩行 session 邏輯的爆炸半徑可大於二十檔 UI 重構）；分級管的是流程重量，不該分掉安全底線。
 
 - Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
 - **FAIL 的修復走完整靜態關卡**：Coder 修 → settle 前自跑三件套（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。計數與上限沿用下方 Retry 迴路（各 gate 最多 3 輪，達上限停下來問人）；嚴重安全問題 → 直接停下來問人
 - Subagent 派發失敗 → 停下來問人（隔離不變量：不退化為主對話自審）
 
-### Step 6: 註解整理（Sonnet subagent）
+### Step 6: 新增註解清單（orchestrator 自做，不派 agent）
 
-所有 gate settle 後（Coder，含條件性的 Step 5 安全 review）、Spec 輕量複核前，orchestrator 先掃一眼本次 diff 的註解量：**明顯偏多（複述、敘述、開發過程類垃圾可見）才派發**註解整理 Agent；diff 乾淨就跳過本步，報告註明「跳過（diff 註解乾淨）」。
-
-- 載入 `srun:comment` skill 取得整理規範與輸出格式
-- 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
-- scope 為「本次修改的檔案清單」（Coder 產出，含其所寫測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`
-- 整理 Agent 依守則**直接套用 Edit**並自跑 scoped lint（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
-- 整理完成後 orchestrator **重跑改動檔的 scoped 測試**作為安全網（誤刪指令註解由保護清單計數防守、手滑動到 code 由 scoped 測試接住，不需全量）；失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
+所有 gate settle 後（Coder，含條件性的 Step 5 安全 review）、Spec 輕量複核前，orchestrator 用 `git diff` 撈出本次 diff 新增行裡的註解（`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 8 報告。零判斷、不派 agent：註解該不該寫由 Coder 載入的 `guidelines` 白名單在生成端約束，這裡只列給人掃。
 
 ### Step 7: Spec 輕量複核（commit 前）
 
 Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防**實作過程中的範圍外溢**（Coder 實際改動超出派發宣告範圍時，可能觸及 Step 3 未評估的規格）：
 
 - 比對 Coder 實際修改的檔案清單與 Step 3 的判斷範圍：一致 → 在完成摘要標記「Spec 已同步（前移）」或「Spec 無影響」；超出 → 對超出部分補跑一次 Step 3 的影響判斷，有影響即補更新 spec
+- Coder 有回報「規格缺口」→ 每條視同 Step 3 的 spec 影響，補寫進對應 spec（場景 (i) 主規格、場景 (ii) 該 change 的 delta spec）；缺口條目同時列進完成報告供人確認
 
 **不執行 commit。** Commit 時機由人工決定（通常在 change 歸檔時一併處理）；Spec 改動與 code 同一個 commit 交付。
 
 ### Step 8: 報告結果
 
-顯示完成摘要（含註解整理與 Spec 同步結果），提示人工確認修復結果。
+顯示完成摘要（含新增註解清單、規格缺口與 Spec 同步結果），提示人工確認修復結果。
 
 **retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表、條目格式與閾值提醒以該 skill 為單一來源，此處不複製）。append 失敗不阻斷報告，註記即可。
 
@@ -199,7 +194,6 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 ### Agent Pipeline 結果
 - Coder: ✓ 完成（N 個檔案，M 個測試通過／純樣式無新測試）
 - 安全 review: ✓ PASS（僅 {securityReview}=true 時列出）
-- 註解整理: ✓ 清除 X 處 / 改寫 Y 處（scoped 測試重跑通過）（或「跳過（diff 註解乾淨）」）
 
 ### Pipeline 統計
 - Coder 派發次數：{coderCalls}（含 retry）
@@ -209,6 +203,12 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ### 人工確認提示（無法自動驗證的部分）
 （Coder 的無法測試清單非空且被頁面使用時列出爆炸半徑，例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」；無則「無」）
+
+### 規格缺口（AI 拍板的商業規則，已補進 spec，請確認）
+（逐條列：spec 沒寫什麼、Coder 選了什麼、code 位置、寫進哪個 spec；無則寫「無」）
+
+### 新增註解（本次 diff 新增的註解行，機械撈出供掃視）
+（檔案:行號 ＋ 原文，一行一條；無則寫「無」）
 
 ### 順手觀察（Coder 路過看到的，僅供參考）
 （Coder 有回報時原樣列出——情報不是待辦，不觸發任何 retry 或派發；無則整段省略）
