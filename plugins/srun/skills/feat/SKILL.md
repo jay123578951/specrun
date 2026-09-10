@@ -234,9 +234,8 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 **規格缺口回寫**：彙整本次 run 所有批次 Coder 回報的「規格缺口」與 Reviewer 報告「規格缺口」段的條目（同一情境只留一份），寫進本 change 的 delta spec：
 
 - 缺口為零 → 跳過，報告註明「無」
-- 路徑與格式從 openspec 讀（`openspec status --change {changeName} --json`、`openspec instructions specs --change {changeName} --json`），不自己猜；寫完跑 `openspec validate {changeName}`
-- 只寫 delta spec，不動主規格：合併由驗收通過後的 `/opsx:sync` 照舊處理
-- spectra 後端：不回寫（artifact 結構另議），缺口只列進報告
+- 路徑與格式從後端 CLI 讀（openspec 與 spectra 同名：`<cli> instructions specs --change {changeName} --json`），不自己猜；寫完跑 `<cli> validate {changeName}`
+- 只寫 delta spec，不動主規格：合併由驗收通過後的收尾指令照舊處理
 
 **新增註解清單（機械）**：用 `git diff {baseBranch}` 撈出本次 diff 新增行裡的註解（`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 7 報告。零判斷、不派 agent；註解好壞的判斷已由 Reviewer 檢核表的註解白名單覆蓋（不合者已作 WARNING 走修復迴路），此處只列給人掃。
 
@@ -306,7 +305,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - Tester: ✓ 通過（M 個測試）
 - Reviewer: ✓ PASS
 - 操作流程驗證: ✓ PASS（或「跳過（未觸及 UI）」/「跳過（playwright 瀏覽器工具未就緒，請人工驗證）」）
-- 規格缺口回寫: ✓ N 條已寫入 delta spec（或「無」／「spectra 後端，僅列出」）
+- 規格缺口回寫: ✓ N 條已寫入 delta spec（或「無」）
 
 ### Pipeline 統計
 - 分批：{batchCount} 批（或「單批」）

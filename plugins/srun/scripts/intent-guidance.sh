@@ -39,7 +39,7 @@ case "$backend" in
 - discuss 完 → 跳選項：先收斂設計決策（/srun:decisions；功能複雜或分支多時建議）｜直接產出規格（/spectra-propose）｜再討論一下；帶進行中 change 進場且結論落在該 change 的規格層（含推翻其前提）→ 選項改含回寫該 change（/spectra-ingest）
 - decisions 完 → 宣告一句，跑 /spectra-propose
 - propose 完 → 確認使用者已人工審過 spec，再跑 /srun:feat
-- feat 完 → 把 spec 驗收點攤成清單，交人工驗收
+- feat 完 → 攤兩張清單交人工驗收：spec 驗收點、規格缺口（feat 報告列的 AI 拍板商業規則，已寫入 delta spec；不接受的走驗收修正改 code 並自 delta 刪該 scenario）
 - 驗收發現問題、或診斷根因確認 → 跳選項：規格層問題（/spectra-ingest）｜實作層小問題（/srun:fix）｜瑣碎（對話直改）
 - 驗收通過 → 宣告，跑 /spectra-archive；archive 完順帶提一句 /srun:retro
 - pipeline／skill 流程內部 → 靜默，流程自身紀律優先
