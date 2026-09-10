@@ -59,9 +59,9 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 
 ### Step 2.5: 基準分支與工作分支
 
-判定基準分支 `{baseBranch}`（`git symbolic-ref refs/remotes/origin/HEAD`；偵測不到看本地主幹慣例，fallback `main`），供後續步驟使用（Reviewer 派發的 diff 基準等）。
+`{baseBranch}` ＝ 開工作分支前所在的分支（main、dev、個人長期分支皆同；接手既有 `feat/{changeName}` 時以其分岔來源為準），供 Reviewer 的 diff 基準與髒檢查用。不用 origin/HEAD 推：遠端主幹可能落後所在分支許多不相關 commit。
 
-一律開工作分支：當前在主幹（`{baseBranch}` 或 dev 這類長期分支）→ 開 `feat/{changeName}`；已在 topic 分支 → 沿用不另開。
+一律從所在分支開 `feat/{changeName}`；唯一不另開的情況是當下已在本 change 自己的 `feat/{changeName}` 上（中斷接手）。
 
 ### Step 3: 評估任務規模與分批策略
 
@@ -204,7 +204,12 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **與 Reviewer 的關係（序列，不平行）**：統一原則——**靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（本步驟）永遠壓軸，驗的必是最終 code**。Step 6 Reviewer 迴路**完全 settle**（含 targeted re-check 通過）後才派發本步驟，故本步驟的 PASS 不會過期。本步驟 FAIL 的修復走完整靜態關卡後才 targeted re-run（見 Retry 迴路）。
 
-**前置**：orchestrator 確保被驗的 dev server 跑的是本次 code（長跑中的舊實例會報假 PASS），必要時另起、驗完關閉，不動使用者既有的實例；起 server 後以啟動 log 或 lsof 確認實際監聽 port 再注入 URL（get-port 類工具在指定 port 被占用時會靜默改聽他 port），注入的入口路徑先實測可達；把實際 URL 告知 agent。功能在登入牆後時，提供「已驗證入口」（dev session / seeded cookie / auth bypass），或（登入本身是被測流程時）測試帳號。
+**前置（固定流程）**：
+
+1. orchestrator 自己起一個驗證專用 dev server，不接手使用者既有的實例（長跑中的舊實例會報假 PASS）。埠每個專案固定一個、跨 run 沿用（記在專案 CLAUDE.md 或 openspec 設定）：playwright 持久化設定檔的登入狀態綁 origin，換埠登入就掉。起完以啟動 log 或 lsof 確認實際監聽埠（get-port 類工具在埠被占時靜默改聽他埠），記下 PID。
+2. 用 playwright 開入口頁看落點：browser_navigate 到入口路徑、browser_snapshot。落在登入頁即有登入牆。
+3. 有登入牆時停下來只說一句「已開好登入頁，請在這個 playwright 視窗登入，好了跟我說」，不索取帳密；使用者回覆後再開一次入口頁確認已進到 app 內部。登入本身是被測流程時才需要測試帳號。
+4. 派發 subagent，注入實際 URL。server 與瀏覽器留到 Step 6.7 進場才收，FAIL 修復後的 re-run 直接沿用。
 
 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**。載入 `srun:verify-flow` skill，由其 subagent prompt 模板驅動；orchestrator 注入：變更名稱、app URL / 啟動方式、驗收依據（`openspec/changes/{changeName}/specs/`）、已知的重點元件 / 位置、必要時的已驗證入口或測試帳密。判準、輸出格式、preflight、登入牆與反 rabbit-hole 規則皆見 `verify-flow` skill，此處不重複。
 
@@ -221,12 +226,14 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 ### Step 6.7: 註解整理（Sonnet subagent）
 
+**進場先收驗證環境（不論是否派發整理 agent）**：用 Step 6.5 記下的 PID 關掉自己起的 dev server（不比對程序名），刪除 playwright 寫在專案根的 `.playwright-mcp/`；此後沒有步驟再驗畫面。
+
 Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 gate 已綠（PASS 或因工具未就緒而跳過）後、報告結果前，orchestrator 先掃一眼本次 diff 的註解量：**明顯偏多（複述、敘述、開發過程類垃圾可見）才派發**註解整理 Agent；diff 乾淨就跳過本步，報告註明「跳過（diff 註解乾淨）」。
 
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次 Pipeline 修改的檔案清單」（即 Coder 各批產出 + Tester 測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`，subagent 不需自行偵測 diff
-- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
+- 整理 Agent 依守則**直接套用 Edit**並自跑 scoped lint（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
 - 整理完成後，**orchestrator 重跑改動檔的 scoped 測試**作為安全網——純註解改動的風險面就兩種：誤刪指令註解由 `comment` 的保護清單計數防守、手滑動到 code 由 scoped 測試接住，不需全量。失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
 
 整理後**不需**重跑 Opus Reviewer 或操作流程驗證（純註解改動不動 code 邏輯）；ESLint + 測試即為安全網。

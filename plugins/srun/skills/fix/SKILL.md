@@ -76,7 +76,7 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 
 ### Step 2: 建立工作分支
 
-一律開工作分支：當前在主幹（main／dev 這類長期分支）→ 開 `fix-<描述>`；已在 topic 分支 → 沿用不另開（場景 ii 通常已在該 change 的功能分支上）。
+一律從所在分支開 `fix-<描述>`；場景 (ii) 已在該 change 的 `feat/` 分支上時沿用不另開。
 
 ### Step 3: Spec 影響判斷（spec-first，派發前）
 
@@ -162,7 +162,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 - 載入 `srun:comment` skill 取得整理規範與輸出格式
 - 使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**
 - scope 為「本次修改的檔案清單」（Coder 產出，含其所寫測試檔），由 orchestrator 注入 prompt 的 `{changedFiles}`
-- 整理 Agent 依守則**直接套用 Edit**並自跑 lint --fix（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
+- 整理 Agent 依守則**直接套用 Edit**並自跑 scoped lint（指令選用與功能型指令註解的保護清單皆由 `comment` 守則規範）
 - 整理完成後 orchestrator **重跑改動檔的 scoped 測試**作為安全網（誤刪指令註解由保護清單計數防守、手滑動到 code 由 scoped 測試接住，不需全量）；失敗回整理 Agent 修正（最多 1 輪），仍失敗 → 停下來問人
 
 ### Step 7: Spec 輕量複核（commit 前）

@@ -49,7 +49,7 @@ description: Use when tidying code comments at the end of development — remove
 
 使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: general-purpose` + `model: sonnet`**。prompt 模板見下方「整理 Agent Subagent Prompt 模板」，依模式注入對應 scope。
 
-Subagent 自行讀檔、自行依守則套用 Edit、自行跑 lint --fix（指令依專案偵測），最後直接輸出本 skill 定義的「輸出格式」報告。主對話收到後直接呈現。
+Subagent 自行讀檔、自行依守則套用 Edit、自行跑 scoped lint（指令依專案偵測，不帶 --fix），最後直接輸出本 skill 定義的「輸出格式」報告。主對話收到後直接呈現。
 
 **Subagent 派發失敗時**：記錄錯誤並停下來問人（隔離不變量：不退化為主對話自做）。
 
@@ -58,7 +58,7 @@ Subagent 自行讀檔、自行依守則套用 Edit、自行跑 lint --fix（指�
 主對話將整理 Agent 的報告原樣呈現，並確認安全網已執行：
 
 - **保護清單前後計數**：subagent 於整理前後對功能型指令保護清單**逐 pattern** regex 計數並核對（見 prompt 模板）——任一 pattern 變少即誤刪，補回才 settle。這是 build-time pragma（測試驗不到）的機械防線
-- **Lint --fix**：由 subagent 在收尾時執行（指令選用見下方安全網引用的 `command-conventions.md`）
+- **Lint**：由 subagent 在收尾時執行（指令選用見下方安全網引用的 `command-conventions.md`）
 - **重跑 scoped 測試**：重跑改動檔的既有測試——**大多數誤刪**功能型指令註解（如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`）**會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外**——它們只影響打包結果，測試驗不到，靠保護清單防守。純註解改動不需全量。被 Pipeline 載入時，由 orchestrator 在整理後重跑；獨立模式由 subagent 自跑並回報。
 
 ---
@@ -146,7 +146,7 @@ build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防�
 
 依守則對改動檔案逐處套用 Edit。全部完成後跑安全網（指令偵測與選用見 `${CLAUDE_SKILL_DIR}/../feat/references/command-conventions.md`，開工前讀）：
 
-1. Lint：跑專案 lint script（需要時帶 `--fix`），確保被你動過的檔案通過 lint
+1. Lint：對你動過的檔案跑 scoped lint（不帶 `--fix`），紅燈逐條手改
 {若獨立模式（非 Pipeline 載入）：}
 2. 測試：跑改動檔的 scoped 測試，確認純註解改動未破壞既有測試——大多數誤刪功能型指令註解會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外，測試驗不到，靠上方保護清單防守
 
@@ -177,7 +177,7 @@ build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防�
 ### 安全網
 
 - 保護清單計數：{前後逐 pattern 一致 | 曾發現 {pattern} 減少，已補回並複核一致}
-- Lint --fix：通過 / 修正 N 處
+- Lint：通過 / 修正 N 處
 {若獨立模式：}
 - 測試：{通過 M / 失敗 X}
 
