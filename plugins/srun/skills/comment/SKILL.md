@@ -4,7 +4,7 @@ argument-hint: "[--staged | --branch <name> | --whole-file]"
 description: Use when tidying code comments at the end of development — removes stale/redundant/thinking-process comments while preserving "why" comments, conventions, and functional directives
 ---
 
-獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Task tool 派發 **Sonnet 整理 Agent subagent** 執行，提供與主對話隔離的 fresh-eyes 視角——避免「剛寫完註解的人最難判斷哪些是廢話」的自評盲點。可在任何場景獨立呼叫，也作為 `feat`／`fix` 開發收尾步驟的單一規範來源。
+獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Task tool 派發 **Sonnet 整理 Agent subagent** 執行，提供與主對話隔離的 fresh-eyes 視角——避免「剛寫完註解的人最難判斷哪些是廢話」的自評盲點。獨立工具，不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋）；適合對人寫的舊 code、別人的 branch 手動跑。
 
 **Input**: 可選指定範圍（見下方模式）。未指定時自動偵測 git diff。
 
@@ -22,16 +22,13 @@ description: Use when tidying code comments at the end of development — remove
 /srun:comment                    → 自動偵測：git diff 未 commit 的變更
 /srun:comment --staged           → 只看 staged changes
 /srun:comment --branch feat/xxx  → 整個 branch 相對 main 的 diff
-/srun:comment --whole-file       → 獨立模式下放寬到整個改動檔案（預設只清 diff 鄰近區）
+/srun:comment --whole-file       → 放寬到整個改動檔案（預設只清 diff 鄰近區）
 ```
-
-被 `feat`／`fix` 收尾步驟載入時，由呼叫方 prompt 指定範圍（通常是「本次 Pipeline 修改的檔案清單」），不需自動偵測。
 
 **掃描邊界（重要，避免失控）**：
 
 - 只處理「本次開發改動到的檔案」，不掃整個 repo；不碰改動檔案以外的檔案
-- **獨立模式預設只處理 diff 改動區及其鄰近註解**——避免誤傷他人 ownership 的舊程式碼。加 `--whole-file` 才放寬到整個改動檔案
-- **Pipeline 模式**（被 `feat`／`fix` 載入）：改動檔案是這條 Pipeline 自己寫出來的，無 ownership 誤傷疑慮，允許清整個 changed file 內明顯的垃圾註解（冗餘複述、思考流程、註解掉的死碼），不限 diff 鄰近區
+- **預設只處理 diff 改動區及其鄰近註解**——避免誤傷他人 ownership 的舊程式碼。加 `--whole-file` 才放寬到整個改動檔案
 
 ---
 
@@ -59,7 +56,7 @@ Subagent 自行讀檔、自行依守則套用 Edit、自行跑 scoped lint（指
 
 - **保護清單前後計數**：subagent 於整理前後對功能型指令保護清單**逐 pattern** regex 計數並核對（見 prompt 模板）——任一 pattern 變少即誤刪，補回才 settle。這是 build-time pragma（測試驗不到）的機械防線
 - **Lint**：由 subagent 在收尾時執行（指令選用見下方安全網引用的 `command-conventions.md`）
-- **重跑 scoped 測試**：重跑改動檔的既有測試——**大多數誤刪**功能型指令註解（如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`）**會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外**——它們只影響打包結果，測試驗不到，靠保護清單防守。純註解改動不需全量。被 Pipeline 載入時，由 orchestrator 在整理後重跑；獨立模式由 subagent 自跑並回報。
+- **重跑 scoped 測試**：重跑改動檔的既有測試——**大多數誤刪**功能型指令註解（如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`）**會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外**——它們只影響打包結果，測試驗不到，靠保護清單防守。純註解改動不需全量。由 subagent 自跑並回報。
 
 ---
 
@@ -67,15 +64,12 @@ Subagent 自行讀檔、自行依守則套用 Edit、自行跑 scoped lint（指
 
 本章節是註解判準、修正方式、輸出格式的 **single source of truth**——所有規範均內嵌於下方 prompt 模板。
 
-**模板語法**：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪。`{scanRange}` 依模式填：獨立模式且無 `--whole-file` → 「僅 diff 改動區及其鄰近註解」；`--whole-file` 或 Pipeline 模式 → 「整個改動檔案」。
+**模板語法**：`{變數}` 代入實際值。`{scanRange}` 依模式填：無 `--whole-file` → 「僅 diff 改動區及其鄰近註解」；`--whole-file` → 「整個改動檔案」。
 
 ```
 你是註解整理 Agent，使用 fresh-eyes 視角整理本次開發產生的程式碼註解。
 
-Scope：{auto | staged | branch:<name> | files}
-{若被 Pipeline 載入：}
-本次 Pipeline 修改的檔案：
-{changedFiles}
+Scope：{auto | staged | branch:<name>}
 
 ---
 
@@ -86,7 +80,6 @@ Scope：{auto | staged | branch:<name> | files}
    - auto: `git diff` 與 `git diff --staged`
    - staged: `git diff --staged`
    - branch: `git diff main...<branch>`
-   - files: 上方列出的檔案清單
 3. 讀取改動到的檔案完整內容（判斷註解是否冗餘、是否與 code 相符，需要完整 context）
 
 掃描邊界：
@@ -126,7 +119,7 @@ Scope：{auto | staged | branch:<name> | files}
   - 拿不準某註解是否為功能型指令時 → 一律保留
 - **法律／授權標頭**
 - **具體且對應真實待辦的 TODO/FIXME**（有明確內容者）
-- **債務註記 `TODO(debt):`**（`guidelines` 規範的刻意取捨記錄：簡化了什麼／上限／升級條件）——一律保留並納入下方保護清單計數；是否已還清（升級完成該移除）是 code 層決策，歸 Coder，不歸本 skill
+- **債務註記 `TODO(debt):`**（`guidelines` 規範的刻意取捨記錄：簡化了什麼／上限／升級條件）——一律保留並納入下方保護清單計數；是否已還清（升級完成該移除）是 code 層決策，歸寫 code 的人，不歸本 skill
 
 判定原則：
 - 對照 diff：鄰近註解須與新 code 一致，不一致即過時，更新或刪除
@@ -147,7 +140,6 @@ build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防�
 依守則對改動檔案逐處套用 Edit。全部完成後跑安全網（指令偵測與選用見 `${CLAUDE_SKILL_DIR}/../feat/references/command-conventions.md`，開工前讀）：
 
 1. Lint：對你動過的檔案跑 scoped lint（不帶 `--fix`），紅燈逐條手改
-{若獨立模式（非 Pipeline 載入）：}
 2. 測試：跑改動檔的 scoped 測試，確認純註解改動未破壞既有測試——大多數誤刪功能型指令註解會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外，測試驗不到，靠上方保護清單防守
 
 ---
@@ -178,16 +170,9 @@ build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防�
 
 - 保護清單計數：{前後逐 pattern 一致 | 曾發現 {pattern} 減少，已補回並複核一致}
 - Lint：通過 / 修正 N 處
-{若獨立模式：}
 - 測試：{通過 M / 失敗 X}
 
 ### 摘要
 
-{1-2 句整體說明，例如「本次清除以 Coder 思考流程註解為主，無誤刪功能型指令」}
+{1-2 句整體說明，例如「本次清除以思考流程註解為主，無誤刪功能型指令」}
 ```
-
----
-
-## 與 Pipeline 的關係
-
-此 skill 只負責「怎麼判斷與整理註解」與「派發給誰」；在 Pipeline 中的位置、重跑測試的時機由呼叫方（`feat`／`fix`）管理。獨立使用時任何時候對任意 diff 執行 `/srun:comment`。
