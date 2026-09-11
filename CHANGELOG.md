@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.30.0 — 2026-09-11
+
+這一版處理的是「AI 自己拍板的商業規則該放哪裡」。舊做法是讓 Coder 寫進程式碼註解，再由收尾的註解整理 Agent 掃一遍。兩頭都不成立：驗收的人不會進 diff 裡撿註解，所以那些拍板等於沒人看過就上線；而整理 Agent 花掉一個 subagent 輪次，換到的只是把垃圾註解掃掉。新做法把兩件事拆開。spec 沒交代的具體情境（邊界值、空狀態、重複操作、錯誤路徑）由 Coder 選最保守的做法做完，記進輸出的「規格缺口」段；run 結束前 orchestrator 一次回寫進 delta spec，並攤進驗收清單讓人逐條確認。註解本身改為預設不寫，只留四種白名單，合不合白名單併進 Reviewer 檢核表。`comment` skill 因此退出 pipeline，回到純獨立工具。另外兩件：retro 第二輪歸檔的教訓落地（驗證環境前置改固定流程、分支基準改寫、lint 不自動修、測試要反向驗證），以及一次全 kit 的 skill 文字瘦身。
+
+### Added
+
+- **Coder 輸出新增「規格缺口」必填段**（`feat` Step 4、`fix` Step 4）：每條寫「所屬 capability／requirement、spec 沒寫什麼、你選了什麼、code 位置」，確認沒有就寫「無」，不可省略。設必填而非選填的理由：下游有兩個消費者（Step 6.7 回寫、Step 7 報告），選填會讓「沒寫」和「沒有」分不開。它跟既有的設計決策摘要分工明確，摘要放實作選擇，缺口放商業規則。`feat` 串行分批時前批的缺口會帶進後批 prompt，避免同一情境各批各選。
+- **`feat` Step 6.7 規格缺口回寫**（orchestrator 自做，不派 agent）：彙整各批 Coder 與 Reviewer 報告的缺口條目（同一情境只留一份）寫進本 change 的 delta spec，缺口為零就跳過。只寫 delta、不動主規格，合併照舊交給驗收通過後的收尾指令。路徑與格式不自己猜，從後端 CLI 讀（openspec 與 spectra 的指令同名：`<cli> instructions specs --change {changeName} --json`），寫完跑 `<cli> validate`。
+- **`review` 報告新增「規格缺口」段與 Spec 一致性反向檢查**：既有檢查問「spec 寫的都做了嗎」，反向問「做了 spec 沒寫的嗎」。查到的記進報告，不立 finding，不影響 verdict 與計輪。Reviewer 是獨立視角，用來補 Coder 自報的漏網，兩份清單由 Step 6.7 合併。
+- **`feat` 報告新增兩張表**：「規格缺口」逐條列 AI 拍板的商業規則供驗收確認，不接受的走驗收修正改 code 並自 delta spec 刪該 scenario；「新增註解」是機械撈出的 diff 新增註解行（檔案:行號＋原文）供人掃視。
+- **`tester-conventions` 新增反向驗證要求**：每個新增或修正的測試檔至少做一次，挑它守的核心行為暫時改壞、確認測試轉紅後還原。改壞了仍全綠的測試不算覆蓋，回頭修斷言。
+
+### Changed
+
+- **`guidelines` 守則 2 註解改為預設不寫**：只有四種可以寫，程式碼層的陷阱／workaround、`TODO(debt):` 債務註記、功能型指令（`eslint-disable`、`@ts-expect-error` 等）、專案 CLAUDE.md 明文要求的公開 API 文件。自檢法是把這行拿掉、讀者看 code 仍看得懂就不寫。商業規則明文禁止進註解，改走守則 1 的規格缺口。舊措辭「只寫 code 無法自我表達的約束與 why」留了太大的自由心證空間，白名單把判斷改成比對。
+- **`guidelines` 守則 1 新增「spec 沒交代的具體情境」處理，STOP 條件同步收窄**：選最保守的做法（不擴張功能、不動既有資料）做完、記進規格缺口、不停不問。STOP 條件從「超出 spec 範圍的取捨」改為「整個方向未定、或需要新增 spec 沒提過的使用者可見功能」，並明寫「spec 對某個具體情境沒交代不算」。原措辭字面上會把每個邊界值都變成 STOP 理由。
+- **`review` 必檢表加入註解白名單檢查**：與 `guidelines` 守則 2 同源。不合白名單的（複述 code、敘述開發過程、寫商業規則）合併成一條 WARNING 歸 coder，描述寫「不合白名單註解 N 處」並列行號與類型，不逐條開 finding。合併是為了不讓註解雜訊淹掉真正的 finding。
+- **`comment` 改為純獨立工具**：開頭標明不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋），定位改為對人寫的舊 code、別人的 branch 手動跑。掃描邊界從「獨立模式／Pipeline 模式」兩套併成一套，預設只清 diff 鄰近區、`--whole-file` 才放寬到整個改動檔案。prompt 模板移除 files scope、Pipeline 載入條件區塊與 `{changedFiles}` 變數，測試安全網一律由 subagent 自跑。
+- **`feat` Step 6.7 從註解整理換成規格缺口回寫**，註解整理 subagent 退場。同一個位置，換掉的是那一步在做什麼。
+- **`feat` Step 6.5 前置改固定流程**：四步。自起驗證專用 dev server 並固定埠（埠跨 run 沿用，記在專案 CLAUDE.md 或 openspec 設定，因為 playwright 持久化設定檔的登入狀態綁 origin，換埠登入就掉）、記 PID；playwright 開入口頁看落點；落在登入頁就停下來請使用者在該視窗登入，不索取帳密；再派 subagent 並注入實際 URL。server 與瀏覽器留到 Step 6.7 進場才收（用 PID 關、不比對程序名），並刪掉 playwright 寫在專案根的 `.playwright-mcp/`。原措辭是一段散文式的注意事項，實測會漏步驟。
+- **基準分支改為起跑所在分支**（`feat` Step 2.5、`fix` Step 2）：不再用 `git symbolic-ref refs/remotes/origin/HEAD` 推，遠端主幹可能落後所在分支許多不相關 commit，拿它當 diff 基準會讓 Reviewer 看到一堆不是本次改的東西。一律從所在分支往下開工作分支，唯一不另開的情況是當下已在本 change 自己的 `feat/{changeName}`（中斷接手）。
+- **lint 一律不帶 `--fix`**（`command-conventions`、`comment`、`feat`、`fix`）：紅燈由 agent 逐條手改。自動修會連檔內既有紅燈一起改掉，捲進大量範圍外 diff。這條 0.28.0 已落在 `guidelines` 守則 3，本次補齊指令層與 skill 層的措辭。
+- **`intent-guidance` 兩張交界圖「feat 完」改攤兩張清單**：spec 驗收點、規格缺口。spectra 與 openspec 兩套後端寫法一致。
+- **規格缺口回寫做成後端中立**：Step 6.7 的路徑與格式改從後端 CLI 同名指令讀，合併交給收尾指令，移除原先「spectra 不回寫」的例外與報告模板的對應選項。
+- **全 kit skill 文字瘦身**：判準是一行文字讀了之後模型的行為會不會不一樣，不會就是寫給人看的。srun 自家 skill 移除沒有讀者的設計沿革（「與 review 同源配對」、三處「與 Pipeline 的關係」、retro 設計原則、Model 選型理由、`fix` 定位標語、四處自評盲點說明）、`review` 勸退呼叫方的成本提示、`verify-flow` 的「核心哲學」段（授權語在 prompt 模板內已有一份，模板外的文字 subagent 收不到）、`retro` 與 `fix` 的 Guardrails 逐字重複條目。vendored skill 移除三處 Related 整節（`backend-patterns`、`clickhouse-io`、`django-patterns` 與 agent `database-reviewer` 均未 vendor，留著會讓 agent 去載不存在的 skill）、兩處 Resources 外部連結、`testcontainers` 兩份參考檔的錨點目錄、十份 skill 重述 description 的自介句。刻意保留三類：When to Activate 觸發清單（與 description 顆粒度不同，description 給未載入的模型選、清單給已載入的模型自我比對）、`testcontainers` 的 BAD/GOOD 對照範例、`decisions` 的 Guardrails 重述條目。
+- **NOTICE 收斂為事實聲明**：兩份 vendored pack 的 NOTICE 清掉逐條修剪紀錄，只留「內容經修剪」。NOTICE 管授權合規與來源歸屬，變更歷程歸 CHANGELOG 與 git diff。
+
+### Removed
+
+- **`feat` 的註解整理步驟**（Sonnet subagent、Agent 分工表的對應列、報告模板的對應行）與 **`fix` Agent 分工表的註解整理列**。改由生成端白名單（`guidelines`）加審查端檢核（`review`）覆蓋，收尾只機械列出新增註解供人掃視。
+
 ## 0.29.0 — 2026-08-31
 
 verify-flow 瀏覽器層整包換掉：claude-in-chrome 換為 playwright MCP。動機是實測 verify-flow 常佔單一項目開發總時長一半以上，根因在截圖驅動互動：每步操作夾整頁截圖給模型看、座標點擊對部分元件點空要繞路重試。playwright 以頁面元素清單（文字）互動、按元素 ref 點擊、內建可互動等待，單步成本與重試率同時降。已用 `--plugin-dir` 起 fresh session 做端到端驗證：MCP server 隨 plugin 載入、24 個工具就緒、迷你流程（開頁／點擊／驗元素／讀 console 分級）全數通過。
