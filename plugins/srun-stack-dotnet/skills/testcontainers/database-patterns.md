@@ -2,12 +2,6 @@
 
 Full code examples for testing with SQL Server, PostgreSQL, and database migrations using TestContainers.
 
-## Contents
-
-- [SQL Server Integration Tests](#sql-server-integration-tests)
-- [PostgreSQL Integration Tests](#postgresql-integration-tests)
-- [Testing Migrations with Real Databases](#testing-migrations-with-real-databases)
-
 ## SQL Server Integration Tests
 
 ```csharp

@@ -2,14 +2,6 @@
 
 Patterns for testing Redis, RabbitMQ, multi-container networks, container reuse, and database reset with Respawn.
 
-## Contents
-
-- [Redis Integration Tests](#redis-integration-tests)
-- [RabbitMQ Integration Tests](#rabbitmq-integration-tests)
-- [Multi-Container Networks](#multi-container-networks)
-- [Reusing Containers Across Tests](#reusing-containers-across-tests)
-- [Database Reset with Respawn](#database-reset-with-respawn)
-
 ## Redis Integration Tests
 
 ```csharp

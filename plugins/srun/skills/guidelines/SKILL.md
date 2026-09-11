@@ -4,9 +4,7 @@ user-invocable: false
 description: Use when an agent writes or modifies code — behavioral guidelines for minimal/surgical changes and autonomous decision boundaries, applied before coding to prevent over-engineering and scope creep
 ---
 
-Coder Agent 的**行為守則** skill，定義「動手寫 code 時該怎麼自我約束」的單一來源，針對 LLM 寫 code 的通病（亂假設、過度設計、亂改不該動的地方），適配本 Pipeline 自主編排；行為守則本身 stack 無關，隨 srun 出貨恆載。
-
-**與 `review` 同源配對**：本 skill 是「生成端自律」，`review` 是「審查端把關」，兩者檢查同一組性質（過度抽象、只改必要）；本 skill 只給 Coder 的行為指引，不取代 review 判定。
+動手寫 code 時的自我約束守則，針對 LLM 的三種通病：亂假設、過度設計、亂改不該動的地方。
 
 ---
 
@@ -89,9 +87,3 @@ Coder Agent 的**行為守則** skill，定義「動手寫 code 時該怎麼自�
 - 「看起來實作了」不等於「滿足驗收條件」——對照 design.md／specs/ 的預期行為自我檢核
 - 宣稱「輸出不變／行為等價」的重構，須以新舊版本實跑比對佐證，不得以閱讀推理代替；第三方元件的 API、斷點、預設值等外部事實，查 node_modules 或實測後才寫，不憑印象
 - 交付前自跑專案 lint script，確保通過再回報（此為既有流程，guidelines 不重複規範指令偵測細節）
-
----
-
-## 與 Pipeline 的關係
-
-本 skill 只負責「Coder 寫 code 時的自我約束」；是否載入、在哪一步載入由呼叫方（`feat`／`fix`）管理——首次與 retry 派發的 Coder 皆載入，兩條 pipeline 共用同一守則，差異在流程不在守則寬鬆度。

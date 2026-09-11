@@ -4,13 +4,13 @@ argument-hint: "[--staged | --branch <name> | --whole-file]"
 description: Use when tidying code comments at the end of development — removes stale/redundant/thinking-process comments while preserving "why" comments, conventions, and functional directives
 ---
 
-獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Task tool 派發 **Sonnet 整理 Agent subagent** 執行，提供與主對話隔離的 fresh-eyes 視角——避免「剛寫完註解的人最難判斷哪些是廢話」的自評盲點。獨立工具，不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋）；適合對人寫的舊 code、別人的 branch 手動跑。
+獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Task tool 派發 **Sonnet 整理 Agent subagent** 執行。獨立工具，不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋）；適合對人寫的舊 code、別人的 branch 手動跑。
 
 **Input**: 可選指定範圍（見下方模式）。未指定時自動偵測 git diff。
 
-**Model 策略**：整理 Agent 走 Sonnet subagent。註解判定屬機械性偏多的工作，不需 Opus 深度推理；subagent context 與主對話隔離取得 fresh eyes，又成本低。
+**Model 策略**：整理 Agent 走 Sonnet subagent。
 
-與 `review`（report-only + STOP 規則）不同，整理 Agent 依守則**直接套用 Edit**，完成後回報它改了什麼。真正危險的刪除只有一種：功能型指令註解，已由保護清單計數機械防守；判斷層對複述／敘述類註解**預設刪**，不必保守。
+整理 Agent 依守則**直接套用 Edit**，完成後回報它改了什麼。真正危險的刪除只有一種：功能型指令註解，已由保護清單計數機械防守；判斷層對複述／敘述類註解**預設刪**，不必保守。
 
 ---
 

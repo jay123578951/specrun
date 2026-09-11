@@ -7,8 +7,6 @@ metadata:
 
 # Redis Patterns
 
-Quick reference for Redis best practices across common backend use cases.
-
 ## How It Works
 
 Redis is an in-memory data structure store that supports strings, hashes, lists, sets, sorted sets, streams, and more. Individual Redis commands are atomic on a single instance; multi-step workflows require Lua scripts, MULTI/EXEC transactions, or explicit synchronization to stay atomic. Data is optionally persisted via RDB snapshots or AOF logs. Clients communicate over TCP using the RESP protocol; connection pools are essential to avoid per-request handshake overhead.
@@ -394,11 +392,3 @@ Use Pub/Sub for fire-and-forget. Switch to Streams if you need guaranteed delive
 | Pub/Sub | Broadcast with no delivery guarantees needed |
 | Sorted Set leaderboard | Ranked scoring, pagination |
 | HyperLogLog | Approximate unique count at low memory |
-
-## Related
-
-- Skill: `postgres-patterns` — relational data patterns
-- Skill: `backend-patterns` — API and service layer patterns
-- Skill: `database-migrations` — schema versioning
-- Skill: `django-patterns` — Django cache framework integration
-- Agent: `database-reviewer` — full database review workflow

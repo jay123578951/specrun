@@ -7,8 +7,6 @@ metadata:
 
 # Database Migration Patterns
 
-Safe, reversible database schema changes for production systems.
-
 ## When to Activate
 
 - Creating or altering database tables

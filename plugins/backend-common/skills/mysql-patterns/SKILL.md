@@ -7,12 +7,6 @@ metadata:
 
 # MySQL Patterns
 
-Use this skill when working on MySQL or MariaDB schema design, migrations,
-slow-query investigation, queue-style transactions, connection pools, or
-production database configuration. Prefer exact version checks before applying a
-feature-specific pattern because MySQL and MariaDB have diverged in several SQL
-details.
-
 ## Activation
 
 - Designing MySQL or MariaDB tables, indexes, and constraints
@@ -403,11 +397,3 @@ When this skill is used for review, return:
 4. Validation plan: `EXPLAIN`, migration dry run, lock/deadlock check, and
    rollback criteria.
 5. Any MySQL/MariaDB syntax differences that affect the recommendation.
-
-## Related
-
-- Skill: `postgres-patterns` - PostgreSQL-specific schema and query patterns
-- Skill: `database-migrations` - migration planning and rollout safety
-- Skill: `backend-patterns` - API and service-layer patterns
-- Skill: `security-review` - secret handling, auth, and least privilege
-- Agent: `database-reviewer` - broader database review workflow

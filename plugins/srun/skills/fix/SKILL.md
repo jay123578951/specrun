@@ -4,7 +4,7 @@ argument-hint: "[問題描述]"
 description: 輕量 Pipeline：決策已在對話收斂、不動模組邊界、且不需建立新的 OpenSpec artifact 的小改動時使用（跨檔案 bug 修復、小型 UI 調整、模組微調、進行中 change 的驗收修正）。需要 spec 記錄（新增 API/元件、行為值得規格化）、改變模組邊界、決策收斂成本高（分支彼此相依）或需拆批改用 feat；單行/純樣式微調直接在對話改即可。
 ---
 
-輕量版 Agent Pipeline。定位一句話：**「對話定案、乾淨執行、快速人工驗證」的執行品質層**，「設計我來、執行你來、驗收我來」分工的載體。
+輕量版 Agent Pipeline。
 
 與 `/srun:feat`（完整版）的差異：
 - 不建立新的變更 artifact — 需求從對話定案取得（場景 (ii) 可回寫**既有** change artifact，見下方）
@@ -145,11 +145,11 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 **Coder 回報測試修不掉／settle 後測試仍紅時**：進入 Retry 迴路（見下方）。
 
-**無法測試清單的消費者（報告行）**：Coder 回報的「無法測試的模組清單」非空、且模組被頁面使用時（grep 模組名稱於頁面／元件原始碼，一條指令），把**受影響頁面清單寫進完成報告的「人工確認提示」段**（例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」）。本流程 **不派** verify-flow——洞的本質是「人工確認時不知道爆炸半徑」，給人 grep 清單即補上資訊差，要看多細由人決定。
+**無法測試清單的消費者（報告行）**：Coder 回報的「無法測試的模組清單」非空、且模組被頁面使用時（grep 模組名稱於頁面／元件原始碼，一條指令），把**受影響頁面清單寫進完成報告的「人工確認提示」段**（例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」）。本流程 **不派** verify-flow；要看多細由人決定。
 
 ### Step 5: 安全 review（`{securityReview}=true` 時才跑，adversarial Opus）
 
-改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder settle 後、Spec 輕量複核之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。安全殺傷力與改動行數無關（兩行 session 邏輯的爆炸半徑可大於二十檔 UI 重構）；分級管的是流程重量，不該分掉安全底線。
+改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder settle 後、Spec 輕量複核之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。
 
 - Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
 - **FAIL 的修復走完整靜態關卡**：Coder 修 → settle 前自跑三件套（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。計數與上限沿用下方 Retry 迴路（各 gate 最多 3 輪，達上限停下來問人）；嚴重安全問題 → 直接停下來問人
@@ -202,7 +202,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 （若有 retry，列出每輪的問題與修復摘要）
 
 ### 人工確認提示（無法自動驗證的部分）
-（Coder 的無法測試清單非空且被頁面使用時列出爆炸半徑，例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」；無則「無」）
+（Coder 的無法測試清單非空且被頁面使用時列出受影響頁面，例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」；無則「無」）
 
 ### 規格缺口（AI 拍板的商業規則，已補進 spec，請確認）
 （逐條列：spec 沒寫什麼、Coder 選了什麼、code 位置、寫進哪個 spec；無則寫「無」）
@@ -232,5 +232,4 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 - Coder prompt 直接描述問題（含 Step 3 更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact；不在 prompt 中貼入檔案內容，讓 agent 自行讀取
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
-- Coder 的輸出（檔案清單 + 修復邏輯）由 orchestrator 保留，用於 retry
 - Spec 影響判斷前移至派發前（spec-first）不可跳過

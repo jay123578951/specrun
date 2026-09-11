@@ -495,11 +495,3 @@ You can use both in the same project - EF Core for writes, Dapper for reads.
 | Tracking read-only data | Use AsNoTracking |
 | Generic repository | Purpose-built read/write stores |
 | Unbounded strings | Configure MaxLength in model |
-
----
-
-## Resources
-
-- **EF Core Performance**: https://learn.microsoft.com/en-us/ef/core/performance/
-- **Dapper**: https://github.com/DapperLib/Dapper
-- **AsSplitQuery**: https://learn.microsoft.com/en-us/ef/core/querying/single-split-queries

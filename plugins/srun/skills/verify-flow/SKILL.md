@@ -4,9 +4,7 @@ argument-hint: "[app URL] [驗收依據路徑或描述]"
 description: Use when you need to confirm a spec-designed user flow actually runs end-to-end in a real browser — drives real clicks to check the flow completes without errors/interruptions, verifies spec-stated elements exist and sit where the spec says; aesthetics and data correctness stay with the human
 ---
 
-一個**可攜、不綁專案**的「操作流程驗證」skill。它在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍（真的點擊、真的填表、真的跳頁），確認**流程串得起來、不報錯、不中斷**，而不是驗「畫面對不對、好不好看」。透過 Task tool 派發 fresh-context subagent 執行，取得與寫 code 的 context 隔離的獨立視角——避免「自己寫的畫面自己驗」的自評盲點。
-
-**核心哲學：給北極星 + 邊界，不給檢查表。** 職責邊界（什麼該驗、什麼不該碰）訂死；怎麼走、怎麼確認、灰色地帶怎麼拿捏，留給模型判斷。
+一個**可攜、不綁專案**的「操作流程驗證」skill。它在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍（真的點擊、真的填表、真的跳頁），確認**流程串得起來、不報錯、不中斷**，而不是驗「畫面對不對、好不好看」。透過 Task tool 派發 fresh-context subagent 執行。
 
 ---
 
@@ -36,7 +34,7 @@ description: Use when you need to confirm a spec-designed user flow actually run
 
 ### 派發 subagent
 
-用 Task tool 派發 fresh-context subagent（預設 `subagent_type: general-purpose` + `model: sonnet`；走瀏覽器流程屬操作性工作，Sonnet 足夠，且與主對話隔離取得獨立視角）。prompt 用下方模板展開。
+用 Task tool 派發 fresh-context subagent（預設 `subagent_type: general-purpose` + `model: sonnet`）。prompt 用下方模板展開。
 
 Subagent 需要 **playwright 瀏覽器工具**（`browser_navigate` / `browser_snapshot` / `browser_click` / `browser_fill_form` / `browser_console_messages` / `browser_network_requests` / `browser_take_screenshot` 等，由 srun 隨附的 playwright MCP server 提供）。若這些工具是 deferred，subagent 須先用一次 ToolSearch 批次載入再操作。
 
@@ -150,11 +148,3 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 ### 摘要
 {1-2 句：流程整體走得通嗎、卡在哪、屬功能問題還是環境問題}
 ```
-
----
-
-## 與 Pipeline 的關係
-
-skill 本體不綁專案；順序、觸發、model 由呼叫方管理（本 kit 為 `feat`，接線見其 Step 6.5；`fix` 刻意不納入，改走報告行補資訊差），本 skill 只負責「怎麼驗、驗到什麼標準、怎麼回報」。獨立使用時對正在跑的 app 執行 `/srun:verify-flow`，給它 URL + 驗收依據。
-
-**它不取代人工驗收**：它是 Phase 3 的**前置過濾器**——擋掉「流程根本走不通」這種低級問題，讓開發者專注在它碰不了的判斷題（美感、資料合理性、體驗）。

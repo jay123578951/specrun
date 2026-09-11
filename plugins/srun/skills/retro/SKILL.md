@@ -4,9 +4,9 @@ argument-hint: "[--archive]"
 description: Pipeline 回饋迴路（雙模式）— 記錄模式（預設）：feat/fix 完成時把偏離快樂路徑的事件記進跨專案收件匣，手動呼叫＝臨時補記（含入口引導漏接／誤觸發）；歸檔模式（--archive）：聚類收件匣、產出附證據的 kit 優化提案。教訓寫回 kit 的 prompt，不寫專案 CLAUDE.md。
 ---
 
-Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 kit 的 prompt 決定、跨專案同一套），故在源頭（orchestrator 事發時在場）做語義記錄，歸檔模式再把收件匣消化成 kit 優化提案。
+Kit 的回饋迴路。在源頭（orchestrator 事發時在場）做語義記錄，歸檔模式再把收件匣消化成 kit 優化提案。
 
-**設計原則**：迴路必須自我維護，否則死於運維疲勞——記錄自動（內建在 feat/fix 完成報告尾端）、消化手動但有閾值提醒。自動 append 點**只進不出**；歸檔是唯一出口且需人同意。
+記錄自動（內建在 feat/fix 完成報告尾端）、消化手動但有閾值提醒。自動 append 點**只進不出**；歸檔是唯一出口且需人同意。
 
 ---
 
@@ -91,7 +91,4 @@ Kit 的回饋迴路。Pipeline 教訓的大宗是 **kit 級**（agent 行為由 
 ## Guardrails
 
 - 記錄模式純機械：對照事件表、一行事實、不寫解讀、不打斷 pipeline（append 失敗不阻斷完成報告，註記即可）
-- 事件表與條目格式以本 skill 為單一來源；feat/fix 只保留一行呼叫，不複製表格
-- 自動 append 點只進不出；歸檔是唯一出口且必經人同意
-- session 指針是深挖線索非依賴——transcripts 約 30 天清理，一行事實必須自足
 - 歸檔模式動 kit 檔案前必徵求同意；提案必附證據（grounding）

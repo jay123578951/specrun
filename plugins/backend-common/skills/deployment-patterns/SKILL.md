@@ -7,8 +7,6 @@ metadata:
 
 # Deployment Patterns
 
-Production deployment workflows and CI/CD best practices.
-
 ## When to Activate
 
 - Setting up CI/CD pipelines

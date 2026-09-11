@@ -4,17 +4,11 @@ argument-hint: "[target]"
 description: Use when reviewing code changes for quality, security, and project conventions — standalone or as review standard within feat pipeline
 ---
 
-獨立的 Code Review skill，定義 review 維度、流程與輸出格式。透過 Task tool 派發 **Opus Reviewer Subagent** 執行 review，提供與主對話 Sonnet 隔離的獨立視角與深度推理。可在任何場景獨立呼叫，也作為 `feat` Reviewer 的 review 標準單一來源。
+獨立的 Code Review skill，定義 review 維度、流程與輸出格式。透過 Task tool 派發 **Opus Reviewer Subagent** 執行 review。可在任何場景獨立呼叫，也作為 `feat` Reviewer 的 review 標準單一來源。
 
 **Input**: 可選指定 review 範圍（見下方模式）。未指定時自動偵測 git diff。
 
-**Model 策略**：Reviewer 走 Opus subagent，與主對話 Sonnet 隔離（避免 context 污染與自評自審）並取得深度推理。
-
-**成本提示**：Opus subagent 每次呼叫會消耗較多 Claude token。以下情境建議略過此 skill，直接請主對話讀檔給意見：
-
-- 改動範圍僅 1–2 個小檔案
-- 單純格式/文字修正（ESLint/TypeScript 已能捕捉）
-- 想要快速 sanity check 而非正式 review
+**Model 策略**：Reviewer 走 Opus subagent。
 
 ---
 
@@ -237,9 +231,3 @@ Grounding rules：
 ## Targeted Check 模式
 
 `feat` WARNING re-check 專用的精簡 re-check：Sonnet subagent、只驗前一輪 WARNING 修復的 diff、不計 Reviewer retry counter。設計重點、派發參數與 prompt 模板見 `${CLAUDE_SKILL_DIR}/references/targeted-check.md`，執行 re-check 時再讀。
-
----
-
-## 與 Pipeline 的關係
-
-此 skill 只負責「怎麼 review」與「派發給誰」；失敗派發邏輯（retry、歸屬路由、3 輪上限）與載入時機由呼叫方（`feat` 或人）管理。獨立使用時任何時候對任意 diff 執行。

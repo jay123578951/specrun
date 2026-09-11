@@ -7,8 +7,6 @@ metadata:
 
 # Docker Patterns
 
-Docker and Docker Compose best practices for containerized development.
-
 ## When to Activate
 
 - Setting up Docker Compose for local development

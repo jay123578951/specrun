@@ -16,7 +16,7 @@ description: 完整 Pipeline：實作完整功能、改變模組邊界的重構�
 
 ### Agent Knowledge Skills
 
-Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:guidelines`（行為守則，stack 無關、隨 srun 出貨恆載），其餘由 subagent 自行從自己 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入。慣例品質是否因此下滑，由 retro 數據觀察。
+Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:guidelines`（行為守則，stack 無關、隨 srun 出貨恆載），其餘由 subagent 自行從自己 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入。
 
 | Agent | Skills（必載） | 可選 Skills | 用途 |
 |-------|---------------|------------|------|
@@ -31,9 +31,9 @@ Orchestrator 不預判知識型 skill 清單：派發 prompt 只強制 `srun:gui
 |-------|-------|------|
 | Coder | sonnet（預設）/ opus | 預設 sonnet；符合「Coder Model 升級判定」時升 opus（見 Step 3）。升級模式開啟後修復派發一律 opus（見「Retry 迴路」） |
 | Tester | sonnet | 修測試的修復派發同樣適用升級模式規則 |
-| Reviewer | opus | 經 `opus-reviewer` plugin agent 派發——frontmatter 鎖 model 與工具白名單（無 Write/Edit），報告首行自報實際 model。Code quality + 安全性 + 慣例 + spec alignment 全包；Opus 深度推理 + subagent context 隔離，與主對話 Sonnet 互為獨立視角 |
-| Reviewer (WARNING re-check) | sonnet | 小範圍 re-check 不需 Opus，由 Sonnet subagent 跑 `review` 的 targeted check |
-| 操作流程驗證 | sonnet | 走瀏覽器流程屬操作性工作，Sonnet 足夠；fresh-context subagent 與主對話隔離避免自評自審 |
+| Reviewer | opus | 經 `opus-reviewer` plugin agent 派發——frontmatter 鎖 model 與工具白名單（無 Write/Edit），報告首行自報實際 model。Code quality + 安全性 + 慣例 + spec alignment 全包 |
+| Reviewer (WARNING re-check) | sonnet | 由 Sonnet subagent 跑 `review` 的 targeted check |
+| 操作流程驗證 | sonnet | fresh-context subagent，派發參數見 Step 6.5 |
 
 ---
 
@@ -182,8 +182,6 @@ Step 6 **首次**派發 Reviewer 前，下列任一條件成立則設 `{adversar
 - 改動含資料庫 schema 變更或生產資料遷移
 
 Retry 後續輪次的 adversarial 升級由「Retry 迴路」的升級模式管理，不在此處重複判斷。
-
-> 註：`review` skill 另列了「使用者明確要求深度 review」這條 adversarial 觸發條件，但 `/srun:feat` 流程不接收 ad-hoc adversarial 指令。如需在 Pipeline 完成後對特定 diff 跑深度 review，請另外執行 `/srun:review`。
 
 使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**（本 plugin 出貨的 agent：frontmatter 鎖 `model: opus` 與工具白名單——有 Bash 供自跑 `git diff`、無 Write/Edit 的 report-only 門檻；報告第一行自報實際 model 作 runtime 降級偵測）。
 

@@ -4,7 +4,7 @@
 
 ## 設計重點
 
-- **由 Sonnet subagent 直接讀檔執行，不派發 Opus**（避免為小範圍 re-check 消耗較貴的 Opus quota，並節省派發開銷）
+- **由 Sonnet subagent 直接讀檔執行，不派發 Opus**
 - 只讀取改動的檔案和對應行數
 - 只驗證原始 WARNING 是否已正確修復、是否引入新問題
 - 不重新掃描所有檔案
