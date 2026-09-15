@@ -1,7 +1,7 @@
 ---
 name: opus-reviewer
 description: 獨立 Code Reviewer subagent — 供 review / feat / fix 派發使用；frontmatter 鎖定 model 與工具白名單（report-only，無 Write/Edit），review 規範由呼叫方自 review skill 模板展開注入 prompt
-tools: Skill, Read, Grep, Glob, Bash
+tools: Skill, Read, Grep, Glob, Bash, WebFetch
 model: opus
 ---
 
