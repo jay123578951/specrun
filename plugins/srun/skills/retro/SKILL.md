@@ -29,7 +29,8 @@ Kit 的回饋迴路。在源頭（orchestrator 事發時在場）做語義記錄
 
 | 事件類型（固定詞彙） | 觸發 |
 |---------------------|------|
-| `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review / comment-safety-net） |
+| `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review / comment-safety-net）；Reviewer 只有 FAIL 才算，PASS with WARNING 記下一列 |
+| `review_warning` | Reviewer 判 PASS with WARNING（記條數與歸屬 coder／tester／spec；不計 `counters.reviewer`，與 retry-loop「targeted re-check 不計輪」一致） |
 | `counter_2` / `counter_3` | 任一迴路 counter 達 2（升 Opus）／達 3（停損問人） |
 | `test_defect` | test-defect 仲裁通道被使用（記上訴結果：測試改了／上訴不成立） |
 | `review_defect` | review-finding 申辯通道被使用（記上訴結果：finding 撤回／維持／升級問人） |
@@ -56,6 +57,7 @@ Kit 的回饋迴路。在源頭（orchestrator 事發時在場）做語義記錄
 ```
 
 - `events`：只用事件表的固定詞彙；一行事實＋指路，**不寫解讀**（解讀是歸檔模式的事）
+- `stats.counters`：只數 retry-loop 定義的「輪」（gate FAIL 回主對話派修再重驗），WARNING 修復與 targeted re-check／re-run 不算
 - `tier: "guidance"`：未進 pipeline 的引導事件補記條目——`stats` 省略、`subject` 寫當時對話主題一句
 - `observations`（開放觀察欄）：模型判斷有事件表之外值得 kit 注意的異常時，以事實＋證據格式一併記，同樣不寫解讀——收集工具本身也是被優化的對象（反覆出現的觀察，消化時提案收進事件表）
 - **閾值提醒**：append 時順手數行數（`wc -l`），收件匣 > 30 筆 → 在 pipeline 完成報告加一行：「回饋收件匣已累積 N 筆，建議擇時執行 `/srun:retro --archive` 消化」。30 只是提醒閾值，不是歸檔門檻
