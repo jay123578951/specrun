@@ -58,6 +58,8 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 
 判定保守。一般小改動維持 sonnet。
 
+判定結果連同理由記進 Step 8 的 retro 條目（`stats.coderModel`／`stats.coderModelReason`）：`fix` 的理由只有 `security` 一種，維持 `sonnet` 記 `null`。記錄口徑見 `srun:retro`。
+
 ---
 
 ## 流程
@@ -197,6 +199,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ### Pipeline 統計
 - Coder 派發次數：{coderCalls}（含 retry）
+- Coder 起跑 model：{coderModel}（升 `opus` 時附理由 {coderModelReason}）
 
 ### Retry 記錄
 （若有 retry，列出每輪的問題與修復摘要）

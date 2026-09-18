@@ -94,6 +94,8 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 
 Step 4 **首次**派發 Coder 前判定 `{coderModel}`：先驗上即可預期需要深度推理才升 `opus`——跨模組邊界的架構變更／大型重構、安全敏感路徑（auth、payment、API key 處理、session 管理；與 Step 6 adversarial 判定共用清單）、design.md 把較多實作方式留給 Coder 自行決定。其餘維持 `sonnet`，判定保守。
 
+判定結果連同理由記進 Step 7 的 retro 條目（`stats.coderModel`／`stats.coderModelReason`）：固定詞彙 `architecture`／`security`／`design-open`，維持 `sonnet` 記 `null`。這是前置判定成效的唯一分母，記錄口徑見 `srun:retro`。
+
 Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 
 ### Step 4: 派發 Coder Agent
@@ -308,6 +310,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 ### Pipeline 統計
 - 分批：{batchCount} 批（或「單批」）
 - Coder 派發次數：{coderCalls}（含 retry）
+- Coder 起跑 model：{coderModel}（升 `opus` 時附理由 {coderModelReason}）
 - Tester 派發次數：{testerCalls}（含 retry）
 - Reviewer 派發次數：{reviewerCalls}（含 retry）
 

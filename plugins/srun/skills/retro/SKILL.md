@@ -53,11 +53,12 @@ Kit 的回饋迴路。在源頭（orchestrator 事發時在場）做語義記錄
 **條目格式**（一行 JSON append；事實不寫解讀。append 前以本節格式為模板產生單行 JSON 序列化輸出，不自創欄位、不憑記憶拼格式）：
 
 ```json
-{"ts":"<ISO 時間>","project":"<專案名>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
+{"ts":"<ISO 時間>","project":"<專案名>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"coderModel":"sonnet|opus","coderModelReason":null|"architecture|security|design-open","testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
 ```
 
 - `events`：只用事件表的固定詞彙；一行事實＋指路，**不寫解讀**（解讀是歸檔模式的事）
 - `stats.counters`：只數 retry-loop 定義的「輪」（gate FAIL 回主對話派修再重驗），WARNING 修復與 targeted re-check／re-run 不算
+- `stats.coderModel`／`stats.coderModelReason`：**首次**派 Coder 用的 model 與升級理由。升級模式改的是修復派發、不是首次派發，兩者不混記；沿用升級模式後的 model 會讓「前置判定有沒有效」這題永遠算不出來。取值不靠記憶：回頭看本 run 第一次 Task 派發的 `model` 參數。理由用固定詞彙：`architecture`（跨模組架構變更／大型重構）、`security`（安全敏感路徑）、`design-open`（design.md 把較多實作方式留給 Coder 自行決定）；維持 `sonnet` 起跑記 `null`。`fix` 只有 `security` 一種，其餘條件在 `fix` 不適用
 - `tier: "guidance"`：未進 pipeline 的引導事件補記條目——`stats` 省略、`subject` 寫當時對話主題一句
 - `observations`（開放觀察欄）：模型判斷有事件表之外值得 kit 注意的異常時，以事實＋證據格式一併記，同樣不寫解讀——收集工具本身也是被優化的對象（反覆出現的觀察，消化時提案收進事件表）
 - **閾值提醒**：append 時順手數行數（`wc -l`），收件匣 > 30 筆 → 在 pipeline 完成報告加一行：「回饋收件匣已累積 N 筆，建議擇時執行 `/srun:retro --archive` 消化」。30 只是提醒閾值，不是歸檔門檻
