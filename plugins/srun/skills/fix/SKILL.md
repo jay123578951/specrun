@@ -58,7 +58,7 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 
 判定保守。一般小改動維持 sonnet。
 
-判定結果連同理由記進 Step 8 的 retro 條目（`stats.coderModel`／`stats.coderModelReason`）：`fix` 的理由只有 `security` 一種，維持 `sonnet` 記 `null`。記錄口徑見 `srun:retro`。
+判定結果連同理由記進 Step 8 的 retro 條目（`guards.coderStart`）：`fix` 的理由只有 `security` 一種，維持 `sonnet` 記 `null`。記錄口徑見 `srun:retro`。
 
 ---
 
@@ -136,7 +136,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 完成後 settle 前自跑三件套：lint + typecheck + 專案測試套件（指令選用一律依 {commandConventionsPath}，測試執行節奏依守則檔；紅燈就地修復不計 retry，就地修不掉 → 停下回報）
 
-輸出：
+輸出（第一行自報你實際使用的 model，格式：`Coder model: <id>`；缺這行視為報告不完整）：
 1. 修改的檔案路徑與變更摘要
 2. 修復邏輯的簡要說明（供 retry 時作為上下文參考）
 3. 測試檔路徑與測試結果（無新測試則說明原因，如「純樣式改動」）
@@ -174,7 +174,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 顯示完成摘要（含新增註解清單、規格缺口與 Spec 同步結果），提示人工確認修復結果。
 
-**retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表、條目格式與閾值提醒以該 skill 為單一來源，此處不複製）。append 失敗不阻斷報告，註記即可。
+**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄：起跑 model 與理由、安全 review 有無觸發與判定、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、停損裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣，再依其回顯格式在報告的「retro」節輸出記了什麼與歸檔提醒（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）。append 失敗不阻斷報告，該節註記失敗原因即可。
 
 ---
 
@@ -221,6 +221,9 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 - {Step 3 更新的 spec 段落列表} 或「無影響（純實作問題）」
 - 輕量複核：{範圍一致 | 超出範圍，已補更新 {spec}}
 
+### retro
+（依 `srun:retro` 回顯格式：記了幾筆事件、防錯規則開關一行、有則加歸檔提醒行；append 失敗寫「retro 記錄失敗：{原因}」）
+
 ### 下一步
 請人工確認修復結果。Commit 時機由人工決定（Spec 改動與 code 同 commit）。
 ```
@@ -233,6 +236,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ## Guardrails
 
+- Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），批次寫「第 N 批」，修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、哪批、首派還是修復
 - Coder prompt 直接描述問題（含 Step 3 更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact；不在 prompt 中貼入檔案內容，讓 agent 自行讀取
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
 - Spec 影響判斷前移至派發前（spec-first）不可跳過

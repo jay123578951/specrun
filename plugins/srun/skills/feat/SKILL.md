@@ -94,7 +94,7 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 
 Step 4 **首次**派發 Coder 前判定 `{coderModel}`：先驗上即可預期需要深度推理才升 `opus`——跨模組邊界的架構變更／大型重構、安全敏感路徑（auth、payment、API key 處理、session 管理；與 Step 6 adversarial 判定共用清單）、design.md 把較多實作方式留給 Coder 自行決定。其餘維持 `sonnet`，判定保守。
 
-判定結果連同理由記進 Step 7 的 retro 條目（`stats.coderModel`／`stats.coderModelReason`）：固定詞彙 `architecture`／`security`／`design-open`，維持 `sonnet` 記 `null`。這是前置判定成效的唯一分母，記錄口徑見 `srun:retro`。
+判定結果連同理由記進 Step 7 的 retro 條目（`guards.coderStart`）：固定詞彙 `architecture`／`security`／`design-open`，維持 `sonnet` 記 `null`。這是前置判定成效的唯一分母，記錄口徑見 `srun:retro`。
 
 Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 
@@ -122,7 +122,7 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 
 完成後依序執行 lint 與 typecheck（指令選用一律依 {commandConventionsPath}；錯誤自行修復，不計 retry）
 
-輸出：
+輸出（第一行自報你實際使用的 model，格式：`Coder model: <id>`；缺這行視為報告不完整）：
 1. 列出你建立/修改/刪除的所有檔案路徑
 2. 簡述每個 task 的關鍵設計決策（供 retry 時參考）
 3. 規格缺口（必填）：依 guidelines 守則 1 回報 spec 沒交代、你自行拍板的商業規則，每條寫「所屬 capability／requirement、spec 沒寫什麼、你選了什麼、code 位置」；確認沒有就寫「無」，不可省略
@@ -245,7 +245,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項、Step 6.7 的規格缺口與新增註解清單；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
 
-**retro 記錄（一行呼叫）**：載入 `srun:retro` skill，依其記錄模式把本次 run 的事件與統計 append 進全域收件匣（事件表、條目格式與閾值提醒以該 skill 為單一來源，此處不複製）。append 失敗不阻斷報告，註記即可。
+**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄：起跑 model 與理由、首派 Reviewer 的 adversarial、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、停損裁決、Coder／Reviewer 自報的 model id）、事件與統計 append 進全域收件匣，再依其回顯格式在報告的「retro」節輸出記了什麼與歸檔提醒（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）。append 失敗不阻斷報告，該節註記失敗原因即可。
 
 報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔）——檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
 
@@ -326,6 +326,9 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - foo.ts:42 — `// ...`
 （無則寫「無」）
 
+### retro
+（依 `srun:retro` 回顯格式：記了幾筆事件、防錯規則開關一行、有則加歸檔提醒行；append 失敗寫「retro 記錄失敗：{原因}」）
+
 ### 下一步
 進入 Phase 3 人工驗收。請啟動 dev server 測試功能。
 規格缺口每一條請一併確認：不接受 → 走驗收修正（/srun:fix 場景 (ii)）改 code，並自 delta spec 刪該 scenario。
@@ -342,6 +345,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 ## Guardrails
 
+- Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），批次寫「第 N 批」，修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、哪批、首派還是修復
 - 每個 agent 的 prompt 只傳變更名稱和目錄，讓 agent 自行讀取 artifacts；不在 prompt 中貼入檔案內容
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
 - Coder 的輸出（檔案清單 + 設計決策 + 規格缺口）由 orchestrator 保留，用於傳遞給後續 agent、retry 與 Step 6.7 回寫；規格缺口跨批累積，run 結束前只回寫一次
