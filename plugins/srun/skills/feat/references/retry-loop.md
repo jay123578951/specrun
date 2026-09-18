@@ -8,4 +8,4 @@
 - **機制型 finding 的同型排查**：finding 屬同一機制在本次改動多處出現的型態（如整批轉換時各處刪掉同款守衛）→ 修復指示須要求排查本次 diff 內的同構位置並一次修完，不只修被點名那處；修復若新增／改寫規範性文字（spec 條文、合規表、範例、摘要型 artifact），同型排查含新文字與既有敘述的一致性掃描，不只排查程式碼同構處
 - **重讀自行判斷**：修復派發已附前輪摘要與失敗報告，通常足以定位；是否回頭重讀 design.md／specs/／CLAUDE.md 由修復 agent 自行判斷
 - **修復 agent settle 前自跑三件套**（lint + typecheck + 專案 test script）：紅燈就地修不計輪；就地修不掉、或判斷失敗屬測試問題 → 回報主對話（計下一輪，或走申辯通道，見各 SKILL.md）
-- **升級模式（全 Pipeline 單一開關，開啟後不關閉）**：任一 gate 進入第 2 輪修復即開啟——此後**所有修復派發升 Opus**（不論被派的是 Coder 或 Tester）。targeted re-check／re-run 是驗證派發，維持 Sonnet 不受影響
+- **升級模式（全 Pipeline 單一開關，開啟後不關閉）**：任一 gate counter 達 2（第 2 次 FAIL 派修，WARNING 修復批不算）即開啟——此後**所有修復派發升 Opus**（不論被派的是 Coder 或 Tester）。targeted re-check／re-run 是驗證派發，維持 Sonnet 不受影響

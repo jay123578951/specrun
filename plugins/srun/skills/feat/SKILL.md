@@ -237,7 +237,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 - 路徑與格式從後端 CLI 讀（openspec 與 spectra 同名：`<cli> instructions specs --change {changeName} --json`），不自己猜；寫完跑 `<cli> validate {changeName}`
 - 只寫 delta spec，不動主規格：合併由驗收通過後的收尾指令照舊處理
 
-**新增註解清單（機械）**：用 `git diff {baseBranch}` 撈出本次 diff 新增行裡的註解（`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 7 報告。零判斷、不派 agent；註解好壞的判斷已由 Reviewer 檢核表的註解白名單覆蓋（不合者已作 WARNING 走修復迴路），此處只列給人掃。
+**新增註解清單（機械）**：撈出本次改動所有檔案新增行裡的註解，**含未進索引的新建檔**（例如 `git diff {baseBranch}` 加 `git ls-files --others --exclude-standard`；`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 7 報告。零判斷、不派 agent；註解好壞的判斷已由 Reviewer 檢核表的註解白名單覆蓋（不合者已作 WARNING 走修復迴路），此處只列給人掃。
 
 ### Step 7: 報告結果
 

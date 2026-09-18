@@ -159,7 +159,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 6: 新增註解清單（orchestrator 自做，不派 agent）
 
-所有 gate settle 後（Coder，含條件性的 Step 5 安全 review）、Spec 輕量複核前，orchestrator 用 `git diff` 撈出本次 diff 新增行裡的註解（`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 8 報告。零判斷、不派 agent：註解該不該寫由 Coder 載入的 `guidelines` 白名單在生成端約束，這裡只列給人掃。
+所有 gate settle 後（Coder，含條件性的 Step 5 安全 review）、Spec 輕量複核前，orchestrator 撈出本次改動所有檔案新增行裡的註解，**含未進索引的新建檔**（例如 `git diff` 加 `git ls-files --others --exclude-standard`；`//`、`#`、`/* */`、`<!-- -->`、`"""` 依語言擇用；字串內誤撈可容忍），整理成「檔案:行號 ＋ 原文」清單放進 Step 8 報告。零判斷、不派 agent：註解該不該寫由 Coder 載入的 `guidelines` 白名單在生成端約束，這裡只列給人掃。
 
 ### Step 7: Spec 輕量複核（commit 前）
 

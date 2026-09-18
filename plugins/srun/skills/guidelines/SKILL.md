@@ -28,6 +28,7 @@ description: Use when an agent writes or modifies code — behavioral guidelines
 - **不可逆／破壞性操作**：刪資料、改既有 migration、動生產設定
 - **實際規模明顯超出派發宣告**：動手後發現要動的範圍明顯大於派發時宣告的範圍 → 回報，**不硬做也不縮水交付**——「要不要升級重走流程」是路由決策，歸 orchestrator／人，不歸你
 - **task 前提實質矛盾**：tasks／design 記載與現場不符、照字面做會做錯 → 回報，不硬做；筆誤級的不符（正確對應唯一明確）→ 自行對正並寫進設計決策摘要，不必停
+- **搜尋零命中類驗證句**（「全文檢索零殘留」「grep 為空」）：先拿一個已知存在的正例跑同一條搜尋，抓得到才算搜尋有效，再跑真正的零命中，正例寫進設計決策摘要；抓不到正例的零命中不算達成，不勾、回報
 
 其餘一律自己判斷。判斷不了功能方向時才停，技術細節不要停。
 
@@ -48,7 +49,7 @@ description: Use when an agent writes or modifies code — behavioral guidelines
 - 先問自己：資深工程師看到這段會不會覺得「過度設計」？會 → 砍到最小
 - 需求只要一個固定行為，就寫固定行為；要兩處共用了再抽象（rule of three）
 - 不為單一用途抽出泛化的 composable／hook／util／抽象層；不提前泛化 props／型別／介面「預留彈性」
-- 註解預設不寫。只有三種可以寫：①指名第三方東西（library、平台 API、瀏覽器、工具）並描述它的行為 ②下方規範的 `TODO(debt):` ③功能型指令（`eslint-disable`、`@ts-expect-error` 等）。自檢：這行指名了哪個第三方東西？答不出來就不寫，本專案自己的設計理由、行為規則、欄位語意住在 spec／design
+- 註解預設不寫。只有三種可以寫：①指名第三方東西（library、平台 API、瀏覽器、工具）並描述它的行為 ②下方規範的 `TODO(debt):` ③功能型指令（`eslint-disable`、`@ts-expect-error` 等）。自檢：這行指名了哪個第三方東西？答不出來就不寫，本專案自己的設計理由、行為規則、欄位語意住在 spec／design。專案慣例開關：專案 CLAUDE.md 明文採理由型註解、或改動檔的既有註解多數在寫設計理由時，本條白名單不套用，照守則 3 配合既有風格寫；Reviewer 的白名單檢查用同一個開關（`review` 必檢表），兩端對同一個 repo 給同一個答案
 
 **最小化的底線**（永遠不准為了 diff 小而省）：
 
