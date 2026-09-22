@@ -128,23 +128,11 @@ npm install -g @fission-ai/openspec@latest   # pnpm / yarn / bun / nix 見它的
 </tr>
 </table>
 
-1. 到 [Releases](https://github.com/jay123578951/specrun-app/releases) 下載最新的 `specrun_x.x.x_aarch64.dmg`，開啟後把 `specrun.app` 拖進「應用程式」
-2. 開一次終端機，把 macOS 替下載檔案蓋上的標記拿掉：
+到 [Releases](https://github.com/jay123578951/specrun-app/releases) 下載安裝後，記得補跑這一行，否則第一次開啟會被 macOS 擋下來說它「已損毀」：
 
-   ```bash
-   xattr -d com.apple.quarantine /Applications/specrun.app
-   ```
-
-3. 回「應用程式」點開 `specrun.app`
-
-<details>
-<summary>第一次開啟被系統擋下來？看這裡</summary>
-
-**拿掉標記那一步不能跳過。** 這個 App 沒有經過 Apple 簽章，直接點開時 macOS 會說它「已損毀，應將其丟到垃圾桶」。那不是檔案真的壞掉，是系統擋下未簽章 App 時用的說法。同理，「隱私權與安全性」面板裡找不到 specrun、右鍵選「打開」也沒用，那兩條路只開放給有簽章的 App。
-
-**那行指令執行成功時畫面上不會出現任何訊息**，游標跳回下一行就是做完了。看到 `No such xattr` 代表你指到的那份 App 身上沒有標記，多半是拖曳時卡在「已有同名項目」、實際沒換成新下載的那份，把舊的丟掉重拖一次。
-
-</details>
+```bash
+xattr -d com.apple.quarantine /Applications/specrun.app
+```
 
 ### 1. 裝 plugin
 

@@ -128,23 +128,11 @@ Run `openspec init` once inside the project to create the `openspec/` directory,
 </tr>
 </table>
 
-1. Download the latest `specrun_x.x.x_aarch64.dmg` from [Releases](https://github.com/jay123578951/specrun-app/releases), open it, and drag `specrun.app` into Applications
-2. Open a terminal once and strip the flag macOS put on the downloaded file:
+Install it from [Releases](https://github.com/jay123578951/specrun-app/releases), then remember to run this. Without it macOS blocks the first launch and claims the app is damaged:
 
-   ```bash
-   xattr -d com.apple.quarantine /Applications/specrun.app
-   ```
-
-3. Go back to Applications and open `specrun.app`
-
-<details>
-<summary>macOS blocked it on first open?</summary>
-
-**Stripping that flag isn't optional.** The app isn't signed by Apple, so opening it directly gets you "is damaged and should be moved to the Trash". Nothing is actually damaged; that is simply the wording macOS uses when it blocks an unsigned app. For the same reason specrun never appears in the Privacy & Security panel, and right-clicking Open does nothing: both of those paths are reserved for signed apps.
-
-**When that command succeeds it prints nothing at all.** The cursor dropping to the next line means it worked. `No such xattr` means the app you pointed at doesn't carry the flag, usually because the drag stopped at the "item already exists" prompt and never replaced the old copy. Trash the old one and drag it again.
-
-</details>
+```bash
+xattr -d com.apple.quarantine /Applications/specrun.app
+```
 
 ### 1. Install the plugin
 
