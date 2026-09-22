@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "srun",
-      "description": "SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + roadmap tracking skill + opus-reviewer agent + SessionStart intent-guidance hook (spectra/openspec backend adapter) + PostToolUse roadmap-guard hook, driven by OpenSpec change artifacts",
+      "description": "SDD pipeline — /srun:decisions / /srun:feat / /srun:fix / /srun:review / /srun:verify-flow / /srun:comment / /srun:retro + guidelines behavioral skill + roadmap tracking skill + opus-reviewer agent + SessionStart intent-guidance hook (openspec backend adapter) + PostToolUse roadmap-guard hook, driven by OpenSpec change artifacts",
       "version": "0.32.0",
       "author": {
         "name": "jay123578951"

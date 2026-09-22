@@ -10,25 +10,25 @@
 | 2 | 專案根目錄有 `openspec/` | openspec CLI |
 | 3 | 皆無 | none（入口降級） |
 
-順序不可對調：spectra 專案的資料格式與 OpenSpec 相容、同樣帶 `openspec/` 目錄。
+順序不可對調，這是技術限制、不是優先級：spectra 專案的資料格式與 OpenSpec 相容、同樣帶 `openspec/` 目錄，把 openspec 那條提前會把 spectra 專案認成 openspec、指令全錯。主線是 openspec（見下方分級），spectra 排第一純粹因為它的訊號比較窄、必須先篩掉。
 
 ## 適配表（措辭單版本，說意圖；最後一步查表翻指令）
 
-| 意圖（交界） | spectra | openspec CLI | none |
-|--------------|---------|--------------|------|
-| 進規格討論流程（入口，宣告制預設） | `/spectra-discuss`［`<change 名>`］ | `/opsx:explore`（吻合的 change 名寫進話題） | 跳降級選項（先問偏好工具、協助初始化） |
-| change 掃描（進場前置，一個指令） | `spectra list` | `ls openspec/changes/` | — |
-| 純知識查詢（直答豁免，可順路提） | `/spectra-ask` | 直答 | 直答 |
+| 意圖（交界） | openspec CLI | spectra | none |
+|--------------|--------------|---------|------|
+| 進規格討論流程（入口，宣告制預設） | `/opsx:explore`（吻合的 change 名寫進話題） | `/spectra-discuss`［`<change 名>`］ | 跳降級選項（先問偏好工具、協助初始化） |
+| change 掃描（進場前置，一個指令） | `ls openspec/changes/` | `spectra list` | — |
+| 純知識查詢（直答豁免，可順路提） | 直答 | `/spectra-ask` | 直答 |
 | 先診斷（入口） | 宣告唯讀調查 | 宣告唯讀調查 | 宣告唯讀調查 |
 | 先收斂設計決策（交界 1，岔路） | `/srun:decisions` | `/srun:decisions` | — |
-| 直接產出規格（交界 1） | `/spectra-propose` | `/opsx:propose` | — |
+| 直接產出規格（交界 1） | `/opsx:propose` | `/spectra-propose` | — |
 | 實作（交界 3，前置：人工審過 spec） | `/srun:feat` | `/srun:feat` | — |
-| 規格層問題（交界 4b，岔路） | `/spectra-ingest` | 先更新 spec 再處理 | — |
+| 規格層問題（交界 4b，岔路） | 先更新 spec 再處理 | `/spectra-ingest` | — |
 | 實作層小問題（交界 4b） | `/srun:fix` | `/srun:fix` | — |
-| 收尾（驗收通過） | `/spectra-archive`（一步） | `/opsx:sync` → `/opsx:archive`（打包宣告一次） | — |
+| 收尾（驗收通過） | `/opsx:sync` → `/opsx:archive`（打包宣告一次） | `/spectra-archive`（一步） | — |
 | 回顧（archive 完，順帶一句） | `/srun:retro` | `/srun:retro` | — |
 
-分級支援：spectra 行為主線一級公民（考卷與 dogfood 全覆蓋）；openspec 行 best-effort（措辭保證正確、不主動驗證）。`spectra-debug`／`spectra-apply` 原則性不進選項（前者繞過診斷停點、後者被 `/srun:feat` 取代），escape hatch 手動可用。
+分級支援：openspec CLI 是行為主線一級公民（考卷與 dogfood 全覆蓋），README 只介紹這條路，搭配的桌面畫面是 specrun（GUI 唯讀顯示同一批檔案，不產生偵測訊號、不進交界圖）；spectra 退為相容保留，行 best-effort（措辭保證正確、不主動驗證），README 不再介紹，僅偵測與交界圖續存，既有專案照跑。`spectra-debug`／`spectra-apply` 原則性不進選項（前者繞過診斷停點、後者被 `/srun:feat` 取代），escape hatch 手動可用。
 
 ## roadmap 開發項追蹤層（0.27.0，兩套後端通用）
 
