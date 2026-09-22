@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.33.0 — 2026-09-22
+
+這一版是 retro 第四輪歸檔的落地，也是第一輪有開啟統計可看的歸檔：收件匣 16 筆裡 12 筆帶 `guards` 與 `usage`，算得出每條防錯規則開了幾次、開了之後那關過沒過、每次 run 花多少錢。資料說了兩件事。第一，pipeline 幾乎不等人（等人時間占跨度 1%），錢花在派發與 orchestrator 主線（主線占總成本 29%），所以「把便宜且確定的工作交給 orchestrator 先算好」這個方向要有節制，只做 grep、計數、對照原文這種。第二，同一個形狀的漏接反覆出現：條文要 agent「記得去找」某樣東西（同構位置、矛盾的原文、專案的測試慣例），agent 常常沒找，而那樣東西 orchestrator 手上本來就有。這版把三個這種交接點從「轉遞一句指令」改成「轉遞一份資料」，並把這個判準寫進 retro 的歸因表，之後每輪歸檔用同一把尺。另一條線是規格後端主線換成 openspec CLI，spectra 退為相容保留；README 精簡並新增英文版。
+
+### Added
+
+- **`tester-conventions` 新增「測試環境能不能用（所有 stack）」一節**：先照專案 CLAUDE.md 或既有測試範本；專案沒寫、設定檔又看不出來時，才實跑一個最小測試判定，不以 package.json 有沒有為準；跑不起來視同沒裝，永不主動安裝，也不得自建 stub、假 app、字串渲染 helper 之類的替代設施繞過，該模組列入無法測試清單並寫出缺哪個套件，讓人決定裝不裝。實例是一個 Nuxt 專案裝了官方測試工具但其 optional peer 沒裝，舊條文用「已裝即直接測」判定，Tester 既測不了也沒有回報出口，專案因此長出 147 行自建測試設施與三支 800 行的接線測試。
+- **`feat` Tester prompt 多一步讀專案 CLAUDE.md 的測試慣例**：測到哪一層、元件測試用哪個 helper、已知測不到的東西。Coder prompt 本來就讀 CLAUDE.md，Tester 沒有，專案寫了 Tester 也看不到。
+- **`feat` test-defect 通道前加 orchestrator 對照分流**：測試 FAIL 進迴路前，orchestrator 先以失敗訊息對照驗收依據原文，斷言的期望值與 spec／design／tasks 原文直接衝突的，直接改派 Tester 修測試並記明依據，不派 Coder；看不出衝突、或衝突在程式行為裡才派 Coder，Coder 仍可申辯。歷來 6 筆 test_defect 全部申辯成立，其中 5 筆主對話本來就做了核對，證據全是 orchestrator context 裡已有的 artifact 原文，先派 Coder 出去發現一件手上已有的事，多付一次派發與一個 counter。
+- **`retro` 歸因表「執行漂移」新增一種修法**：條文要 agent 自己去找的東西，若找起來便宜且確定（grep、計數、對照 artifact），改成 orchestrator 先算好附進 prompt；隔離型交接（Tester 的行為清單、Reviewer 的 fresh eyes）除外，那些刻意不預先消化。
+
+### Changed
+
+- **規格後端主線改為 openspec CLI，spectra 退為相容保留**：適配表 openspec 欄移到 spectra 前，分級對調為 openspec 一級公民、spectra best-effort；偵測順序維持 SPECTRA 標記優先並註明是技術限制（spectra 專案同樣帶 `openspec/` 目錄，反序會認錯）；`intent-guidance.sh` 分支依主線重排，注入文本一字未改。plugin 與 marketplace 描述改為 openspec backend adapter。
+- **`retry-loop` 同型排查併進「修復派發 prompt 一律附」的清單**：成為第四項「同型位置清單」，finding 屬同一機制多處出現時，orchestrator 派修前先 grep 出本次 diff 內的同構位置，涉及規範性文字則連同該規則的其他載體一起列，附進 prompt 要求一次修完；非機制型寫「無」。原本是八點清單裡獨立的第 4 點，一段條件式敘述，實跑常被跳過：一筆 run 同一條規則六處複述分四次才掃完，歸檔 Reviewer 退件 103 次裡 13 次明載「前輪未掃乾淨」。條文從八點變七點。
+- **`feat` Step 6.5 的 settle 定義明寫含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check**：操作流程驗證固定壓軸。舊條文只寫「含 targeted re-check 通過」，SUGGESTION 處置那段沒說先後，實跑讀成「後」，verify PASS 之後收尾批改了畫面結構，PASS 當場過期，多派一次 re-run。
+- **`tester-conventions` 反向驗證的還原方式明寫**：用事前備份或手動改回，不用 git 指令。一筆 run 的 Tester 用 `git checkout <file>` 還原，把 Coder 未 commit 的整份實作一起丟掉，靠備份才救回。
+- **`retro-usage.mjs` 專案目錄編碼修正**：Claude Code 把專案路徑裡每個非英數字元（含底線、中文）各換成一個連字號當 transcript 目錄名，腳本原本只換斜線與點，路徑含底線或中文的專案省略 session-id 時一律找不到 transcript，`usage` 記成 null。
+- **README 精簡並新增英文版**：README.md 改為英文並設為 GitHub 預設，中文搬到 README.zh-TW.md；前置依賴改為 OpenSpec CLI 必裝、specrun 桌面 App 與 Chrome 選配；安裝說明簡化為一行指令；流程內部六個角色的說明壓成表格，判準與理由移入 `docs/pipeline.md`。
+
+### Removed
+
+- **`tester-conventions` 的 Nuxt composable 三層策略整節**：三條裡兩條已被新的通用段涵蓋，剩下「用官方測試工具、重環境只標在需要的檔」改寫成不指名框架併入通用段第 4 點。守則整份不再出現任何框架或套件名，stack 專屬知識歸知識型 skill 與專案 CLAUDE.md。
+- **`feat`／`fix`／`retro` 的派發 description「批次寫『第 N 批』」要求**：0.32.0 才加，實跑 65 次派發 59 次沒寫，而 retro 統計只按角色與首派／修復分組，批次沒有任何下游。角色開頭與「修復／修正」兩半保留，那兩半有效。
+
 ## 0.32.0 — 2026-09-18
 
 這一版換掉 `retro` 的工作定義。舊版只記「哪裡出事」，於是 kit 只會愈長愈厚：每次歸檔都在找缺口、補條文，沒有一條規則有機會被拿掉。但 kit 裡多數規則是為了防模型犯某種錯而寫的，模型換代之後那種錯可能已經不犯了，只是沒人量得出來。新版每次 run 都記下本次哪些防錯規則開了、開了之後那一關過沒過，快樂路徑照記（沒開的 run 才是分母）；歸檔時算開啟率與攔截率，開啟率低、或開了跟沒開通過率一樣的列為拆除候選，提一個帶基準值與樣本數的拆除實驗。找問題不消失，降為底線守門：拆了之後對應事件有沒有回升。同時新增一支腳本從 transcript 算本次 run 的用時與 token，讓「多付的成本」有數字可比。第二件事是 playwright MCP 的啟動方式：改走 plugin 自己的腳本，第一次裝進資料目錄之後零網路，瀏覽器改用系統 Chrome。
