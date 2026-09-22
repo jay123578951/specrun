@@ -1,195 +1,195 @@
+**English** · [繁體中文](README.zh-TW.md)
+
 # specrun
 
-> 一個指令跑完開發 → 測試 → 審查的 SDD 工作流 Claude Code plugin。核心 pipeline 不挑技術棧；慣例知識拆成 stack pack 選裝，裝了 agent 自己會挑著用，沒裝也照樣跑。
+> A Claude Code plugin that runs the whole spec-driven loop, code to test to review, off a single command. The core pipeline is stack-agnostic; stack conventions ship as optional packs that agents pick up on their own, and everything still runs without them.
 
-## 這是什麼
+## What it is
 
-**你開口的那一刻，該下的指令、該載的規範、該找的人，specrun 全接手，替你跑完一輪 SDD。**
+**From the moment you say what you want, specrun takes it from there: which command to run, which rules to load, which agent to hand it to.**
 
-- **入口** — 附一個開場 hook。你開口講需求，它替你判斷該走哪條路。
-- **流程** — 改動分級：複雜項目走完整流程，小改動走輕量版，需求還沒想清楚就先把決策收斂完再動手。
-- **品質** — 動手前先讀行為守則墊底，該用哪些技術棧慣例讓 agent 自己挑；寫完交給獨立審查把關。
-- **回饋** — 跑偏的事件會被記錄、聚類，寫回。
+- **Entry**: a session hook reads what you just said and picks the path it belongs on.
+- **Flow**: complex work takes the full pipeline, small changes take a light one. Cost tracks risk.
+- **Quality**: what gets written is reviewed by an agent that never saw the author's reasoning.
+- **Feedback**: runs that go off the happy path get recorded, clustered, and written back.
 
-## 入口引導
+## Entry guidance
 
-**最需要流程的時機，恰是你腦中沒有「輸入指令」意識的時刻**。specrun 附一個開場 hook，替你在入口判斷該走哪條路。
+**You need the process most at the exact moment you aren't thinking about typing a command.**
 
 ```mermaid
 flowchart TD
-    U["你開口"] --> J{"想做什麼？"}
-    J -- "開發、提問、想討論" --> D["宣告一句<br/>帶你進規格討論"] --> P["產出規格<br/>→ /srun:feat"]
-    J -- "很明確的小微調" --> E["直接改"]
-    J -- "東西壞了" --> B["查完回報原因就停<br/>修不修由你決定"]
-    J -- "查個資料、專案外雜事" --> S["直接回答"]
+    U["You say something"] --> J{"What are you after?"}
+    J -- "Build, ask, discuss" --> D["States one line,<br/>takes you into spec discussion"] --> P["Spec comes out<br/>→ /srun:feat"]
+    J -- "A clearly scoped tweak" --> E["Edits it directly"]
+    J -- "Something broke" --> B["Reports the cause, then stops.<br/>Fixing is your call"]
+    J -- "A lookup, an off-project errand" --> S["Just answers"]
 ```
 
-> 專案還沒接規格流程時，入口會改成問你想怎麼走。
+> On a project with no spec workflow wired up yet, the entry asks you which way to go instead.
 
-## 核心流程
+## The pipeline
 
 ```mermaid
 flowchart LR
     A["/srun:feat"] --> Coder
     Coder["Coder<br/>Sonnet / Opus"] --> Tester["Tester<br/>Sonnet"]
-    Tester -- "測試失敗退回" --> Coder
-    Tester --> Reviewer["Reviewer<br/>Opus・獨立"]
-    Reviewer -- "FAIL 退回" --> Coder
-    Reviewer --> Verify["操作流程驗證<br/>觸及 UI 時"]
-    Verify -- "FAIL 退回" --> Coder
-    Verify --> Gap["規格缺口回寫"]
+    Tester -- "tests fail, back it goes" --> Coder
+    Tester --> Reviewer["Reviewer<br/>Opus · independent"]
+    Reviewer -- "FAIL, back it goes" --> Coder
+    Reviewer --> Verify["Flow verification<br/>when UI is touched"]
+    Verify -- "FAIL, back it goes" --> Coder
+    Verify --> Gap["Spec gaps written back"]
 ```
 
-> 每個角色都是獨立 subagent。失敗會自動退回上一關修，修好再往下走。整條流程起跑就列成 task 清單，隨時看得到跑到哪一關；tasks.md 裡「驗證畫面」「檢查完整性」這類 task 不會丟給 Coder 自己驗自己，等對應關卡過了自動幫你打勾。
+> Every role is its own subagent. A failure sends the work back a stage and it moves on once fixed. The whole run is laid out as a task list the moment it starts, so you can see which stage it's on. Tasks in `tasks.md` like "verify the screen" or "check completeness" never go to the Coder to grade its own work; they get checked off once the matching stage passes.
 
-## 五個設計重點
+## Five design calls
 
-| 重點                            | 怎麼做                                                                                                        | 為什麼                                                                                                                      |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **預防勝於 retry**              | Coder 動手前先載入行為守則當地板；需求還沒收斂的，先進決策階段把細節問清楚再開工                              | 事後攔一次的代價是退回、重寫、整條 pipeline 重跑，遠高於動手前多問幾句。Reviewer 是安全網，不該當第一道防線                 |
-| **Reviewer 看不到寫的人怎麼想** | Reviewer 是獨立 Opus subagent，只拿到 code 和 spec，拿不到 Coder 的推理過程，也聽不到他解釋「我為什麼這樣寫」 | 自己寫自己審，只會照著原本的思路找證據支持自己：會驗證，不會證偽。斷開 context 才是真正的第二雙眼睛，不是同一顆腦袋讀第二遍 |
-| **模型動態切換**                | Coder 一般用 Sonnet；碰到架構變更、安全路徑、決策密集，或第 2 輪 retry 才升 Opus                              | 大部分改動不用 Opus，把錢花在刀口上                                                                                         |
-| **改動要分級**                  | 對話已定案的小改動走輕量 pipeline，新功能才走完整 spec 流程；需求還沒收斂的，先進決策階段問清楚再動手         | 流程的成本要跟改動的風險成正比。小改動被完整 spec 綁住，你下次就繞過流程自己改了。流程一旦讓人想逃，它就失效了              |
-| **主對話不爆 context**          | 每個角色都在自己的 subagent 裡幹活，只把結論回報主對話，過程的雜訊留在各自的 context                          | 主對話只累積結論、不累積過程，訊息不漏又不撞壓縮瓶頸，開發再長也不怕被截斷                                                  |
+| The call | How it works | Why |
+| -------- | ------------ | --- |
+| **Prevention beats retry** | The Coder loads behavioral guidelines as a floor before touching anything. Requirements that haven't settled go through a decisions pass first | Catching it afterwards costs a send-back, a rewrite, and a full pipeline rerun, far more than a few questions up front. The Reviewer is a safety net, not the first line of defense |
+| **The Reviewer can't see how the author thought** | The Reviewer is a separate Opus subagent. It gets the code and the spec, never the Coder's reasoning, and never hears it explain "here's why I wrote it this way" | Grading your own work means hunting for evidence that supports the path you already took: you verify, you don't falsify. Cutting the context is what makes it a second pair of eyes rather than the same head reading twice |
+| **Models switch on demand** | The Coder runs Sonnet normally, and moves up to Opus for architectural changes, security paths, decision-heavy work, or once a loop hits its second retry | Most changes don't need Opus. Spend it where it counts |
+| **Changes get tiered** | Small changes already settled in conversation take the light pipeline; new features take the full spec flow. Unsettled requirements go through decisions first | Process cost has to track risk. Tie a small change up in a full spec and you'll route around the process next time. A process people want to escape has already failed |
+| **The main thread never blows up** | Every role works inside its own subagent and reports back conclusions only. The noise stays in their own context | The main thread accumulates conclusions, not transcripts. Nothing gets dropped, nothing hits the compaction wall, and a long project never gets truncated |
 
-## 功能
+## Features
 
-### 指令
+### Commands
 
-平常你只會下這三個 — 它們會自動編排底下的角色：
+Day to day you only type these three. They orchestrate the roles underneath:
 
-| 指令                               | 什麼時候用                                                             | 做什麼                                                                                                                                     |
-| ---------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`/srun:feat`** `<change-name>`   | 新功能、大型重構、跨模組變更                                           | 跑完整 pipeline，搭配規格 artifact                                                                                                         |
-| **`/srun:fix`**                    | 對話已定案、不需新 spec 的小改動（跨檔 bug、小 UI 調整、小型模組微調） | 輕量 pipeline：先判斷 spec 影響 → Coder（自寫測試）→ Spec 複核                                                                              |
-| **`/srun:decisions`** `[任務描述]` | 需求還沒完全想清楚、怕有沒定案的細節被漏掉（完整新功能、全新 UI 流程） | 動手前先把還沒想清楚的地方一個個挖出來問你，整理成決策清單交給 propose 階段（`/spectra-propose` 或 `/opsx:propose`），不產 spec、不寫 code |
+| Command | When to use it | What it does |
+| ------- | -------------- | ------------ |
+| **`/srun:feat`** `<change-name>` | New features, large refactors, cross-module changes | Runs the full pipeline against a spec artifact |
+| **`/srun:fix`** | Small changes already settled in conversation, no new spec needed (cross-file bugs, small UI adjustments, minor module work) | Light pipeline: check spec impact → Coder (writes its own tests) → spec recheck |
+| **`/srun:decisions`** `[task description]` | The requirements aren't fully thought through and you're worried an undecided detail will slip past (whole new features, brand-new UI flows) | Digs out the unsettled points one at a time and asks you, then hands a decision list to the propose stage (`/opsx:propose`). Produces no spec, writes no code |
 
-還有一個追蹤 kit 防錯規則的指令：**`/srun:retro`** `[--archive]` — feat/fix 完成時自動記下本次哪些防錯規則開了、開了之後那關過沒過，以及偏離事件，進跨專案收件匣；`--archive` 算各規則的開啟率與攔截率，過期的提拆除實驗、出事的提補強。
+One more, for tracking the kit's own guardrails: **`/srun:retro`** `[--archive]` records which guardrails fired on a feat/fix run and whether that stage passed, along with anything that went off the happy path, into a cross-project inbox. `--archive` computes each rule's fire rate and catch rate, proposing removal experiments for the stale ones and reinforcement for the ones that let something through.
 
-> **微調就別開 plugin 了** — CSS、文字、單行 fix 直接在主對話改最快。
+> **Don't reach for the plugin on a tweak.** CSS, copy, a one-line fix: editing straight in the main thread is fastest.
 
-### 流程內部跑什麼
+### What runs inside
 
-`feat` / `fix` 跑起來，內部依序派發這幾個獨立 subagent：
+Once `feat` / `fix` starts, it dispatches these stages in order. The criteria behind each one, and why they were set that way, are in [docs/pipeline.md](docs/pipeline.md) (written in Chinese).
 
-#### Coder · Sonnet / Opus
+| Stage | Model | What it does | What sends it back |
+| ----- | ----- | ------------ | ------------------ |
+| **Coder** | Sonnet; moves to Opus for architecture / security / decision-heavy work, or on the second repair round | Writes code against the tasks, loads the `guidelines` rules before starting, runs lint + typecheck when done | A FAIL at any downstream stage lands here |
+| **Tester** | Sonnet | Lists what should be covered from the spec alone, then fills the gaps. Barred from reading the existing test files | Failing tests send it back, up to 3 rounds; the Coder can push back and have the Tester fix the test instead |
+| **Reviewer** · `/srun:review` | Opus, independent, no write access | Reviews code quality, security, conventions and spec alignment in one pass | FAIL sends it back; whoever was called out can cite evidence and ask for that one point to be re-reviewed |
+| **Flow verification** · `/srun:verify-flow` | Sonnet, when UI is touched | Clicks through the flow in a real browser, checking it completes, throws nothing, and that the elements the spec names are present | A FAIL sends it back once reproduced |
+| **Spec gaps written back** | Main thread does this itself | Takes the rules the Coder hit that the spec never covered, writes them into the delta spec, and lists them for you | Nothing goes back; you decide case by case at acceptance |
 
-- 預設 Sonnet；判定為架構變更 / 安全路徑 / 決策密集時升 Opus。任一迴路進到第 2 輪修復就全程升 Opus，不再降回
-- 完成後自跑 lint + typecheck
-- 動手前載入 `guidelines` 行為守則：能不寫就不寫、有現成的就別造新的、新裝套件是最後手段，一路砍到最小可行。但**砍有地板**：輸入驗證、錯誤處理、安全、無障礙，不准為了少改幾行而省；真的刻意走了捷徑，會在現場留註記說明簡化了什麼、什麼時候該還
-- `feat` 和 `fix` 共用同一套規範，差別只在流程，不在風格寬鬆度
-- 改動途中路過看到的問題（死碼、可疑邏輯、過時註解）會列進完成報告，但**回報，不順手動它**：那是給你的情報，不是待辦
+## Side tools
 
-#### Tester · Sonnet
+> Not on the pipeline, and you don't invoke them. Installing `srun` gets you them; whether to use them is per project.
 
-- 獨立稽核者：先照 spec 自己列「該驗什麼」，再對照補寫
-- **禁看既有測試檔**，防止被現成的測試錨定思路
-- 測試失敗退回 Coder 修，最多 3 輪；Coder 也能引驗收依據申辯，改叫 Tester 修測試
+### Work-item tracking (Beta) · `srun:roadmap`
 
-#### Reviewer · Opus・獨立 · `/srun:review`
+When one big feature takes several passes, how to slice it, which part goes first, and what to watch out for now have somewhere to live before the first change even exists.
 
-- 用 `opus-reviewer` agent 派發，鎖 `model: opus`、無 Write/Edit 權限
-- 一次審完 code quality / 安全 / 慣例 / spec 對齊
-- 改到 UI 元件的模板／樣式加載 `web-design-guidelines` 補 a11y 檢查；安全路徑或升級模式改用 adversarial prompt
-- **會看走眼，所以能申辯**：被指出問題的一方可拿依據要求重審那一條（`feat` 限定），免得整條線被一個誤判卡死
+- **One file per item**, under `openspec/roadmap/`. The directory's presence is the on/off switch, and a project that doesn't want it gets asked once and never again
+- **It disappears on its own**: opening a change moves the notes into `design.md`, and finishing the item deletes the file. It never grows without bound
 
-#### 操作流程驗證 · Sonnet · 觸及 UI 時 · `/srun:verify-flow` `[URL] [依據]`
+### Comment cleanup · `srun:comment`
 
-- 在真瀏覽器點完 spec 設計的流程，只驗「走得完、不報錯、不中斷」和 spec 明文寫的元件
-- 美感、間距、資料合理性**留給人**
-- 壓軸執行，驗的一定是最終 code；FAIL（重現確認後）退回 Coder，修好走完靜態關卡再重驗
+Run by hand over old human-written code or someone else's branch: anything the code itself already says gets deleted as redundant. What survives is the "why" that still holds after the development period, JSDoc, and functional directives (`eslint-disable` and friends have counts watching them, so there's no risk of losing one).
 
-#### 規格缺口回寫 · 主對話自做
+## Install
 
-- Coder 動手時撞到 spec 沒交代的商業規則（邊界值、空狀態、錯誤路徑），不停下來問：選最保守的做法做完、記下來，pipeline 繼續跑
-- 收尾一次把這些規則寫進這個 change 的 delta spec，驗收報告逐條列給你；不接受的改 code、刪那條，接受的跟著 `/opsx:sync` 進主規格
-- 註解則反過來：預設不寫，商業邏輯一律住 spec，code 裡只留 library 的坑、workaround 與債務註記；Reviewer 會核白名單，報告也把新增的註解全部列出來讓你掃一眼
+### 0. Prerequisites
 
-#### 註解整理 · Sonnet · `/srun:comment`（獨立工具，不在 pipeline 上）
+| Tool | Required | What for |
+| ---- | -------- | -------- |
+| **[OpenSpec CLI](https://github.com/Fission-AI/OpenSpec)** | Yes | Turns "what we're changing this time" into specs and a task list. The engine the whole flow sits on; every `/opsx:*` command goes through it |
+| [specrun desktop app](https://github.com/jay123578951/specrun-app) | No | A desktop view of your specs, reading the same files the OpenSpec CLI writes. Skip it and you read them in a text editor; the flow is unaffected |
+| [Google Chrome](https://www.google.com/chrome/) | No | The browser flow verification actually drives. The playwright MCP bundled with `srun` uses your system Chrome, so there's no separate Playwright Chromium to install; the MCP package itself installs into the plugin data directory on first launch and needs no network after that. Without Chrome that stage is skipped and falls back to manual verification, which never blocks delivery |
 
-- 對人寫的舊 code、別人的 branch 手動跑：讀 code 本身就看得懂的一律當冗餘刪掉
-- 只留過了開發期還成立的「為什麼」、JSDoc 和功能型指令（`eslint-disable` 這類有前後計數盯著，不怕誤刪）
-
-## 周邊工具
-
-> 不在 pipeline 上，也不用你下指令。裝了 `srun` 就有，要不要用每個專案自己決定。
-
-### 開發項追蹤（Beta） · `srun:roadmap`
-
-一個大功能要分好幾次做的時候，怎麼切、先做哪段、動手前要注意什麼，這些在第一個 change 開出來之前有地方放。
-
-- **一項一檔**，放在 `openspec/roadmap/`。有沒有這個目錄就是開關，不想用的專案問過一次就不再問
-- **它會自己消失**：開 change 時筆記搬進 `design.md`，整項做完檔案直接刪掉，不會愈長愈大
-
-## 安裝
-
-### 前置依賴
-
-| 工具                                                              | 用途                                                    |
-| ----------------------------------------------------------------- | ------------------------------------------------------- |
-| **[spectra](https://github.com/kaochenlong/spectra-app)**（推薦） | 基於 OpenSpec 新增桌面 app 能視覺化追蹤，工作流指令優化 |
-| [OpenSpec](https://github.com/Fission-AI/OpenSpec)                | 把「這次要改什麼」寫成規格與任務清單                    |
-| [Google Chrome](https://www.google.com/chrome/)                   | 操作流程驗證（verify-flow）實際開的瀏覽器。srun 隨附的 playwright MCP 走系統 Chrome，不用另裝 Playwright 的 Chromium；MCP 套件本身第一次啟動會自動裝進 plugin 資料目錄，之後啟動不上網。沒有 Chrome 的話該關會跳過、退回人工驗證，不擋交付 |
-
-spectra 和 OpenSpec **挑一個裝就好**：做的是同一件事，寫出來的規格檔也通用。specrun 開場會自己認出你用哪一套，指令跟著換。
-
-### 1. 裝 plugin
-
-裝 `srun` 本體＋自己技術棧的 stack pack，知識型 skills 由 pack 的依賴自動連帶安裝。目前提供的 stack pack：
-
-| Pack                | 適用技術棧          | 需先 add 的 skills 來源                                         |
-| ------------------- | ------------------- | --------------------------------------------------------------- |
-| `srun-stack-vue`    | Vue / Nuxt          | `jay123578951/antfu-skills`                                     |
-| `srun-stack-dotnet` | .NET / ASP.NET Core | `dotnet/skills`（官方）；`backend-common` 隨本 marketplace 提供 |
-
-以 Vue / Nuxt 為例：
+Installing the OpenSpec CLI:
 
 ```bash
-/plugin marketplace add jay123578951/specrun      # srun 本體
-/plugin marketplace add jay123578951/antfu-skills # 該 pack 的知識型 skills 來源
-/plugin install srun@specrun                      # 核心 pipeline（stack 無關）
-/plugin install srun-stack-vue@specrun            # stack pack，依賴自動連帶安裝
+npm install -g @fission-ai/openspec@latest   # pnpm / yarn / bun / nix: see its README
 ```
 
-.NET / ASP.NET Core：
+Run `openspec init` once inside the project to create the `openspec/` directory, and `srun` will recognize on startup that this project runs the spec flow.
+
+<table>
+<tr>
+<td width="80" align="center"><img src="docs/assets/specrun-app-icon.png" width="64" alt=""></td>
+<td>
+
+**[specrun desktop app](https://github.com/jay123578951/specrun-app)** (same name as this kit, but a separate repo) lays the change list, specs and tasks under `openspec/` out on one screen, so you aren't `cd`-ing around reading markdown. The engine is entirely the OpenSpec CLI; the app only displays. Both are looking at the same files.
+
+**Apple silicon Macs only.** On an Intel Mac it opens to "cannot be opened on this Mac".
+
+</td>
+</tr>
+</table>
+
+1. Download the latest `specrun_x.x.x_aarch64.dmg` from [Releases](https://github.com/jay123578951/specrun-app/releases), open it, and drag `specrun.app` into Applications
+2. Open a terminal once and strip the flag macOS put on the downloaded file:
+
+   ```bash
+   xattr -d com.apple.quarantine /Applications/specrun.app
+   ```
+
+3. Go back to Applications and open `specrun.app`
+
+<details>
+<summary>macOS blocked it on first open?</summary>
+
+**Stripping that flag isn't optional.** The app isn't signed by Apple, so opening it directly gets you "is damaged and should be moved to the Trash". Nothing is actually damaged; that is simply the wording macOS uses when it blocks an unsigned app. For the same reason specrun never appears in the Privacy & Security panel, and right-clicking Open does nothing: both of those paths are reserved for signed apps.
+
+**When that command succeeds it prints nothing at all.** The cursor dropping to the next line means it worked. `No such xattr` means the app you pointed at doesn't carry the flag, usually because the drag stopped at the "item already exists" prompt and never replaced the old copy. Trash the old one and drag it again.
+
+</details>
+
+### 1. Install the plugin
+
+Install `srun` itself plus the stack pack for your stack; the knowledge skills come along as pack dependencies. Pick a row below and substitute it into the four commands:
+
+| Stack | `{pack}` | `{skills source}` |
+| ----- | -------- | ----------------- |
+| Vue / Nuxt | `srun-stack-vue` | `jay123578951/antfu-skills` |
+| .NET / ASP.NET Core | `srun-stack-dotnet` | `dotnet/skills` (official; `backend-common` ships with this marketplace) |
 
 ```bash
-/plugin marketplace add jay123578951/specrun      # srun 本體（backend-common 也在這）
-/plugin marketplace add dotnet/skills             # 官方 .NET skills（dotnet-agent-skills）
-/plugin install srun@specrun
-/plugin install srun-stack-dotnet@specrun         # 依賴自動連帶安裝 backend-common 與官方兩包
+/plugin marketplace add jay123578951/specrun   # srun itself
+/plugin marketplace add {skills source}        # where that pack's knowledge skills come from
+/plugin install srun@specrun                   # core pipeline, stack-agnostic
+/plugin install {pack}@specrun                 # stack pack, dependencies come along
 ```
 
-> 你的技術棧還沒有對應的 stack pack？只裝 `srun@specrun` 也照樣跑：agent 挑不到合用的知識 skill，就靠 `guidelines` 行為守則和專案 CLAUDE.md 的慣例動手。
+> No stack pack for your stack yet? Run just the first and third lines and it still works: the agents find no matching knowledge skill and fall back to the conventions in your project's `CLAUDE.md`.
 
-### 2. 驗證
+### 2. Check it took
 
 ```bash
-/plugin list   # 應看到 srun@specrun、你裝的 stack pack，及自動連帶安裝的依賴
+/plugin list   # should list srun@specrun, your stack pack, and the dependencies pulled in
 ```
 
-## 最小範例
+## Minimal example
 
 ```bash
-/spectra-discuss dark-mode    # 討論設計（可選）
-/srun:decisions dark-mode     # 收斂未定決策（決策多時，可選）
-/spectra-propose dark-mode    # 產出 proposal / design / tasks / specs
+/opsx:explore dark-mode       # discuss the design (optional)
+/srun:decisions dark-mode     # settle open decisions (optional, when there are many)
+/opsx:propose dark-mode       # produces proposal / design / tasks / specs
 
-/srun:feat dark-mode          # Coder → Tester → Reviewer 一氣呵成
+/srun:feat dark-mode          # Coder → Tester → Reviewer, start to finish
 ```
 
-跑完人工驗收，最後 `/spectra-archive` → commit → merge。
+Accept it by hand, then `/opsx:sync` → `/opsx:archive` → commit → merge.
 
-> 用 OpenSpec 的話，把前兩個指令換成 `/opsx:explore`、`/opsx:propose`，收尾換成 `/opsx:verify` → `/opsx:sync` → `/opsx:archive`。
+## Project conventions
 
-## 專案慣例
-
-UI 語言、設計系統、CSS 變數命名等專案特有慣例，寫在根目錄 `CLAUDE.md`。agent 派發前會自動讀，review 階段再引用一次。
+UI language, design system, CSS variable naming and anything else specific to your project go in the root `CLAUDE.md`. Agents read it before dispatch, and the review stage cites it again.
 
 ## Feedback
 
-Bug 或建議請開 [GitHub Issues](https://github.com/jay123578951/specrun/issues)。
+Bugs and suggestions: [GitHub Issues](https://github.com/jay123578951/specrun/issues).
 
 ## License
 
-MIT — 見 [LICENSE](LICENSE)。變更紀錄見 [CHANGELOG.md](CHANGELOG.md)。
+MIT, see [LICENSE](LICENSE). Changes are in [CHANGELOG.md](CHANGELOG.md) (written in Chinese).
