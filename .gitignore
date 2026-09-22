@@ -16,3 +16,6 @@ node_modules/
 
 # Eval 原始 transcript（體積大、非產物）
 plugins/srun/skills/*/evals/results/
+
+# playwright MCP 在專案根寫的 console log 與頁面快照
+.playwright-mcp/
