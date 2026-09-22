@@ -148,10 +148,11 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 
 開始工作前：
 1. 從你 context 的 available-skills 挑選與本專案測試框架／stack 相關的知識型 skill 載入（無合適項就不載）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
-2. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、排除規則、框架專屬測試策略、執行指令、輸出必含皆在其中；讀不到 → 停下回報）
-3. 讀取變更目錄下的 specs/ 目錄（了解預期行為的 scenarios）
-4. 讀取變更目錄下的 design.md（了解設計意圖，使測試貼近實作決策而非僅驗表面行為）
-5. 讀取上方列出的 Coder 產出/修改檔案
+2. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、測試環境判定、排除規則、執行指令、輸出必含皆在其中；讀不到 → 停下回報）
+3. 讀取專案的 CLAUDE.md，找測試慣例：測到哪一層、元件測試用哪個 helper、已知測不到的東西；專案有寫的照專案的，守則檔只管專案沒寫的
+4. 讀取變更目錄下的 specs/ 目錄（了解預期行為的 scenarios）
+5. 讀取變更目錄下的 design.md（了解設計意圖，使測試貼近實作決策而非僅驗表面行為）
+6. 讀取上方列出的 Coder 產出/修改檔案
 
 工作順序（防錨定的關鍵，依序執行）：
 ① 先讀 specs/ 的 scenarios，**獨立列出應驗證行為清單**——此階段**禁止查看任何測試檔**（含 Coder 順手寫的），避免被既有斷言錨定
@@ -203,7 +204,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **觸發判斷**：改動觸及使用者流程（畫面結構、頁面／路由、互動）才派發；純後端、純邏輯、純樣式改動跳過（樣式驗不出流程斷裂，UI/UX 面向由 Step 6 Reviewer 把關）。例外：Tester 的「無法測試的模組清單」有模組被頁面使用時，即使純邏輯改動也**強制派發**，並把受影響頁面清單注入 prompt 做 targeted 驗證——讓 Tester 的警訊有人接（怎麼確認模組被哪些頁面使用，自行判斷）。
 
-**與 Reviewer 的關係（序列，不平行）**：統一原則——**靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（本步驟）永遠壓軸，驗的必是最終 code**。Step 6 Reviewer 迴路**完全 settle**（含 targeted re-check 通過）後才派發本步驟，故本步驟的 PASS 不會過期。本步驟 FAIL 的修復走完整靜態關卡後才 targeted re-run（見 Retry 迴路）。
+**與 Reviewer 的關係（序列，不平行）**：統一原則——**靜態關卡（測試＋review）跟著每一次修復重新蓋章；動態關卡（本步驟）永遠壓軸，驗的必是最終 code**。Step 6 Reviewer 迴路**完全 settle**（含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check 通過）後才派發本步驟，故本步驟的 PASS 不會過期。本步驟 FAIL 的修復走完整靜態關卡後才 targeted re-run（見 Retry 迴路）。
 
 **前置（固定流程）**：
 
@@ -278,6 +279,8 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 ### test-defect 申辯通道
 
+測試 FAIL 進迴路前，orchestrator 先以失敗訊息對照驗收依據原文：斷言的期望值與 spec／design／tasks 原文直接衝突的，直接改派 Tester 修測試並在報告記明依據（來源路徑），不派 Coder；看不出衝突、或衝突在程式行為裡而不在文字上，才派 Coder 修，Coder 仍可申辯。
+
 Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論該測試的原作者是誰），可回報 test-defect：**必須引用驗收依據原文**（spec scenario／design 段落，含來源路徑）並指出斷言不符之處，**引不出原文不受理**，乖乖修 code。受理後主對話**改派 Tester 修測試**——修復階段的測試檔修改一律歸 Tester；Tester 可反駁，同樣須引依據原文。申辯輪照計輪。
 
 ### review-finding 申辯通道
@@ -345,7 +348,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 ## Guardrails
 
-- Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），批次寫「第 N 批」，修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、哪批、首派還是修復
+- Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
 - 每個 agent 的 prompt 只傳變更名稱和目錄，讓 agent 自行讀取 artifacts；不在 prompt 中貼入檔案內容
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
 - Coder 的輸出（檔案清單 + 設計決策 + 規格缺口）由 orchestrator 保留，用於傳遞給後續 agent、retry 與 Step 6.7 回寫；規格缺口跨批累積，run 結束前只回寫一次

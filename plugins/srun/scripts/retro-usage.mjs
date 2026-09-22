@@ -17,7 +17,8 @@ for (let i = 0; i < args.length; i++) {
 }
 
 const projectsRoot = join(homedir(), '.claude', 'projects')
-const encoded = project.replace(/[\\/.]/g, '-')
+// Claude Code 把專案路徑裡每個非英數字元（含底線、中文）各換成一個連字號當 transcript 目錄名
+const encoded = project.replace(/[^A-Za-z0-9]/g, '-')
 let transcript = null
 if (sessionId) {
   for (const dir of readdirSync(projectsRoot)) {

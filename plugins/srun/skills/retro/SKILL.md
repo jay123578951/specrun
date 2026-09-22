@@ -51,7 +51,7 @@ node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" [session-id] --since <p
 
 session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 Step 1 宣告的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與四種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、四種 token）。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
 
-腳本靠派發時的 `description` 分辨角色與批次：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），批次寫「第 N 批」，修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，回顯註記一句，不阻斷。
+腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，回顯註記一句，不阻斷。
 
 ### 事件（底線守門，對照事件表列舉，偏離快樂路徑全記）
 
@@ -127,7 +127,7 @@ retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
    |------|------|
    | 條文不清（規範存在但模糊／易誤讀） | 重寫該段條文 |
    | 條文缺席（無規範可循，agent 只能猜） | 新增條文，或事件表／守則新增項目 |
-   | 執行漂移（條文清楚但未被遵守） | 先查條文是否過長、關鍵句被埋沒——調結構或前移；同處反覆漂移才考慮升 hook 等機制層 |
+   | 執行漂移（條文清楚但未被遵守） | 先查條文是否過長、關鍵句被埋沒——調結構或前移；條文要 agent 自己去找的東西（同構位置、受影響頁面、矛盾的原文），若找起來便宜且確定（grep、計數、對照 artifact），改成 orchestrator 先算好附進 prompt，隔離型交接（Tester 的行為清單、Reviewer 的 fresh eyes）除外；同處反覆漂移才考慮升 hook 等機制層 |
    | 防錯規則過期（第 2 步的拆除候選：開啟率低、開了跟沒開的通過率一樣、或通過率差距撐不起成本） | 提拆除實驗：拆哪條、盯 `guards` 哪個欄位或哪個事件、跑幾次 run、基準值是多少；經同意後寫進 `experiments.jsonl` 並改 kit。只量得出開啟率的是補推理類；防亂做類量不出開啟率，只能直接拆、盯對應事件有沒有回升 |
    | 一次性失誤（無系統性成因） | 不動 kit——報告註記即可，不為非問題過度工程 |
 

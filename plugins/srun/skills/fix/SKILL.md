@@ -236,7 +236,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 ## Guardrails
 
-- Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），批次寫「第 N 批」，修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、哪批、首派還是修復
+- Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
 - Coder prompt 直接描述問題（含 Step 3 更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact；不在 prompt 中貼入檔案內容，讓 agent 自行讀取
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
 - Spec 影響判斷前移至派發前（spec-first）不可跳過
