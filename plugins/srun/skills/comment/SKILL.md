@@ -21,7 +21,7 @@ description: Use when tidying code comments at the end of development — remove
 ```
 /srun:comment                    → 自動偵測：git diff 未 commit 的變更
 /srun:comment --staged           → 只看 staged changes
-/srun:comment --branch feat/xxx  → 整個 branch 相對 main 的 diff
+/srun:comment --branch feat/xxx  → 整個 branch 相對基準分支的 diff
 /srun:comment --whole-file       → 放寬到整個改動檔案（預設只清 diff 鄰近區）
 ```
 
@@ -40,7 +40,7 @@ description: Use when tidying code comments at the end of development — remove
 2. 依模式確認變更範圍：
    - 自動偵測：`git diff` + `git diff --staged`
    - `--staged`：`git diff --staged`
-   - `--branch`：`git diff main...<branch>`
+   - `--branch`：`git diff {baseBranch}...<branch>`（`{baseBranch}` 以 `git symbolic-ref refs/remotes/origin/HEAD` 偵測，偵測不到 fallback `main`，同 `review` Step 1）
 
 ### Step 2: 派發整理 Agent Subagent
 
@@ -64,7 +64,7 @@ Subagent 自行讀檔、自行依守則套用 Edit、自行跑 scoped lint（指
 
 本章節是註解判準、修正方式、輸出格式的 **single source of truth**——所有規範均內嵌於下方 prompt 模板。
 
-**模板語法**：`{變數}` 代入實際值。`{scanRange}` 依模式填：無 `--whole-file` → 「僅 diff 改動區及其鄰近註解」；`--whole-file` → 「整個改動檔案」。
+**模板語法**：`{變數}` 代入實際值。`{scanRange}` 依模式填：無 `--whole-file` → 「僅 diff 改動區及其鄰近註解」；`--whole-file` → 「整個改動檔案」。`{baseBranch}` 填 Step 1 偵測到的值（僅 `--branch` 模式用到）。
 
 ```
 你是註解整理 Agent，使用 fresh-eyes 視角整理本次開發產生的程式碼註解。
@@ -79,7 +79,7 @@ Scope：{auto | staged | branch:<name>}
 2. 取得本次改動範圍：
    - auto: `git diff` 與 `git diff --staged`
    - staged: `git diff --staged`
-   - branch: `git diff main...<branch>`
+   - branch: `git diff {baseBranch}...<branch>`
 3. 讀取改動到的檔案完整內容（判斷註解是否冗餘、是否與 code 相符，需要完整 context）
 
 掃描邊界：

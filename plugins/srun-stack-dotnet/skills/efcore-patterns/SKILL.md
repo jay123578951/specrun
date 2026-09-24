@@ -131,7 +131,7 @@ public class OrderService
 
 ## Pattern 2: Never Edit Migrations Manually
 
-**CRITICAL:** Always use EF Core CLI commands to manage migrations. Never:
+Manage migrations through the EF Core CLI. Each migration is paired with its `.Designer.cs` and the shared `*ModelSnapshot.cs`; editing, deleting, or moving the files by hand desyncs them, and the next `migrations add` generates a wrong diff. So don't:
 - Manually edit migration files (except for custom SQL in `Up()`/`Down()`)
 - Delete migration files directly
 - Rename migration files

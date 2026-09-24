@@ -4,7 +4,7 @@ user-invocable: false
 description: Use when an agent writes or modifies code — behavioral guidelines for minimal/surgical changes and autonomous decision boundaries, applied before coding to prevent over-engineering and scope creep
 ---
 
-動手寫 code 時的自我約束守則，針對 LLM 的三種通病：亂假設、過度設計、亂改不該動的地方。
+動手寫 code 時的自我約束守則：spec 沒定的細節自己拍板並寫明假設、只寫當前 task 需要的 code、只改達成目標必要的地方。
 
 ---
 

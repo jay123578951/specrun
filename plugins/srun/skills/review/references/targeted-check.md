@@ -22,7 +22,7 @@
 模板語法同 SKILL.md 的 Reviewer Subagent Prompt 模板（`{變數}` 代入、`{若...：}` 區塊整段處理）。
 
 ```
-你是 Code Reviewer Targeted Check Agent，使用 Sonnet 對前一輪 WARNING 修復做精簡 re-check。
+你是 Code Reviewer Targeted Check Agent，對前一輪 WARNING 修復做精簡 re-check。
 
 前一輪 Review 報告中的 WARNING 清單：
 {warningList}
