@@ -19,3 +19,6 @@ plugins/srun/skills/*/evals/results/
 
 # playwright MCP 在專案根寫的 console log 與頁面快照
 .playwright-mcp/
+
+# kit repo 文件只放本機（決策紀錄、簡報、考卷、評測）
+docs/

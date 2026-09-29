@@ -72,7 +72,7 @@ One more, for tracking the kit's own guardrails: **`/srun:retro`** `[--archive]`
 
 ### What runs inside
 
-Once `feat` / `fix` starts, it dispatches these stages in order. The criteria behind each one, and why they were set that way, are in [docs/pipeline.md](docs/pipeline.md) (written in Chinese).
+Once `feat` / `fix` starts, it dispatches these stages in order. The criteria behind each one, and why they were set that way, are in [pipeline.md](pipeline.md) (written in Chinese).
 
 | Stage | Model | What it does | What sends it back |
 | ----- | ----- | ------------ | ------------------ |
@@ -117,7 +117,7 @@ Run `openspec init` once inside the project to create the `openspec/` directory,
 
 <table>
 <tr>
-<td width="80" align="center"><img src="docs/assets/specrun-app-icon.png" width="64" alt=""></td>
+<td width="80" align="center"><img src=".github/assets/specrun-app-icon.png" width="64" alt=""></td>
 <td>
 
 **[specrun desktop app](https://github.com/jay123578951/specrun-app)** (same name as this kit, but a separate repo) lays the change list, specs and tasks under `openspec/` out on one screen, so you aren't `cd`-ing around reading markdown. The engine is entirely the OpenSpec CLI; the app only displays. Both are looking at the same files.

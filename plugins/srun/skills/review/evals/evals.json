@@ -1,7 +1,7 @@
 {
   "skill_name": "review",
   "model_tier": "opus",
-  "_model_tier_note": "baseline 與 with-skill 兩組都要跑在此模型層（review 設計層＝Opus）。用更強的模型當 baseline 會靠原生能力通過壓力/守規斷言、虛高地掩蓋 skill 增益。詳見 docs/evals.md『受測模型鎖在 skill 實際設計的那一階』。",
+  "_model_tier_note": "baseline 與 with-skill 兩組都要跑在此模型層（review 設計層＝Opus）。用更強的模型當 baseline 會靠原生能力通過壓力/守規斷言、虛高地掩蓋 skill 增益。詳見 docs/maintenance/evals.md『受測模型鎖在 skill 實際設計的那一階』。",
   "evals": [
     {
       "id": 1,

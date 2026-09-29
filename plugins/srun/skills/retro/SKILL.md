@@ -64,7 +64,7 @@ session-id 省略時取當前專案最近修改的 transcript（run 結束當下
 | `review_defect` | review-finding 申辯通道被使用（記上訴結果：finding 撤回／維持／升級問人） |
 | `flaky` | verify-flow 標記 flaky |
 | `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆／工具能力不足） |
-| `scope_exceeded` | G7 規模超標回報（路由誤判實錘——`docs/routing-cases.md` 新題候選） |
+| `scope_exceeded` | G7 規模超標回報（路由誤判實錘——`docs/maintenance/routing-cases.md` 新題候選） |
 | `acceptance_fix` | `fix` 場景 (ii) 驗收修正 |
 | `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
 | `security_review` | 安全 review 被觸發（記結果）；開關記在 `guards.securityReview`，事件留一行事實 |
@@ -131,7 +131,7 @@ retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
    | 防錯規則過期（第 2 步的拆除候選：開啟率低、開了跟沒開的通過率一樣、或通過率差距撐不起成本） | 提拆除實驗：拆哪條、盯 `guards` 哪個欄位或哪個事件、跑幾次 run、基準值是多少；經同意後寫進 `experiments.jsonl` 並改 kit。只量得出開啟率的是補推理類；防亂做類量不出開啟率，只能直接拆、盯對應事件有沒有回升 |
    | 一次性失誤（無系統性成因） | 不動 kit——報告註記即可，不為非問題過度工程 |
 
-7. **產出 kit 優化提案報告**：固定先放第 2 步的開啟統計表與第 3 步的實驗判定，再列提案。每條提案標註歸因、附證據（哪幾筆條目、transcript 位置）、指向 kit 的哪個檔案哪段條文、建議修法；`scope_exceeded` 實例同時列為 `docs/routing-cases.md` 新題候選。**每條提案必答「最便宜等效替代」**：有沒有更便宜的修法能達到同等效果（一句條文 vs 一段規範 vs 新機制）？答不出「為何便宜版不夠」的提案不成立——防 kit 越修越肥。拆除提案同樣要答：拆掉之後靠什麼接住（既有事件表／另一條規則／不需要接）
+7. **產出 kit 優化提案報告**：固定先放第 2 步的開啟統計表與第 3 步的實驗判定，再列提案。每條提案標註歸因、附證據（哪幾筆條目、transcript 位置）、指向 kit 的哪個檔案哪段條文、建議修法；`scope_exceeded` 實例同時列為 `docs/maintenance/routing-cases.md` 新題候選。**每條提案必答「最便宜等效替代」**：有沒有更便宜的修法能達到同等效果（一句條文 vs 一段規範 vs 新機制）？答不出「為何便宜版不夠」的提案不成立——防 kit 越修越肥。拆除提案同樣要答：拆掉之後靠什麼接住（既有事件表／另一條規則／不需要接）
 8. **徵求同意**：提案呈報使用者，**經同意才動 kit 檔案與 `experiments.jsonl`**（動慣例影響全域，是「該問人」的類型）
 9. **歸檔**：已消化條目 append 到 `runs-archive.jsonl` 並自 `runs.jsonl` 移除（唯一出口）
 

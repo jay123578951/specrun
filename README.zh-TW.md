@@ -72,7 +72,7 @@ flowchart LR
 
 ### 流程內部跑什麼
 
-`feat` / `fix` 跑起來，內部依序派發這幾關。每一關的判準、為什麼這樣定，見 [docs/pipeline.md](docs/pipeline.md)。
+`feat` / `fix` 跑起來，內部依序派發這幾關。每一關的判準、為什麼這樣定，見 [pipeline.md](pipeline.md)。
 
 | 關卡 | model | 做什麼 | 什麼情況退回 |
 | ---- | ----- | ------ | ------------ |
@@ -117,7 +117,7 @@ npm install -g @fission-ai/openspec@latest   # pnpm / yarn / bun / nix 見它的
 
 <table>
 <tr>
-<td width="80" align="center"><img src="docs/assets/specrun-app-icon.png" width="64" alt=""></td>
+<td width="80" align="center"><img src=".github/assets/specrun-app-icon.png" width="64" alt=""></td>
 <td>
 
 **[specrun 桌面 App](https://github.com/jay123578951/specrun-app)**（與這包 kit 同名，是另一個獨立的 repo）把 `openspec/` 目錄裡的變更清單、規格與任務攤成一個桌面畫面，省得一路 `cd` 進去翻 markdown。引擎完全是 OpenSpec CLI，它只負責顯示，兩邊看到的是同一份檔案。

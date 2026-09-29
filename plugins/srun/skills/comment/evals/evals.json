@@ -1,7 +1,7 @@
 {
   "skill_name": "comment",
   "model_tier": "sonnet",
-  "_model_tier_note": "baseline 與 with-skill 兩組都要鎖 Sonnet（comment 設計層＝Sonnet subagent）。Iter 1 用 Opus baseline 導致 c3 壓力場景兩組全過（量不出增益）；Iter 2 鎖回 Sonnet 後 baseline 立刻在權威指令下誤刪保護清單、with-skill 守住，鑑別度才顯形。詳見 docs/evals.md。",
+  "_model_tier_note": "baseline 與 with-skill 兩組都要鎖 Sonnet（comment 設計層＝Sonnet subagent）。Iter 1 用 Opus baseline 導致 c3 壓力場景兩組全過（量不出增益）；Iter 2 鎖回 Sonnet 後 baseline 立刻在權威指令下誤刪保護清單、with-skill 守住，鑑別度才顯形。詳見 docs/maintenance/evals.md。",
   "evals": [
     {
       "id": 1,

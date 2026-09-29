@@ -48,7 +48,7 @@
 | Bash 中 `spectra new` | 保險：流程外手動建 change 時提醒填名 |
 | Bash 中 `rm` 且路徑含 `openspec/roadmap/` | 三層分組出口鏈保底：提醒回上層檔（`屬於` 欄位）打勾、更新 N/M；上層全勾則確認後一併 rm |
 
-設計裁定（含 TCERT 側討論脈絡）見決策 doc `docs/roadmap-tracking-2026-08.md`（維護者本機，不隨 repo 發佈）。
+設計裁定（含 TCERT 側討論脈絡）見決策 doc `docs/decisions/roadmap-tracking-2026-08.md`（維護者本機，不隨 repo 發佈）。
 
 ## 行為紀律（與注入規則同源）
 
