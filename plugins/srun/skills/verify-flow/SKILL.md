@@ -87,7 +87,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 **導覽方式**：SPA 內優先用畫面上的連結與按鈕移動；網址列 navigate 會整頁重整，可能重置 session／角色／mock 狀態——用了之後先確認前置狀態還在，再繼續驗。
 
-**工具怪癖（已知情報）**：操作以 browser_snapshot 回傳的元素 ref 為準，不用座標；點擊內建等待元素可互動，逾時失敗代表真的點不到（先看元素在不在 snapshot 裡、有沒有被 overlay 蓋住），別改用座標亂點。表單多欄用 browser_fill_form 一次填完。
+**工具怪癖（已知情報）**：操作以 browser_snapshot 回傳的元素 ref 為準，不用座標；點擊內建等待元素可互動，逾時失敗代表真的點不到（先看元素在不在 snapshot 裡、有沒有被 overlay 蓋住），別改用座標亂點。表單多欄用 browser_fill_form 一次填完。上傳檔案（browser_file_upload）的檔案要放在專案根目錄的 `.playwright-mcp/` 底下，放別處會被拒（outside allowed roots）。
 
 **流程層**——實際操作走到終點，途中盯這些「明顯撞牆」信號（命中才 FAIL）：
 - 走不到終點（點了沒反應、跳頁卡住、下一步元素不出現）
