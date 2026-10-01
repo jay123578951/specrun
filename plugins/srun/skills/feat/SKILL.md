@@ -284,13 +284,13 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 - **待人確認**：算不算壞判斷不了
 - **工具做不到的**：工具在，但做不到 spec 要求的操作；其他情境照常判定，報告開頭那行補「（N 個情境工具做不到）」
 
-**Subagent 派發失敗時**：判為 BLOCKED（工具未就緒）處理：跳過本步、退回人工驗收。派發失敗也不改由主對話自己驗。
+**Subagent 派發失敗時**：判為 BLOCKED（工具未就緒），跳過本步、退回人工驗收。派發失敗也不改由主對話自己驗。
 
 ### Step 6.7: 規格缺口回寫（orchestrator 自做，不派 agent）
 
 **進場先收驗證環境**：用 Step 6.5 記下的 PID 關掉自己起的 dev server（不比對程序名），刪除 playwright 寫在專案根的 `.playwright-mcp/`；此後沒有步驟再驗畫面。
 
-**規格缺口回寫**：彙整本次 run 所有批次 Coder 回報的「規格缺口」與 Reviewer 報告「規格缺口」段的條目（同一情境只留一份），寫進本 change 的 delta spec：
+**規格缺口回寫**：彙整本次 run 所有批次 Coder 回報的「規格缺口」與 Reviewer 報告「規格缺口」段的條目（同一情境只留一份），寫進本 change 的 delta spec。
 
 - 缺口為零 → 跳過，報告不列這段
 - 路徑與格式從後端 CLI 讀（openspec 與 spectra 同名：`<cli> instructions specs --change {changeName} --json`），不自己猜；寫完跑 `<cli> validate {changeName}`
@@ -298,7 +298,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 ### Step 7: 報告結果
 
-**勾選前實測**：報告前，逐條實測 tasks.md 與 design.md 裡的判準，對照後才勾：
+**勾選前實測**：報告前，逐條實測 tasks.md 與 design.md 裡的判準，對照後才勾。
 
 - 要實測的判準：
   - 量化判準（條目數、指標數）
@@ -327,9 +327,9 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 一般修復輪的過程（哪關擋下、怎麼修好）不列，只在開頭那行寫退回修過幾次：跑的過程中各關報告已顯示過，retro 也記了。
 
-**retro 記錄**：載入 `srun:retro` skill，依其記錄模式記錄本次 run：
+**retro 記錄**：載入 `srun:retro` skill，依其記錄模式記錄本次 run。
 
-- 記錄內容：防錯規則開關（`guards` 七欄：起跑 model 與理由、首派 Reviewer 的 adversarial、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id）、事件與統計，append 進全域收件匣
+- 記錄內容：防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、首派 Reviewer 的 adversarial、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id）、事件與統計，append 進全域收件匣
 - 開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶
 - `usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）
 - 報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則：只有歸檔提醒或記錄失敗時出現。開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製
@@ -370,7 +370,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 歸屬 `spec`（規格 artifact 內容本身的問題，見 `review` 的歸屬定義）的 finding，FAIL 與 WARNING 同一路由：**決策級**（需推翻 design 決策或改變規格語意）→ 直接停下來問人，不進 Coder retry；**機械級**（殘留、漏掃、跨載體同步遺漏）→ 派 Coder 修 artifact 檔案，照常計輪。
 
-**SUGGESTION 處置**：只在 Reviewer **最終報告**處理一次：有 WARNING 修復批就併入同批，沒有（PASS 乾淨）則單獨派一次收尾批；同樣走 targeted re-check，**不計輪**、不影響 verdict。Coder 對會擴 scope 或推翻既定取捨的項目回報不修並附理由，其餘修完。
+**SUGGESTION 處置**：只在 Reviewer **最終報告**處理一次。有 WARNING 修復批就併入同批，沒有（PASS 乾淨）則單獨派一次收尾批；同樣走 targeted re-check，**不計輪**、不影響 verdict。Coder 對會擴 scope 或推翻既定取捨的項目回報不修並附理由，其餘修完。
 
 **這關修完後回哪一步**：
 

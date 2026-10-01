@@ -24,7 +24,7 @@ description: 在真實瀏覽器裡把 spec 設計的使用者流程從頭走到�
 呼叫方（Pipeline 或人）提供：
 
 1. **App 進入點**：正在跑的 app URL（dev server 位址），或啟動方式。**功能在登入牆後面時，優先提供「已驗證的入口」**——驗證瀏覽器已登入的持久化 session / seeded cookie / 測試帳號自動登入 / dev 環境的 auth bypass——讓驗證直接從 app 內部開始（用 UI 真的打帳密每次跑都脆弱，能免則免）
-2. **驗收依據**：要走的流程從哪來——依專案手上有什麼，優先序：
+2. **驗收依據**：要走的流程從哪來。依專案手上有什麼決定，優先序如下。
    - 正式 spec / scenario（如 OpenSpec `specs/`、Gherkin、驗收條件文件）
    - 沒有正式 spec 時 → fallback 到 task 描述 / PR 描述 / 需求敘述
 3.（可選）**要特別確認的關鍵元件 / 位置**：呼叫方已知的重點，沒給就由 subagent 從驗收依據自行推出

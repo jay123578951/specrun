@@ -1,6 +1,6 @@
 # 阻塞輸出模板（feat／fix 共用）
 
-Orchestrator 宣告阻塞時展開。`{變數}` 以實際值替換；debug 檔名——feat：`.claude/debug/{changeName}-{timestamp}.md`、fix：`.claude/debug/fix-{timestamp}.md`。
+Orchestrator 宣告阻塞時展開。`{變數}` 以實際值替換；debug 檔名在 feat 是 `.claude/debug/{changeName}-{timestamp}.md`，在 fix 是 `.claude/debug/fix-{timestamp}.md`。
 
 宣告阻塞前，先輸出 debug 檔（不放專案根目錄——檔案含完整 diff，`.claude/` 應由專案 gitignore 蓋掉）：
 

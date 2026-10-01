@@ -102,7 +102,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 4: 派發 Coder Agent（含測試職責）
 
-依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/` 下 `command-conventions.md` 與 `tester-conventions.md` 的**絕對路徑**分別代入 `{commandConventionsPath}` 與 `{testerConventionsPath}`。使用 Agent tool 派發 subagent（model: {coderModel}）。模板語法：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪：
+依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/` 下 `command-conventions.md` 與 `tester-conventions.md` 的**絕對路徑**分別代入 `{commandConventionsPath}` 與 `{testerConventionsPath}`。使用 Agent tool 派發 subagent（model: {coderModel}）。模板語法：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪。
 
 ```
 你是 Coder Agent，兼負本次修復的測試職責（本流程不派獨立 Tester）。
@@ -148,7 +148,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 **Coder 回報測試修不掉／交回結果後測試仍紅時**：進入 Retry 迴路（見下方）。
 
-**無法測試清單的消費者（報告行）**：Coder 回報的「無法測試的模組清單」非空、且模組被頁面使用時（grep 模組名稱於頁面／元件原始碼，一條指令），把**受影響頁面清單寫進完成報告的「要你親手驗的」段**（例：「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」）。本流程 **不派** verify-flow；要看多細由人決定。
+**無法測試清單的消費者（報告行）**：Coder 回報的「無法測試的模組清單」非空、且模組被頁面使用時（grep 模組名稱於頁面／元件原始碼，一條指令），把**受影響頁面清單寫進完成報告的「要你親手驗的」段**（例如「模組 `useXxx` 無法被單元測試覆蓋，被頁面 A、B、C 使用，建議確認時順手檢查」）。本流程 **不派** verify-flow；要看多細由人決定。
 
 ### Step 5: 安全 review（`{securityReview}=true` 時才跑，adversarial Opus）
 
@@ -179,7 +179,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 一般修復輪的過程不列，只在開頭那行寫退回修過幾次。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
 
-**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄：起跑 model 與理由、安全 review 有無觸發與判定、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）。append 失敗不阻斷報告。
+**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）。append 失敗不阻斷報告。
 
 ---
 
