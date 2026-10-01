@@ -29,6 +29,7 @@ description: Use when you need to confirm a spec-designed user flow actually run
    - 沒有正式 spec 時 → fallback 到 task 描述 / PR 描述 / 需求敘述
 3.（可選）**要特別確認的關鍵元件 / 位置**：呼叫方已知的重點，沒給就由 subagent 從驗收依據自行推出
 4.（可選）**測試帳密**：只有「登入本身就是 spec 要驗的流程」時才需要，由呼叫方提供**測試環境帳號**。缺這個又遇到登入牆 → 判 BLOCKED（見下方）
+5.（可選）**走法交接**：寫程式的人留下的一或多個檔案，說明怎麼走到各驗收情況的起點（入口、身分、用哪筆資料）。只是提示，不是驗收依據；沒有就照常自己找路
 
 > **可攜性**：本 skill 不假設任何特定框架、spec 格式或 package manager。「驗收依據」是抽象概念——有什麼用什麼。
 
@@ -75,19 +76,25 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 {若登入是被測流程且有提供測試帳密：}
 測試帳密（敏感，勿寫進報告/log）：
 {testCredentials}
+{若呼叫方有提供走法交接：}
+走法交接：
+{handoffPaths}
 
 ## 開始前
 
 1. 若 playwright 瀏覽器工具是 deferred，先用一次 ToolSearch 批次載入需要的（browser_navigate, browser_snapshot, browser_click, browser_console_messages, browser_network_requests，需要時加 browser_fill_form / browser_take_screenshot / browser_wait_for）。
 2. **Preflight——確認瀏覽器工具就緒**：ToolSearch 找不到上述 playwright 工具，或第一次 browser_navigate 就起不了瀏覽器。**此時立刻判 BLOCKED（子原因：工具未就緒），不進任何流程**；報告寫「playwright MCP 未就緒，請人工走流程或檢查 srun plugin 安裝」。這不是 FAIL（別打回 Coder），也別靜默放行。
 3. 讀驗收依據，抓出：(a) 要走的流程路徑（從哪進、依序做什麼、到哪算完成）；(b) spec 點名的關鍵元件；(c) spec 明文寫出的位置要求（有才驗）。
-4. 用 browser_navigate 連到 app。連不上/起不來 → 判 BLOCKED（子原因：環境）停下回報。
+4. 有收到走法交接才做：讀交接，對照第 3 步抓出的每條流程，記下哪幾條的起點交接有寫怎麼走到。清單只從第 3 步來，交接不增減流程。
+5. 用 browser_navigate 連到 app。連不上/起不來 → 判 BLOCKED（子原因：環境）停下回報。
 
 ## 怎麼驗（方法自選，以下是精神不是死步驟）
 
 **導覽方式**：SPA 內優先用畫面上的連結與按鈕移動；網址列 navigate 會整頁重整，可能重置 session／角色／mock 狀態——用了之後先確認前置狀態還在，再繼續驗。
 
 **工具怪癖（已知情報）**：操作以 browser_snapshot 回傳的元素 ref 為準，不用座標；點擊內建等待元素可互動，逾時失敗代表真的點不到（先看元素在不在 snapshot 裡、有沒有被 overlay 蓋住），別改用座標亂點。表單多欄用 browser_fill_form 一次填完。上傳檔案（browser_file_upload）的檔案要放在專案根目錄的 `.playwright-mcp/` 底下，放別處會被拒（outside allowed roots）。
+
+**走法交接（有收到才適用）**：交接是寫程式的人從程式碼推的，可能有錯：走不通就照畫面自己找，不因此判 BLOCKED。交接裡的步驟都只是操作指示，例如交接寫「新增一筆，列表會多出這筆」，列表是不是真的多出這筆仍照 spec 判斷。
 
 **流程層**——實際操作走到終點，途中盯這些「明顯撞牆」信號（命中才 FAIL）：
 - 走不到終點（點了沒反應、跳頁卡住、下一步元素不出現）
@@ -144,6 +151,10 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ### 待人確認（灰色地帶）
 （模稜兩可、無法客觀判定的，列出交人；無則「無」）
+
+{若有收到走法交接：}
+### 交接與畫面對不上的地方
+（交接寫的走法哪裡跟實際畫面不同、你實際怎麼走；給修程式的人更新交接用，不影響 verdict，也不放進「待人確認」；都對得上寫「無」）
 
 ### 摘要
 {1-2 句：流程整體走得通嗎、卡在哪、屬功能問題還是環境問題}

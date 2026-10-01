@@ -100,7 +100,7 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 
 ### Step 4: 派發 Coder Agent
 
-派發前把 `${CLAUDE_SKILL_DIR}/references/command-conventions.md` 的**絕對路徑**代入 `{commandConventionsPath}`。使用 Task tool 派發 subagent（model: {coderModel}）：
+派發前把 `${CLAUDE_SKILL_DIR}/references/command-conventions.md` 的**絕對路徑**代入 `{commandConventionsPath}`；`{handoffPath}` 代入 `.claude/debug/{changeName}-交接.md`。串行各批共用這一個檔，平行各批在檔名後加批次代號（如 `-交接-T1.md`），以免互相覆蓋。本 run 第一次派發前，刪掉 `.claude/debug/{changeName}-交接*.md`：那是上次 run 依當時程式碼寫的，不能沿用。使用 Task tool 派發 subagent（model: {coderModel}）：
 
 ```
 你是 Coder Agent。
@@ -126,8 +126,12 @@ Retry 中的動態升級規則見「Retry 迴路」的升級模式。
 1. 列出你建立/修改/刪除的所有檔案路徑
 2. 簡述每個 task 的關鍵設計決策（供 retry 時參考）
 3. 規格缺口（必填）：依 guidelines 守則 1 回報 spec 沒交代、你自行拍板的商業規則，每條寫「所屬 capability／requirement、spec 沒寫什麼、你選了什麼、code 位置」；確認沒有就寫「無」，不可省略
-4. 若有順手寫測試，列出測試檔路徑（供 Tester 稽核）
-5. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
+4. 走法交接（必填）：本次改到畫面時寫進 `{handoffPath}`，這裡只寫檔案位置；沒改畫面寫「無（本次未改畫面）」，不建檔。檔案已存在（前批寫的）就先讀，改寫成涵蓋所有批的整份。內容是給操作流程驗證 agent 的提示，說明怎麼走到每個驗收情況的起點，用你實作時讀過、改過的程式碼推出來：
+   - 每個改到的畫面一段：從哪個畫面點進來、用什麼身分、身分在哪裡切
+   - 需要特定資料的 scenario 在段落下點名用哪筆；現成資料沒有符合的，寫怎麼在畫面上做出那個狀態；連怎麼做都不知道，寫「不確定」加原因
+   - 哪些操作會讓前面做好的狀態消失（身分、登入、已建立的資料都算）
+5. 若有順手寫測試，列出測試檔路徑（供 Tester 稽核）
+6. 順手觀察（選填）：依 guidelines 規範回報路過看到的無關死碼／可疑處，一行一項；無則省略
 ```
 
 ### Step 5: 派發 Tester Agent
@@ -213,7 +217,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 3. 有登入牆時停下來只說一句「已開好登入頁，請在這個 playwright 視窗登入，好了跟我說」，不索取帳密；使用者回覆後再開一次入口頁確認已進到 app 內部。登入本身是被測流程時才需要測試帳號。
 4. 派發 subagent，注入實際 URL。server 與瀏覽器留到 Step 6.7 進場才收，FAIL 修復後的 re-run 直接沿用。
 
-使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**。載入 `srun:verify-flow` skill，由其 subagent prompt 模板驅動；orchestrator 注入：變更名稱、app URL / 啟動方式、驗收依據（`openspec/changes/{changeName}/specs/`）、已知的重點元件 / 位置、必要時的已驗證入口或測試帳密。判準、輸出格式、preflight、登入牆與反 rabbit-hole 規則皆見 `verify-flow` skill，此處不重複。
+使用 Task tool 派發 subagent，固定 **`subagent_type: general-purpose` + `model: sonnet`**。載入 `srun:verify-flow` skill，由其 subagent prompt 模板驅動；orchestrator 注入：變更名稱、app URL / 啟動方式、驗收依據（`openspec/changes/{changeName}/specs/`）、已知的重點元件 / 位置、走法交接（Coder 回報的所有交接檔位置；都是「無」就不給）、必要時的已驗證入口或測試帳密。判準、輸出格式、preflight、登入牆與反 rabbit-hole 規則皆見 `verify-flow` skill，此處不重複。
 
 **verdict 分支**：
 
@@ -244,11 +248,11 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 **蓋章前抽驗**：報告前對 tasks.md 與 design.md 的量化判準（條目數、指標數）與「全綠／無 diff」類判準逐條實測對照後才勾（含 Step 3 綁定 gate 的代勾項）。判準失準且正確值唯一明確 → 對正 artifact 後勾；實作未達正確判準 → 回對應 gate 的 retry 迴路；落差會改變驗收語意 → 問人。實作中途調整作法造成的判準漂移亦由此攔截。
 
-顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項、Step 6.7 的規格缺口與新增註解清單；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
+顯示 Phase 2 完成摘要（含操作流程驗證報告中的 flaky 標註與待人確認項、Step 6.7 的規格缺口與新增註解清單、走法交接檔位置；Coder 若有回報「順手觀察」，原樣列入摘要交人判斷——它是情報不是待辦，不觸發任何 retry 或派發），提示進入 Phase 3 人工驗收。
 
 **retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄：起跑 model 與理由、首派 Reviewer 的 adversarial、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、停損裁決、Coder／Reviewer 自報的 model id）、事件與統計 append 進全域收件匣，再依其回顯格式在報告的「retro」節輸出記了什麼與歸檔提醒（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）。append 失敗不阻斷報告，該節註記失敗原因即可。
 
-報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔）——檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
+報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔）——檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。走法交接檔例外：人工驗收還用得到，留到 change 歸檔後由 Step 2 清。
 
 ---
 
@@ -260,6 +264,7 @@ Reviewer 判定 PASS（含 WARNING re-check 完成）、且操作流程驗證 ga
 
 - **修復派發 prompt**：spec alignment 類 finding 已依 `review` 規範附上被違反的 spec 段落原文——orchestrator **全文轉遞**，修復 agent 不必重讀 spec 檔
 - **派給 Coder 的修復 prompt 一律載明**：不得修改測試檔（修復階段測試修改一律由 Tester 派發）；判斷失敗屬測試問題 → 依 test-defect 申辯通道回報並引驗收依據原文，不要自行改斷言
+- **派給 Coder 的修復 prompt 附走法交接**：前一輪輸出摘要附上所有交接檔位置；回報必填一行「交接變動：無」或「交接變動：已重寫 {位置}」。修復改到走到起點的路（入口、身分、要用的資料）才算有變，有變就整份重寫該檔
 - **升級模式開啟後**，Opus Reviewer 重派一律帶 `{adversarial}=true`；Reviewer 自身固定 Opus，無升級問題
 
 ### 各 gate 失敗誰修、重驗什麼
@@ -329,6 +334,11 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - foo.ts:42 — `// ...`
 （無則寫「無」）
 
+### 走法交接（怎麼走到改動的畫面，人工驗收可參考）
+- {Coder 回報的交接檔位置，一行一個}
+Coder 依本次跑完當下的程式碼推出來的，可能有錯；之後用 fix 改過畫面的話可能對不上。檔案留到 change 歸檔。
+（Coder 全部回報「無」則整段省略）
+
 ### retro
 （依 `srun:retro` 回顯格式：記了幾筆事件、防錯規則開關一行、有則加歸檔提醒行；append 失敗寫「retro 記錄失敗：{原因}」）
 
@@ -351,7 +361,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - Task 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
 - 每個 agent 的 prompt 只傳變更名稱和目錄，讓 agent 自行讀取 artifacts；不在 prompt 中貼入檔案內容
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
-- Coder 的輸出（檔案清單 + 設計決策 + 規格缺口）由 orchestrator 保留，用於傳遞給後續 agent、retry 與 Step 6.7 回寫；規格缺口跨批累積，run 結束前只回寫一次
+- Coder 的輸出（檔案清單 + 設計決策 + 規格缺口 + 交接檔位置）由 orchestrator 保留，用於傳遞給後續 agent、retry 與 Step 6.7 回寫；規格缺口跨批累積，run 結束前只回寫一次
 - 獨立的修復任務可平行派發，**前提是修復檔案集不相交**（如 Coder 與 Tester 各修不同檔案的 WARNING）；檔案相交或無法確定 → 串行
 - Coder / Tester 派發本身失敗或中途中斷 → 以 `git status` 對照 tasks.md checkbox **對帳實際完成度**後再重派（磁碟優先，不憑對話記憶推測進度）
 - Pipeline 完成後不自動 commit，等人工驗收通過後再走交付流程
