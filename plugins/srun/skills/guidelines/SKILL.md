@@ -1,7 +1,7 @@
 ---
 name: guidelines
 user-invocable: false
-description: Use when an agent writes or modifies code — behavioral guidelines for minimal/surgical changes and autonomous decision boundaries, applied before coding to prevent over-engineering and scope creep
+description: agent 寫或改 code 時的行為守則：只寫當前 task 需要的 code、只改達成目標必要的地方，並劃清哪些細節自己決定、哪些情況要停下回報。動手寫 code 前套用，防止過度設計與做出超出要求的改動。
 ---
 
 動手寫 code 時的自我約束守則：spec 沒定的細節自己拍板並寫明假設、只寫當前 task 需要的 code、只改達成目標必要的地方。

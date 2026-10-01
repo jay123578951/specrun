@@ -1,7 +1,7 @@
 ---
 name: verify-flow
 argument-hint: "[app URL] [驗收依據路徑或描述]"
-description: Use when you need to confirm a spec-designed user flow actually runs end-to-end in a real browser — drives real clicks to check the flow completes without errors/interruptions, verifies spec-stated elements exist and sit where the spec says; aesthetics and data correctness stay with the human
+description: 在真實瀏覽器裡把 spec 設計的使用者流程從頭走到尾：真的點擊，確認流程走得完、不報錯、不中斷，並確認 spec 明文寫出的元件存在、位置跟 spec 寫的一樣。要確認流程在瀏覽器實際跑得通時使用。美感與資料是否合理不檢查，留給人判斷。
 ---
 
 一個**可攜、不綁專案**的「操作流程驗證」skill。它在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍（真的點擊、真的填表、真的跳頁），確認**流程串得起來、不報錯、不中斷**，而不是驗「畫面對不對、好不好看」。透過 Agent tool 派發 fresh-context subagent 執行。

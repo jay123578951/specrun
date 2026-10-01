@@ -1,7 +1,7 @@
 ---
 name: comment
 argument-hint: "[--staged | --branch <name> | --whole-file]"
-description: Use when tidying code comments at the end of development — removes stale/redundant/thinking-process comments while preserving "why" comments, conventions, and functional directives
+description: 整理程式碼註解：刪掉過時、重複、記錄思考過程的註解，保留說明「為什麼這樣寫」的註解、團隊慣例與功能型指令註解。開發收尾要清註解時使用；獨立工具，不在 feat／fix pipeline 上，可對舊 code 或別人的 branch 手動跑。
 ---
 
 獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Agent tool 派發 **Sonnet 整理 Agent subagent** 執行。獨立工具，不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋）；適合對人寫的舊 code、別人的 branch 手動跑。

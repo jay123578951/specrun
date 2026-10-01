@@ -1,7 +1,7 @@
 ---
 name: review
 argument-hint: "[target]"
-description: Use when reviewing code changes for quality, security, and project conventions — standalone or as review standard within feat pipeline
+description: Code review：檢查程式碼改動的品質、安全性，以及是否符合專案慣例。要 review 程式碼改動時使用；可單獨呼叫，也是 feat pipeline 裡 Reviewer 的 review 標準。
 ---
 
 獨立的 Code Review skill，定義 review 維度、流程與輸出格式。透過 Agent tool 派發 **Opus Reviewer Subagent** 執行 review。可在任何場景獨立呼叫，也作為 `feat` Reviewer 的 review 標準單一來源。
