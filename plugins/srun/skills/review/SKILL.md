@@ -132,7 +132,7 @@ Scope：{auto | staged | branch:<name> | change:<changeName>}
 
 過度設計類 finding（過度抽象、投機功能、重造輪子）在描述中標註違反七階梯第幾階——階梯序（與 Coder 守則 `guidelines` 同源）：1 需要存在嗎 → 2 codebase 已有 → 3 標準庫 → 4 平台原生 → 5 已裝依賴 → 6 一行解 → 7 最小實作。例：「違反第 2 階：重造既有共用模組」。改動處若帶合格的 `TODO(debt):` 註記（含上限與升級條件），視為有記錄的刻意取捨，不以過度簡化立 finding——除非升級條件已明顯兌現。
 
-註解白名單（與 Coder 守則 `guidelines` 守則 2 同源）：diff 新增的註解只允許三種——指名第三方東西（library／平台 API／瀏覽器／工具）並描述其行為、合格的 `TODO(debt):`、功能型指令（`eslint-disable`、`@ts-expect-error` 等）。檢查法：問這條註解指名了哪個第三方東西，答不出來且不屬後兩種即不合白名單，**合併成一條 WARNING**、歸屬 coder，描述寫「不合白名單註解 N 處」並列出各行號與類型，不逐條開 finding。**專案慣例開關**：專案 CLAUDE.md 明文採理由型註解、或改動檔的既有註解多數在寫設計理由時，本項整條不套用、不立 finding，只在「摘要」註明一句「本 repo 採理由型註解慣例，白名單未套用」；不得改開 SUGGESTION（SUGGESTION 在 `feat` 內仍會進收尾批被修掉）。
+註解白名單（與 Coder 守則 `guidelines` 守則 2 同源）：diff 新增的註解只允許三種——指名第三方東西（library／平台 API／瀏覽器／工具）並描述其行為、合格的 `TODO(debt):`、功能型指令（`eslint-disable`、`@ts-expect-error` 等）。檢查法：問這條註解指名了哪個第三方東西，答不出來且不屬後兩種即不合白名單，**合併成一條 WARNING**、歸屬 coder，描述寫「不合白名單註解 N 處」並列出各行號與類型，不逐條開 finding。**專案慣例開關**：只在專案 CLAUDE.md 明文採理由型註解時成立（不看既有註解寫法自行推測），本項整條不套用、不立 finding，只在「摘要」註明一句「本 repo 採理由型註解慣例，白名單未套用」；不得改開 SUGGESTION（SUGGESTION 在 `feat` 內仍會進收尾批被修掉）。
 
 ### 條件檢查
 

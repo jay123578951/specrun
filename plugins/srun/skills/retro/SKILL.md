@@ -49,7 +49,7 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" [session-id] --since <pipeline 起跑的 ISO 時間>
 ```
 
-session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 Step 1 宣告的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與四種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、四種 token）。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
+session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 Step 1 宣告的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
 
 腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，不阻斷（手動呼叫的回顯在用時那行註記原因）。
 
@@ -82,7 +82,7 @@ session-id 省略時取當前專案最近修改的 transcript（run 結束當下
 一行 JSON append；事實不寫解讀。append 前以本節格式為模板產生單行 JSON 序列化輸出，不自創欄位、不憑記憶拼格式：
 
 ```json
-{"ts":"<ISO 時間>","project":"<專案名>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","guards":{"coderStart":{"model":"sonnet","reason":null},"adversarialFirst":false,"escalation":{"opened":false,"gate":null,"round":null,"passedNextRound":null},"recheck":{"runs":0,"fail":0},"securityReview":{"triggered":false,"verdict":null},"stopLoss":{"fired":false,"humanChoice":null},"modelIds":{"coder":"<id>","reviewer":"<id>"}},"usage":<retro-usage.mjs 的輸出原樣，失敗記 null>,"events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
+{"ts":"<ISO 時間>","project":"<git 根目錄完整路徑>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","guards":{"coderStart":{"model":"sonnet","reason":null},"adversarialFirst":false,"escalation":{"opened":false,"gate":null,"round":null,"passedNextRound":null},"recheck":{"runs":0,"fail":0},"securityReview":{"triggered":false,"verdict":null},"stopLoss":{"fired":false,"humanChoice":null},"modelIds":{"coder":"<id>","reviewer":"<id>"}},"usage":<retro-usage.mjs 的輸出原樣，失敗記 null>,"events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
 ```
 
 - `guards`：七個欄位每次都要有值，沒開就記 `false`／`null`／`0`，不省略整個欄位
@@ -106,7 +106,7 @@ session-id 省略時取當前專案最近修改的 transcript（run 結束當下
 ```
 retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
 防錯規則：起跑 {model}｜adversarial {是/否}｜升級模式 {未開/第 N 輪開→下輪過/未過/中止}｜re-check {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜達上限 {未觸發/觸發→{humanChoice}}
-用時：{wallClockMin} 分（派發 {dispatchMin}、等人 {waitingHumanMin}）｜輸出 token {各 model 加總，k 為單位}｜Opus 佔派發用時 {百分比}（usage 為 null 時此行寫「用時：未取得（{原因}）」）
+用時：{wallClockMin} 分（派發 {dispatchMin}、等人 {waitingHumanMin}）｜Opus 佔派發用時 {百分比}（usage 為 null 時此行寫「用時：未取得（{原因}）」）
 ```
 
 補記條目沒有 `guards`／`usage`（如 `tier: "guidance"`）時，省略對應行。
@@ -127,7 +127,7 @@ retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
 流程：
 
 1. **讀收件匣**：全量讀 `runs.jsonl` 與 `experiments.jsonl`；讀取、統計與聚類一律以 JSON 解析處理（各條目序列化間距不保證一致，grep 字面比對會漏樣本）
-2. **算防錯規則開啟統計與成本**（機械，從 `guards` 與 `usage` 欄直接算，不需解讀）：每個開關一列——樣本數、開啟率、開了之後那關的通過率、開了比沒開多花的用時與 token、與上一輪歸檔的比較。另列用時分布：每次 run 的跨度、派發用時依角色與首派／修復分組、等人時間占比、各 model 的 token 與依當時價目表換算的金額。`modelIds` 有換代時前後分開列。`guards`／`usage` 欄缺席的舊條目不進分母。統計裡開啟率極低、開了跟沒開的通過率相當、或通過率差距撐不起多付的成本的規則，列為**拆除候選**，交下方第 6 步歸因
+2. **算防錯規則開啟統計與成本**（機械，從 `guards` 與 `usage` 欄直接算，不需解讀）：每個開關一列——樣本數、開啟率、開了之後那關的通過率、開了比沒開多花的用時與 token、與上一輪歸檔的比較。另列用時分布：每次 run 的跨度、派發用時依角色與首派／修復分組、等人時間占比、各 model 的 token 與依當時價目表換算的金額（不含輸出，標為下限）。`modelIds` 有換代時前後分開列。`guards`／`usage` 欄缺席的舊條目不進分母。統計裡開啟率極低、開了跟沒開的通過率相當、或通過率差距撐不起多付的成本的規則，列為**拆除候選**，交下方第 6 步歸因
 3. **判進行中的實驗**：到期的實驗把實驗期間的指標值與 `baseline` 並列，給出「守住／沒守住／樣本不足」三選一的判定，寫進報告；判定後把該行 `status` 改為 `done` 並附結論
 4. **聚類找跨專案模式**：同類事件反覆出現（同一 gate 常 FAIL、同類 blocked、同一 skill 條文常被誤解）→ 候選模式；開放觀察欄反覆出現的觀察 → 提案收進事件表（自我完善迴路）
 5. **需要時深挖**：順條目的 session 指針開採 transcripts 還原細節——量大時平行派發 subagent 分片閱讀

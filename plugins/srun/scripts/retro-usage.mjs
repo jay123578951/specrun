@@ -39,11 +39,15 @@ const readJsonl = p => readFileSync(p, 'utf8').split('\n').filter(Boolean).flatM
 const ts = o => o.timestamp ? new Date(o.timestamp) : null
 const inWindow = o => { const t = ts(o); return t && (!since || t >= since) }
 const sumUsage = (acc, u) => {
-  acc.inTok += u.input_tokens || 0; acc.outTok += u.output_tokens || 0
+  acc.inTok += u.input_tokens || 0
   acc.cacheWriteTok += u.cache_creation_input_tokens || 0; acc.cacheReadTok += u.cache_read_input_tokens || 0
   return acc
 }
-const emptyUsage = () => ({ inTok: 0, outTok: 0, cacheWriteTok: 0, cacheReadTok: 0 })
+// output_tokens 不記：transcript 存的是回應剛開始時的數字，不是最終值
+const emptyUsage = () => ({ inTok: 0, cacheWriteTok: 0, cacheReadTok: 0 })
+// 一次模型回應含多個 content block 時，transcript 拆成多行、每行附同一份 usage；同一個 message id 只算一次
+const usageOnce = () => { const seen = new Set(); return m => { if (!m.usage) return false; if (m.id) { if (seen.has(m.id)) return false; seen.add(m.id) } return true } }
+const toolCalls = lines => lines.reduce((n, o) => n + (o.type === 'assistant' && Array.isArray(o.message?.content) ? o.message.content.filter(c => c.type === 'tool_use').length : 0), 0)
 const min = (a, b) => a && b ? +((b - a) / 60000).toFixed(1) : null
 
 const main = readJsonl(transcript).filter(inWindow)
@@ -51,6 +55,7 @@ const mainUsage = emptyUsage(); const models = {}
 let first = null, last = null
 const dispatches = []
 const humanGaps = []; let lastAssistantTs = null
+const mainOnce = usageOnce()
 const isHuman = o => {
   if (o.type !== 'user' || o.isMeta) return false
   const c = (o.message || {}).content
@@ -63,7 +68,7 @@ for (const o of main) {
   const msg = o.message || {}
   if (o.type === 'assistant') {
     lastAssistantTs = t
-    if (msg.usage) { sumUsage(mainUsage, msg.usage); models[msg.model] = (models[msg.model] || 0) + 1 }
+    if (mainOnce(msg)) { sumUsage(mainUsage, msg.usage); models[msg.model] = (models[msg.model] || 0) + 1 }
   }
   if (isHuman(o) && lastAssistantTs) { humanGaps.push([lastAssistantTs, t]); lastAssistantTs = null }
   const r = o.toolUseResult
@@ -80,11 +85,11 @@ const out = []
 const intervals = []
 for (const d of dispatches) {
   const p = join(subDir, `agent-${d.agentId}.jsonl`); seen.add(d.agentId)
-  const row = { role: role(d.description), batch: batch(d.description), kind: kind(d.description), model: d.model, min: null, ...emptyUsage(), description: d.description }
+  const row = { role: role(d.description), batch: batch(d.description), kind: kind(d.description), model: d.model, min: null, toolCalls: null, ...emptyUsage(), description: d.description }
   if (existsSync(p)) {
-    const lines = readJsonl(p); const u = emptyUsage(); const mc = {}; let a = null, b = null
-    for (const o of lines) { const t = ts(o); if (!t) continue; a = a || t; b = t; const m = o.message || {}; if (m.usage) { sumUsage(u, m.usage); mc[m.model] = (mc[m.model] || 0) + 1 } }
-    Object.assign(row, u, { min: min(a, b), model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || d.model })
+    const lines = readJsonl(p); const u = emptyUsage(); const mc = {}; let a = null, b = null; const once = usageOnce()
+    for (const o of lines) { const t = ts(o); if (!t) continue; a = a || t; b = t; const m = o.message || {}; if (once(m)) { sumUsage(u, m.usage); mc[m.model] = (mc[m.model] || 0) + 1 } }
+    Object.assign(row, u, { min: min(a, b), toolCalls: toolCalls(lines), model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || d.model })
     if (a && b) intervals.push([a, b])
   }
   out.push(row)
@@ -92,9 +97,9 @@ for (const d of dispatches) {
 if (existsSync(subDir)) for (const f of readdirSync(subDir)) {
   const id = f.replace(/^agent-|\.jsonl$/g, ''); if (seen.has(id) || !f.endsWith('.jsonl')) continue
   const lines = readJsonl(join(subDir, f)).filter(inWindow); if (!lines.length) continue
-  const u = emptyUsage(); const mc = {}; let a = null, b = null
-  for (const o of lines) { const t = ts(o); if (!t) continue; a = a || t; b = t; const m = o.message || {}; if (m.usage) { sumUsage(u, m.usage); mc[m.model] = (mc[m.model] || 0) + 1 } }
-  out.push({ role: 'other', batch: null, kind: 'first', model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || null, min: min(a, b), ...u, description: '（未對應到派發紀錄）' })
+  const u = emptyUsage(); const mc = {}; let a = null, b = null; const once = usageOnce()
+  for (const o of lines) { const t = ts(o); if (!t) continue; a = a || t; b = t; const m = o.message || {}; if (once(m)) { sumUsage(u, m.usage); mc[m.model] = (mc[m.model] || 0) + 1 } }
+  out.push({ role: 'other', batch: null, kind: 'first', model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || null, min: min(a, b), toolCalls: toolCalls(lines), ...u, description: '（未對應到派發紀錄）' })
 }
 
 // 等人時間：助理最後一筆到人下一則訊息的空檔，扣掉同時有 subagent 在跑的部分
@@ -106,7 +111,7 @@ for (const [g0, g1] of humanGaps) {
 }
 
 const byModel = {}
-for (const r of out) { const m = r.model || 'unknown'; byModel[m] = byModel[m] || { dispatches: 0, min: 0, outTok: 0, inTok: 0, cacheWriteTok: 0, cacheReadTok: 0 }; const b = byModel[m]; b.dispatches++; b.min = +(b.min + (r.min || 0)).toFixed(1); b.outTok += r.outTok; b.inTok += r.inTok; b.cacheWriteTok += r.cacheWriteTok; b.cacheReadTok += r.cacheReadTok }
+for (const r of out) { const m = r.model || 'unknown'; byModel[m] = byModel[m] || { dispatches: 0, min: 0, inTok: 0, cacheWriteTok: 0, cacheReadTok: 0 }; const b = byModel[m]; b.dispatches++; b.min = +(b.min + (r.min || 0)).toFixed(1); b.inTok += r.inTok; b.cacheWriteTok += r.cacheWriteTok; b.cacheReadTok += r.cacheReadTok }
 
 console.log(JSON.stringify({
   session: sessionId, since: since ? since.toISOString() : null,
