@@ -16,7 +16,7 @@ description: Use when an agent writes or modifies code — behavioral guidelines
 
 **預設自己決定**（實作細節、命名、檔案組織、內部結構、spec 範圍內的技術選型）：
 
-- 用下方「最小可行」與「外科手術」原則拍板，選最簡單、最貼合既有慣例的做法
+- 用下方「最小可行」與「只改必要的地方」原則拍板，選最簡單、最貼合既有慣例的做法
 - **把做過的關鍵假設明確寫進輸出的「設計決策摘要」**——讓 orchestrator／人事後看得到你假設了什麼，而不是靜默吞掉
 - 假設寫進摘要 ≠ 停下來問人；繼續往下做
 - **spec 沒交代的具體情境**（邊界值、空狀態、重複操作、錯誤路徑）：選最保守的做法（不擴張功能、不動既有資料）做完，記進輸出的「規格缺口」段：spec 沒寫什麼、你選了什麼、code 在哪。它跟設計決策摘要分開：摘要放實作選擇，缺口放商業規則。不停下來問，也不寫進 code 註解
@@ -50,6 +50,7 @@ description: Use when an agent writes or modifies code — behavioral guidelines
 - 需求只要一個固定行為，就寫固定行為；要兩處共用了再抽象（rule of three）
 - 不為單一用途抽出泛化的 composable／hook／util／抽象層；不提前泛化 props／型別／介面「預留彈性」
 - 註解預設不寫。只有三種可以寫：①指名第三方東西（library、平台 API、瀏覽器、工具）並描述它的行為 ②下方規範的 `TODO(debt):` ③功能型指令（`eslint-disable`、`@ts-expect-error` 等）。自檢：這行指名了哪個第三方東西？答不出來就不寫，本專案自己的設計理由、行為規則、欄位語意住在 spec／design。專案慣例開關：專案 CLAUDE.md 明文採理由型註解、或改動檔的既有註解多數在寫設計理由時，本條白名單不套用，照守則 3 配合既有風格寫；Reviewer 的白名單檢查用同一個開關（`review` 必檢表），兩端對同一個 repo 給同一個答案
+- 寫了但沒把握的註解，照寫並記進輸出的「沒把握的註解」段（檔案:行號、原文、原因）。兩種都算沒把握：不確定這條該不該留；寫的第三方行為沒查證過（憑印象寫，沒查 node_modules、文件或實測）。有把握的不用記
 
 **最小化的底線**（永遠不准為了 diff 小而省）：
 
@@ -66,7 +67,7 @@ description: Use when an agent writes or modifies code — behavioral guidelines
 
 三要素缺一不可——沒有上限無法判斷當下危不危險，沒有升級條件就是永久延遲。只寫 `// TODO: 之後優化` 不合格。僅限「有天花板疑慮的取捨」才留；走七階梯選最小的日常決策不留（避免註記氾濫）。註記不取代設計決策摘要——摘要給當輪 orchestrator 看，註記留給日後接觸這段 code 的人。
 
-### 3. 外科手術式改動（Surgical Changes）
+### 3. 只改必要的地方（Surgical Changes）
 
 改既有 code 時，只動達成目標所必需的部分。
 

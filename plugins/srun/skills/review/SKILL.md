@@ -4,7 +4,7 @@ argument-hint: "[target]"
 description: Use when reviewing code changes for quality, security, and project conventions — standalone or as review standard within feat pipeline
 ---
 
-獨立的 Code Review skill，定義 review 維度、流程與輸出格式。透過 Task tool 派發 **Opus Reviewer Subagent** 執行 review。可在任何場景獨立呼叫，也作為 `feat` Reviewer 的 review 標準單一來源。
+獨立的 Code Review skill，定義 review 維度、流程與輸出格式。透過 Agent tool 派發 **Opus Reviewer Subagent** 執行 review。可在任何場景獨立呼叫，也作為 `feat` Reviewer 的 review 標準單一來源。
 
 **Input**: 可選指定 review 範圍（見下方模式）。未指定時自動偵測 git diff。
 
@@ -54,7 +54,7 @@ description: Use when reviewing code changes for quality, security, and project 
 
 ### Step 3: 派發 Reviewer Subagent
 
-使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**——本 plugin 出貨的 agent（`plugins/srun/agents/opus-reviewer.md`），frontmatter 鎖 `model: opus` 與工具白名單（清單以該檔 `tools` 欄為準；無 Write/Edit：report-only 的工具層門檻，保留 Bash 供自跑 `git diff`——提高失誤門檻，非 sandbox 保證），並要求報告第一行自報實際 model（runtime 降級偵測）。prompt 模板見「Reviewer Subagent Prompt 模板」章節，依模式注入對應 scope 與 adversarial flag。
+使用 Agent tool 派發 subagent，派發參數固定為 **`subagent_type: opus-reviewer`**——本 plugin 出貨的 agent（`plugins/srun/agents/opus-reviewer.md`），frontmatter 鎖 `model: opus` 與工具白名單（清單以該檔 `tools` 欄為準；無 Write/Edit：report-only 的工具層門檻，保留 Bash 供自跑 `git diff`——提高失誤門檻，非 sandbox 保證），並要求報告第一行自報實際 model（runtime 降級偵測）。prompt 模板見「Reviewer Subagent Prompt 模板」章節，依模式注入對應 scope 與 adversarial flag。
 
 Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的「輸出格式」最終報告。主對話收到後直接呈現，不需要再做重新包裝或補充檢查（這些責任已在 prompt 中明確交給 subagent）。
 
@@ -64,7 +64,7 @@ Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的�
 
 **Subagent 執行失敗 / 派發異常時**（獨立模式與 `feat` 模式統一紀律）：
 
-記錄錯誤並停下來問人（隔離不變量：不退化為主對話自審）。`feat` 流程下，orchestrator 將整體狀態（含已完成的 Coder/Tester 產出、Reviewer 派發失敗原因）報告給使用者後等待後續指示，不繼續推進 retry 迴路。
+記錄錯誤並停下來問人（派發失敗也不改由主對話自己審）。`feat` 流程下，orchestrator 將整體狀態（含已完成的 Coder/Tester 產出、Reviewer 派發失敗原因）報告給使用者後等待後續指示，不繼續推進 retry 迴路。
 
 ### Step 4: 呈現結果
 
@@ -78,7 +78,7 @@ Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的�
 
 本章節是 Review 維度、嚴重程度、判定規則、輸出格式的 **single source of truth**——所有規範均內嵌於下方 prompt 模板。文件其他章節（如「Targeted Check 模式」、「與 Pipeline 的關係」）僅描述外圍流程，不另存規範副本。
 
-呼叫方依模式組裝 prompt 並用 Task tool 派發。
+呼叫方依模式組裝 prompt 並用 Agent tool 派發。
 
 **派發參數**：
 

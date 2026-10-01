@@ -54,9 +54,9 @@ case "$backend" in
 - explore 完 → 跳選項：先收斂設計決策（/srun:decisions；功能複雜或分支多時建議）｜直接產出規格（/opsx:propose）｜再討論一下
 - decisions 完 → 宣告一句，跑 /opsx:propose
 - propose 完 → 確認使用者已人工審過 proposal，再跑 /srun:feat
-- feat 完 → 攤兩張清單交人工驗收：spec 驗收點、規格缺口（feat 報告列的 AI 拍板商業規則，已寫入 delta spec；不接受的走驗收修正改 code 並自 delta 刪該 scenario）
+- feat 完 → feat 報告後已跳驗收選項（通過，跑收尾｜有地方要改｜還沒驗完），照使用者選的接下面兩行；不另外攤清單
 - 驗收發現問題、或診斷根因確認 → 跳選項：規格層問題（先更新 spec 再處理）｜實作層小問題（/srun:fix）｜瑣碎（對話直改）
-- 驗收通過 → 打包宣告一次，依序 /opsx:sync → /opsx:archive；archive 完順帶提一句 /srun:retro
+- 驗收通過 → 打包宣告一次，依序 /opsx:sync → /opsx:archive
 - pipeline／skill 流程內部 → 靜默，流程自身紀律優先
 MAP
     ;;
@@ -68,9 +68,9 @@ MAP
 - discuss 完 → 跳選項：先收斂設計決策（/srun:decisions；功能複雜或分支多時建議）｜直接產出規格（/spectra-propose）｜再討論一下；帶進行中 change 進場且結論落在該 change 的規格層（含推翻其前提）→ 選項改含回寫該 change（/spectra-ingest）
 - decisions 完 → 宣告一句，跑 /spectra-propose
 - propose 完 → 確認使用者已人工審過 spec，再跑 /srun:feat
-- feat 完 → 攤兩張清單交人工驗收：spec 驗收點、規格缺口（feat 報告列的 AI 拍板商業規則，已寫入 delta spec；不接受的走驗收修正改 code 並自 delta 刪該 scenario）
+- feat 完 → feat 報告後已跳驗收選項（通過，跑收尾｜有地方要改｜還沒驗完），照使用者選的接下面兩行；不另外攤清單
 - 驗收發現問題、或診斷根因確認 → 跳選項：規格層問題（/spectra-ingest）｜實作層小問題（/srun:fix）｜瑣碎（對話直改）
-- 驗收通過 → 宣告，跑 /spectra-archive；archive 完順帶提一句 /srun:retro
+- 驗收通過 → 宣告，跑 /spectra-archive
 - pipeline／skill 流程內部 → 靜默，流程自身紀律優先
 MAP
     ;;

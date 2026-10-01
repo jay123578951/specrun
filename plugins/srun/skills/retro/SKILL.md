@@ -25,7 +25,7 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 
 ## 記錄模式（預設）
 
-**呼叫點**：`feat` Step 7 與 `fix` Step 8 的完成報告尾端內建一行呼叫（SSOT——開關表、事件表與條目格式只活在本 skill，feat/fix 不各抄一份）。手動呼叫 `/srun:retro` ＝ 臨時補記（如人工驗收後才發現的問題）。
+**呼叫點**：`feat` Step 7 與 `fix` Step 7 的完成報告尾端內建一行呼叫（SSOT——開關表、事件表與條目格式只活在本 skill，feat/fix 不各抄一份）。手動呼叫 `/srun:retro` ＝ 臨時補記（如人工驗收後才發現的問題）。
 
 ### 防錯規則開關（`guards`，每次 run 必記，快樂路徑也記）
 
@@ -33,9 +33,9 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 
 | 欄位 | 取值 | 對應哪條防錯規則 | 從哪拿 |
 |------|------|------------------|--------|
-| `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat Step 3／fix Model 策略的起跑升級判定 | 本 run **第一次** Task 派發 Coder 的 `model` 參數與判定理由。升級模式改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
+| `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat Step 3／fix Model 策略的起跑升級判定 | 本 run **第一次**派發 Coder 的 `model` 參數與判定理由。升級模式改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
 | `adversarialFirst` | `true\|false` | feat Step 6 首派 Reviewer 的 adversarial 判定 | 首次派 Reviewer 時代入的 `{adversarial}`。`fix` 無此判定記 `null` |
-| `escalation` | `{opened: bool, gate: test\|reviewer\|verify\|security-review\|null, round: N\|null, passedNextRound: bool\|null}` | retry-loop 升級模式（counter 達 2 全部修復派發升 Opus） | 開啟時記哪個 gate 在第幾輪觸發；`passedNextRound`＝開啟後該 gate 下一輪是否通過（停損或中止記 `null`） |
+| `escalation` | `{opened: bool, gate: test\|reviewer\|verify\|security-review\|null, round: N\|null, passedNextRound: bool\|null}` | retry-loop 升級模式（counter 達 2 全部修復派發升 Opus） | 開啟時記哪個 gate 在第幾輪觸發；`passedNextRound`＝開啟後該 gate 下一輪是否通過（達上限停下或中止記 `null`） |
 | `recheck` | `{runs: N, fail: M}` | review Targeted Check 用 Sonnet 不升 Opus | 本 run 派了幾次 targeted re-check、其中幾次判 FAIL |
 | `securityReview` | `{triggered: bool, verdict: PASS\|WARNING\|FAIL\|null}` | fix Step 5 安全 review 條件觸發 | `fix` 專用；`feat` 的安全訊號已由 `adversarialFirst` 覆蓋，記 `null` |
 | `stopLoss` | `{fired: bool, humanChoice: continue\|skip\|manual\|rerun\|null}` | retry-loop 各 gate 最多 3 輪停下問人 | 觸發時記人的裁決：`continue`＝再修一輪、`skip`＝跳過該 gate 交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑 |
@@ -51,7 +51,7 @@ node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" [session-id] --since <p
 
 session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 Step 1 宣告的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與四種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、四種 token）。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
 
-腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，回顯註記一句，不阻斷。
+腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，不阻斷（手動呼叫的回顯在用時那行註記原因）。
 
 ### 事件（底線守門，對照事件表列舉，偏離快樂路徑全記）
 
@@ -59,11 +59,11 @@ session-id 省略時取當前專案最近修改的 transcript（run 結束當下
 |---------------------|------|
 | `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review / comment-safety-net）；Reviewer 只有 FAIL 才算，PASS with WARNING 記下一列 |
 | `review_warning` | Reviewer 判 PASS with WARNING（記條數與歸屬 coder／tester／spec；不計 `counters.reviewer`，與 retry-loop「targeted re-check 不計輪」一致） |
-| `counter_2` / `counter_3` | 任一迴路 counter 達 2（升 Opus）／達 3（停損問人）；開關細節記在 `guards.escalation`／`guards.stopLoss`，事件只留一行事實 |
-| `test_defect` | test-defect 仲裁通道被使用（記上訴結果：測試改了／上訴不成立） |
-| `review_defect` | review-finding 申辯通道被使用（記上訴結果：finding 撤回／維持／升級問人） |
+| `counter_2` / `counter_3` | 任一迴路 counter 達 2（升 Opus）／達 3（達上限停下問人）；開關細節記在 `guards.escalation`／`guards.stopLoss`，事件只留一行事實 |
+| `test_defect` | 測試異議被提出（記結果：測試改了／異議不成立） |
+| `review_defect` | review 異議被提出（記結果：finding 撤回／維持／升級問人） |
 | `flaky` | verify-flow 標記 flaky |
-| `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆／工具能力不足） |
+| `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆） |
 | `scope_exceeded` | G7 規模超標回報（路由誤判實錘——`docs/maintenance/routing-cases.md` 新題候選） |
 | `acceptance_fix` | `fix` 場景 (ii) 驗收修正 |
 | `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
@@ -92,21 +92,31 @@ session-id 省略時取當前專案最近修改的 transcript（run 結束當下
 - `tier: "guidance"`：未進 pipeline 的引導事件補記條目——`guards`、`usage` 與 `stats` 省略、`subject` 寫當時對話主題一句
 - `observations`（開放觀察欄）：模型判斷有事件表之外值得 kit 注意的異常時，以事實＋證據格式一併記，同樣不寫解讀——收集工具本身也是被優化的對象（反覆出現的觀察，消化時提案收進事件表）
 
-### 回顯（append 後在完成報告尾端輸出，讓人不開檔案就知道記了什麼）
+### 回顯（append 後輸出，依呼叫方分兩種）
+
+**從 feat／fix 完成報告呼叫**：平常不輸出任何東西，連「retro」節標題都不出現。只有兩種情況在報告尾端出現「retro」節：
+
+- 有歸檔提醒（見下節）→ 只列提醒句
+- append 失敗 → 一行「retro 記錄失敗：{原因}」，讓人知道這次 run 的資料缺了、可以手動補記
+
+`usage` 為 `null` 不算失敗，不輸出。
+
+**手動呼叫 `/srun:retro` 補記**：輸出完整回顯，讓人確認記對了：
 
 ```
 retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
-防錯規則：起跑 {model}｜adversarial {是/否}｜升級模式 {未開/第 N 輪開→下輪過/未過/中止}｜re-check {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜停損 {未觸發/觸發→{humanChoice}}
+防錯規則：起跑 {model}｜adversarial {是/否}｜升級模式 {未開/第 N 輪開→下輪過/未過/中止}｜re-check {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜達上限 {未觸發/觸發→{humanChoice}}
 用時：{wallClockMin} 分（派發 {dispatchMin}、等人 {waitingHumanMin}）｜輸出 token {各 model 加總，k 為單位}｜Opus 佔派發用時 {百分比}（usage 為 null 時此行寫「用時：未取得（{原因}）」）
 ```
 
-### 歸檔提醒（append 時順手檢查，符合的各加一行在回顯之後；30 只是提醒閾值，不是歸檔門檻）
+補記條目沒有 `guards`／`usage`（如 `tier: "guidance"`）時，省略對應行。
+
+### 歸檔提醒（append 時順手檢查，符合的各加一行；30 只是提醒閾值，不是歸檔門檻）
 
 | 時機 | 檢查 | 提醒句 |
 |------|------|--------|
 | 累積夠多 | `wc -l` 收件匣 > 30 筆 | 「回饋收件匣已累積 N 筆，建議擇時執行 `/srun:retro --archive` 消化」 |
 | 拆除實驗到期 | `experiments.jsonl` 有 `status: active` 的實驗，數 `startedAt` 之後收件匣＋歸檔的 run 數 ≥ `targetRuns` | 「拆除實驗『{rule}』已滿 {targetRuns} 筆，可以判了」 |
-| 模型換代 | 本次 `guards.modelIds` 任一值與收件匣最後一筆（收件匣空則看歸檔最後一筆）不同 | 「{coder/reviewer} model 從 {舊} 換成 {新}，歸檔時前後資料分開算」 |
 
 ---
 

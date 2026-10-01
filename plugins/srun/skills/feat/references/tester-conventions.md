@@ -30,9 +30,9 @@
 
 工具用法：PM 偵測、專案 script 優先、不裸 `npx` 等指令選用通則見同目錄 `command-conventions.md`。**指令以專案偵測到的測試框架為準**（優先跑專案 test script）；下列以 vitest 為預設範例——需逐項失敗資訊時用 `pnpm exec vitest run --reporter=verbose`，scoped 到特定檔用 `pnpm exec vitest run <路徑>`（依偵測到的 PM；其他框架換用對應指令）。
 
-**執行節奏**：收斂階段 scoped 到改動檔，全綠後跑一次全量當回歸蓋章；節奏自行拿捏，唯一硬規則是**蓋章用的全量必須在最後一次改動之後執行**——先跑全量再改 code，那次全量即過期作廢。
+**執行節奏**：收斂階段 scoped 到改動檔，全綠後最後跑一次全部測試，確認沒有回歸；節奏自行拿捏，唯一硬規則是**最後這次全部測試必須在最後一次改動之後執行**——先跑全量再改 code，那次全量即過期作廢。
 
-**Settle 前 lint 自查**：對自己新增／修改的測試檔跑 scoped lint（per-file——全量 lint 會被 pre-existing error 淹沒而漏報；指令選用依 `command-conventions.md`），紅燈自修後才交付。
+**交回結果前 lint 自查**：對自己新增／修改的測試檔跑 scoped lint（per-file——全量 lint 會被 pre-existing error 淹沒而漏報；指令選用依 `command-conventions.md`），紅燈自修後才交付。
 
 ## 輸出必含
 

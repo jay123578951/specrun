@@ -4,7 +4,7 @@ argument-hint: "[app URL] [驗收依據路徑或描述]"
 description: Use when you need to confirm a spec-designed user flow actually runs end-to-end in a real browser — drives real clicks to check the flow completes without errors/interruptions, verifies spec-stated elements exist and sit where the spec says; aesthetics and data correctness stay with the human
 ---
 
-一個**可攜、不綁專案**的「操作流程驗證」skill。它在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍（真的點擊、真的填表、真的跳頁），確認**流程串得起來、不報錯、不中斷**，而不是驗「畫面對不對、好不好看」。透過 Task tool 派發 fresh-context subagent 執行。
+一個**可攜、不綁專案**的「操作流程驗證」skill。它在真實瀏覽器裡把 spec 設計的使用者流程實際走一遍（真的點擊、真的填表、真的跳頁），確認**流程串得起來、不報錯、不中斷**，而不是驗「畫面對不對、好不好看」。透過 Agent tool 派發 fresh-context subagent 執行。
 
 ---
 
@@ -35,11 +35,11 @@ description: Use when you need to confirm a spec-designed user flow actually run
 
 ### 派發 subagent
 
-用 Task tool 派發 fresh-context subagent（預設 `subagent_type: general-purpose` + `model: sonnet`）。prompt 用下方模板展開。
+用 Agent tool 派發 fresh-context subagent（預設 `subagent_type: general-purpose` + `model: sonnet`）。prompt 用下方模板展開。
 
 Subagent 需要 **playwright 瀏覽器工具**（`browser_navigate` / `browser_snapshot` / `browser_click` / `browser_fill_form` / `browser_console_messages` / `browser_network_requests` / `browser_take_screenshot` 等，由 srun 隨附的 playwright MCP server 提供）。若這些工具是 deferred，subagent 須先用一次 ToolSearch 批次載入再操作。
 
-**派發失敗或 app 起不來**：記錄狀況、判為 `BLOCKED` 交人（隔離不變量：不退化為主對話自做），也不硬算 FAIL。
+**派發失敗或 app 起不來**：記錄狀況、判為 `BLOCKED` 交人（派發失敗也不改由主對話自己驗），也不硬算 FAIL。
 
 ### verdict
 
@@ -47,9 +47,9 @@ Subagent 需要 **playwright 瀏覽器工具**（`browser_navigate` / `browser_s
 |---------|------|------|
 | **PASS** | 流程走得完、spec 明文項目都成立、無 error 級信號 | 進下一步（人工驗收） |
 | **FAIL** | 流程斷 / error 級信號 / spec 明文項目不成立（元件沒出現、跑錯區域、明顯崩版）——**且已重現確認**；視覺型 FAIL 附截圖或幾何描述 | 回 Coder 修 |
-| **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（playwright MCP server 沒起／瀏覽器工具載不到）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人**；**工具能力不足**（工具在、呼叫成功，但達不成 spec 要求的操作）→ **問人**，報告寫明缺的是哪項能力 |
+| **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（playwright MCP server 沒起／瀏覽器工具載不到）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人** |
 
-不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。FAIL 截圖存 `.claude/debug/`（不進版控，生命週期由呼叫方管理）。
+不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**工具做不到的情境**（工具在、呼叫成功，但達不成 spec 要求的操作）不判 BLOCKED：記進輸出的「工具做不到的」段、寫明缺哪項能力，其他情境照常判定，交人工驗收親手驗。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。FAIL 截圖存 `.claude/debug/`（不進版控，生命週期由呼叫方管理）。
 
 ---
 
@@ -114,6 +114,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ## 擋路情境
 - **登入牆**：驗證瀏覽器的登入狀態跨次保留（持久化設定檔），人登過一次就不再撞牆。有已驗證入口就從 app 內部開始，別打登入 UI；登入本身是被測流程且有測試帳密才實際走（絕不自創帳密、不用開發者本人帳號、帳密不寫進報告）；過不去（沒帳密 / 第三方 OAuth / SSO / CAPTCHA / 2FA / 魔術連結）→ 判 BLOCKED（子原因：登入牆），寫明卡在哪類，**瀏覽器留著別關**：建議動作寫「請在驗證瀏覽器視窗完成登入後重跑」。
+- **工具做不到**：工具在、呼叫也回報成功，但畫面達不到 spec 要求的狀態（例：調整視窗大小回報成功，實際尺寸沒變）→ 試 2-3 次不成就記進「工具做不到的」段，寫明缺哪項能力，接著驗其他情境。這不是環境問題，不判 BLOCKED。
 - **反 rabbit-hole**：同一道牆試 2-3 次不成就停，別無限重試或亂點繞路；遇 alert/confirm 等 dialog 用 browser_handle_dialog 處理；不解 CAPTCHA。
 
 ## 灰色地帶
@@ -127,7 +128,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ### Verdict：{PASS | FAIL | BLOCKED}
 實際驗證的 URL/port：{你真正操作的位址，如 http://localhost:3000——供人工對帳 dev server 身分}
-{若 BLOCKED：}子原因：{工具未就緒 | 環境（dev server/seed） | 登入牆（缺帳密 / OAuth / SSO / CAPTCHA / 2FA / 魔術連結） | 工具能力不足（工具在但達不成 spec 要求的操作）}
+{若 BLOCKED：}子原因：{工具未就緒 | 環境（dev server/seed） | 登入牆（缺帳密 / OAuth / SSO / CAPTCHA / 2FA / 魔術連結）}
 建議動作：{例如「請人工走一遍流程」/「檢查 srun plugin 的 playwright MCP 後重跑」/「在驗證瀏覽器視窗完成登入後重跑」/「提供測試帳號」}
 
 ### 走過的流程
@@ -151,6 +152,9 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 ### 待人確認（灰色地帶）
 （模稜兩可、無法客觀判定的，列出交人；無則「無」）
+
+### 工具做不到的
+（哪個情境、要做什麼操作、缺哪項能力；不影響其他情境的判定，交人工驗收親手驗；無則「無」）
 
 {若有收到走法交接：}
 ### 交接與畫面對不上的地方

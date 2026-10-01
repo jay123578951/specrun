@@ -4,7 +4,7 @@ argument-hint: "[--staged | --branch <name> | --whole-file]"
 description: Use when tidying code comments at the end of development — removes stale/redundant/thinking-process comments while preserving "why" comments, conventions, and functional directives
 ---
 
-獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Task tool 派發 **Sonnet 整理 Agent subagent** 執行。獨立工具，不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋）；適合對人寫的舊 code、別人的 branch 手動跑。
+獨立的「註解整理」skill，定義註解衛生的判準、流程與輸出格式。透過 Agent tool 派發 **Sonnet 整理 Agent subagent** 執行。獨立工具，不在 `feat`／`fix` pipeline 上（pipeline 內的註解由 `guidelines` 白名單與 Reviewer 檢核覆蓋）；適合對人寫的舊 code、別人的 branch 手動跑。
 
 **Input**: 可選指定範圍（見下方模式）。未指定時自動偵測 git diff。
 
@@ -44,17 +44,17 @@ description: Use when tidying code comments at the end of development — remove
 
 ### Step 2: 派發整理 Agent Subagent
 
-使用 Task tool 派發 subagent，派發參數固定為 **`subagent_type: general-purpose` + `model: sonnet`**。prompt 模板見下方「整理 Agent Subagent Prompt 模板」，依模式注入對應 scope。
+使用 Agent tool 派發 subagent，派發參數固定為 **`subagent_type: general-purpose` + `model: sonnet`**。prompt 模板見下方「整理 Agent Subagent Prompt 模板」，依模式注入對應 scope。
 
 Subagent 自行讀檔、自行依守則套用 Edit、自行跑 scoped lint（指令依專案偵測，不帶 --fix），最後直接輸出本 skill 定義的「輸出格式」報告。主對話收到後直接呈現。
 
-**Subagent 派發失敗時**：記錄錯誤並停下來問人（隔離不變量：不退化為主對話自做）。
+**Subagent 派發失敗時**：記錄錯誤並停下來問人（派發失敗也不改由主對話自己整理）。
 
 ### Step 3: 呈現結果 + 安全網
 
 主對話將整理 Agent 的報告原樣呈現，並確認安全網已執行：
 
-- **保護清單前後計數**：subagent 於整理前後對功能型指令保護清單**逐 pattern** regex 計數並核對（見 prompt 模板）——任一 pattern 變少即誤刪，補回才 settle。這是 build-time pragma（測試驗不到）的機械防線
+- **保護清單前後計數**：subagent 於整理前後對功能型指令保護清單**逐 pattern** regex 計數並核對（見 prompt 模板）——任一 pattern 變少即誤刪，補回才算完成。這是 build-time pragma（測試驗不到）的機械防線
 - **Lint**：由 subagent 在收尾時執行（指令選用見下方安全網引用的 `command-conventions.md`）
 - **重跑 scoped 測試**：重跑改動檔的既有測試——**大多數誤刪**功能型指令註解（如 `eslint-disable`、`@ts-expect-error`、`istanbul ignore`）**會在此暴露；build-time pragma（`@__PURE__`、`webpackChunkName` 等）除外**——它們只影響打包結果，測試驗不到，靠保護清單防守。純註解改動不需全量。由 subagent 自跑並回報。
 
@@ -126,11 +126,11 @@ Scope：{auto | staged | branch:<name>}
 - borderline（拿不準是否含「為什麼」價值）→ **保留**，列入報告「保留決策」段供覆核
 - 不改 code 邏輯，只動註解；不調整與註解無關的格式
 
-## 保護清單前後計數（機械不變量，必做）
+## 保護清單前後計數（機械核對，必做）
 
 build-time pragma 與債務註記誤刪測試驗不到，靠這道機械網防守。**開始整理前**，對上方「必須保留」清單的每種功能型 pattern（`eslint-disable`、`prettier-ignore`、`@ts-expect-error`、`@__PURE__`、`webpackChunkName`、`v-html` 註記等全部項目）加上 `TODO(debt)` 在 scope 檔案內各跑一次 regex 計數；**整理完成後**同樣再數一次，**逐 pattern 核對**（不加總——總數不變可能是 A 少一、B 多一互相掩護）：
 
-- 任一 pattern 計數變少 → 誤刪了該種標記，找回補上後重新核對，**全部相等才 settle**
+- 任一 pattern 計數變少 → 誤刪了該種標記，找回補上後重新核對，**全部相等才算完成**
 - 只數保護清單內的 pattern，一般註解不管（測試網接得住，不重複防）
 - 純機械、零判斷，成本趨近零
 
