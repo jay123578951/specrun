@@ -23,10 +23,14 @@ Step 4      Coder（sonnet／opus）實作
 Step 5      Tester（sonnet）稽核與補測試            失敗 → Retry 迴路
             分批時每批跑 Step 4–5，全部批次跑完才進 Step 6
 Step 6      Reviewer（opus-reviewer）               有待修項 → Retry 迴路，直到這關修完
+Step 6.3    全部測試（主對話自跑）                    失敗 → Retry 迴路
 Step 6.5    操作流程驗證（sonnet，觸及 UI/流程才跑）  FAIL → Retry 迴路
 Step 6.7    收驗證環境、規格缺口回寫（主對話自做）
-Step 7      報告、retro 記錄、跳驗收選項 → 交人工驗收
+Step 7      勾選前實測、報告、retro 記錄、跳驗收選項 → 交人工驗收
+            實測發現實作未達 → Retry 迴路
 ```
+
+**測試分工**：派出去的 agent（Coder、Tester、修復）只跑自己任務的相關測試；全部測試只由主對話在 Step 6.3 跑。Reviewer 之後任何一關改了 code，都從那裡往後重走剩下的關卡：修復複查 → 全部測試 → 操作流程驗證（依 Step 6.5 觸發判斷），細節見「Retry 迴路」。
 
 ### 派發說明（每次派發前）
 
@@ -187,7 +191,7 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 ① 先讀 specs/ 的 scenarios，**獨立列出應驗證行為清單**——此階段**禁止查看任何測試檔**（含 Coder 順手寫的）
 ② 對照既有測試（含 Coder 本輪所寫）找缺口與錯誤斷言
 ③ 補寫缺少的測試、修正錯誤的斷言——針對可經真實 import／掛載驗證的 scenario 撰寫，驗不到的列入無法測試清單（不硬產出，降級規則見守則檔排除規則），撰寫與執行依守則檔
-④ 依守則檔的執行節奏跑測試（先 scoped 跑到全綠，最後跑一次全部測試）並輸出報告
+④ 依守則檔跑相關測試到全綠，並輸出報告。不跑全部測試：全部測試由主對話在 Reviewer 通過後統一跑
 
 輸出：
 1. 應驗證行為清單（①的產出）
@@ -232,8 +236,20 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **出口**：
 
-- PASS 且沒有任何 WARNING／SUGGESTION → 判斷要不要跑 Step 6.5（見其觸發判斷）：要跑 → Step 6.5；不跑 → Step 6.7
-- FAIL，或 PASS 但有 WARNING／SUGGESTION → 進入 Retry 迴路（見下方），這關修完後同樣判斷要不要跑 Step 6.5
+- PASS 且沒有任何 WARNING／SUGGESTION → Step 6.3
+- FAIL，或 PASS 但有 WARNING／SUGGESTION → 進入 Retry 迴路（見下方），這關修完後同樣進 Step 6.3
+
+### Step 6.3: 全部測試（orchestrator 自跑，不派 agent）
+
+Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 第一次跑全部測試：前面的 agent 只跑相關測試，跨模組的回歸在這裡才抓得到。
+
+- 指令選用依 `${CLAUDE_SKILL_DIR}/references/command-conventions.md`
+- 只輸出失敗項目，不把整份結果帶進對話
+
+**出口**：
+
+- 全綠 → 判斷要不要跑 Step 6.5（見其觸發判斷）：要跑 → Step 6.5；不跑 → Step 6.7
+- 有失敗 → 進入 Retry 迴路（見下方）
 
 ### Step 6.5: 操作流程驗證（Sonnet subagent，觸及 UI/流程時才跑）
 
@@ -245,8 +261,9 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **先後順序**：本步驟永遠最後才跑，驗的必須是最終 code。
 
-- 測試與 review 每次修復後都會重驗；本步驟要等 Step 6 Reviewer 這關修完（含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check 通過）才派發，所以本步驟的 PASS 不會因為之後又改 code 而失效
-- 本步驟 FAIL 的修復，要先通過三項檢查與 targeted re-check，才 targeted re-run 本步驟（見 Retry 迴路）
+- 本步驟要等 Step 6 Reviewer 這關修完（含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check 通過）、Step 6.3 全部測試全綠才派發
+- 本步驟 FAIL 的修復，要先通過三項檢查、targeted re-check 與全部測試，才 targeted re-run 本步驟（見 Retry 迴路）
+- 本步驟 PASS 之後若又改了 code（Step 7 實測發現實作未達），要回頭重跑本步驟，PASS 才算數
 
 **前置（固定流程）**：
 
@@ -306,7 +323,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
   - Step 3 對應到 gate、由 orchestrator 代勾的項目
 - 實測與判準對不上時：
   - 判準本身寫錯，且正確值唯一明確 → 對正 artifact 後勾
-  - 判準沒錯，實作未達 → 回對應 gate 的 retry 迴路
+  - 判準沒錯，實作未達 → orchestrator 判斷要補什麼、派 Coder 修，走 Retry 迴路「Step 7 實測未達」那列，重驗完回到這裡重新實測
   - 落差會改變驗收語意 → 問人
 - 實作中途調整作法、判準沒跟著改的情況，也由這裡攔截
 
@@ -356,6 +373,7 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
   - 先載入 `srun:guidelines` 行為守則再動手（同首派）
   - 不得修改測試檔（修復階段測試修改一律由 Tester 派發）
   - 判斷失敗屬測試問題 → 依「測試異議」回報並引驗收依據原文，不要自行改斷言
+- **修復 agent 交回前的三項檢查，測試只跑相關測試**（定義見測試守則檔），不跑全部測試：全部測試由主對話在下表「修完重驗什麼」排定的位置跑。修復 prompt 一律載明這點
 - **派給 Coder 的修復 prompt 附走法交接**：前一輪輸出摘要附上所有交接檔位置；回報必填一行「交接變動：無」或「交接變動：已重寫 {位置}」。修復改到走到起點的路（入口、身分、要用的資料）才算有變，有變就整份重寫該檔
 - **升級模式開啟後**，Opus Reviewer 重派一律帶 `{adversarial}=true`；Reviewer 自身固定 Opus，無升級問題
 
@@ -363,10 +381,14 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 | Gate 失敗 | 誰修 | 修完重驗什麼 |
 |----------|------|-------------|
-| 測試 | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查全綠即修完，**不重派 Tester**——修復後防的是機械回歸，跑套件即可；Tester 的獨立價值在首輪設計測試 |
+| 測試（Step 5，Reviewer 之前） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查全綠即修完，**不重派 Tester**：修復後防的是機械回歸，Tester 的獨立價值在首輪設計測試。不派 targeted re-check：Reviewer 接著會審到這次修改 |
 | Review FAIL（有 CRITICAL） | 依歸屬：實作代碼 → Coder、測試代碼 → Tester；嚴重安全問題 → 直接停下來問人（認為 finding 不成立 → 提出 review 異議） | 重派 Opus Reviewer |
 | Review PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（SUGGESTION 併入方式見下方處置；認為 finding 不成立 → 提出 review 異議） | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
-| 操作流程驗證 FAIL | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 依序：三項檢查 → Sonnet targeted re-check（只審修復 diff）→ 最後 **verify-flow targeted re-run**（只重走受影響流程） |
+| 全部測試（Step 6.3） | Coder（判斷屬測試問題 → 提出測試異議） | 依序：三項檢查 → Sonnet targeted re-check → 重跑 Step 6.3 |
+| 操作流程驗證 FAIL | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 依序：三項檢查 → Sonnet targeted re-check → 主對話跑全部測試（同 Step 6.3 做法）→ 最後 **verify-flow targeted re-run**（只重走受影響流程） |
+| Step 7 實測未達 | Coder（orchestrator 判斷要補什麼後派發） | 依序：三項檢查 → Sonnet targeted re-check → 主對話跑全部測試 → 依 Step 6.5 觸發判斷：要跑就照 Step 6.5 前置重起驗證環境、targeted re-run 受影響流程、再照 Step 6.7 收環境 → 回 Step 7 重新實測。計輪歸該判準對應的 gate，對應不到的歸 Reviewer |
+
+Reviewer 之後只改了測試檔（如測試異議受理、Tester 改斷言）→ 主對話重跑全部測試即可，畫面沒變不重跑操作流程驗證。只改 artifact 文字 → 不重驗。
 
 歸屬 `spec`（規格 artifact 內容本身的問題，見 `review` 的歸屬定義）的 finding，FAIL 與 WARNING 同一路由：**決策級**（需推翻 design 決策或改變規格語意）→ 直接停下來問人，不進 Coder retry；**機械級**（殘留、漏掃、跨載體同步遺漏）→ 派 Coder 修 artifact 檔案，照常計輪。
 
@@ -374,9 +396,11 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 **這關修完後回哪一步**：
 
-- 測試 → 分批時還有下一批，回 Step 4 派下一批；全部批次跑完 → Step 6
-- Review（FAIL、WARNING、SUGGESTION 全部修完）→ 判斷要不要跑 Step 6.5：要跑 → Step 6.5；不跑 → Step 6.7
+- 測試（Step 5）→ 分批時還有下一批，回 Step 4 派下一批；全部批次跑完 → Step 6
+- Review（FAIL、WARNING、SUGGESTION 全部修完）→ Step 6.3
+- 全部測試 → 重跑全綠後照 Step 6.3 出口
 - 操作流程驗證 → targeted re-run PASS 後進 Step 6.7
+- Step 7 實測未達 → 回 Step 7 勾選前實測
 
 ### 測試異議
 

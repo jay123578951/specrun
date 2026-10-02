@@ -37,7 +37,9 @@ flowchart LR
     Tester -- "tests fail, back it goes" --> Coder
     Tester --> Reviewer["Reviewer<br/>Opus · independent"]
     Reviewer -- "FAIL, back it goes" --> Coder
-    Reviewer --> Verify["Flow verification<br/>when UI is touched"]
+    Reviewer --> Full["Full test suite<br/>main thread"]
+    Full -- "tests fail, back it goes" --> Coder
+    Full --> Verify["Flow verification<br/>when UI is touched"]
     Verify -- "FAIL, back it goes" --> Coder
     Verify --> Gap["Spec gaps written back"]
 ```
@@ -77,8 +79,9 @@ Once `feat` / `fix` starts, it dispatches these stages in order. The criteria be
 | Stage | Model | What it does | What sends it back |
 | ----- | ----- | ------------ | ------------------ |
 | **Coder** | Sonnet; moves to Opus for architecture / security / decision-heavy work, or on the second repair round | Writes code against the tasks, loads the `guidelines` rules before starting, runs lint + typecheck when done | A FAIL at any downstream stage lands here |
-| **Tester** | Sonnet | Lists what should be covered from the spec alone, then fills the gaps. Barred from reading the existing test files | Failing tests send it back, up to 3 rounds; the Coder can push back and have the Tester fix the test instead |
+| **Tester** | Sonnet | Lists what should be covered from the spec alone, then fills the gaps. Barred from reading the existing test files. Runs only the related tests | Failing tests send it back, up to 3 rounds; the Coder can push back and have the Tester fix the test instead |
 | **Reviewer** · `/srun:review` | Opus, independent, no write access | Reviews code quality, security, conventions and spec alignment in one pass | FAIL sends it back; whoever was called out can cite evidence and ask for that one point to be re-reviewed |
+| **Full test suite** | Main thread does this itself | Runs the whole suite once after the Reviewer passes. Every agent before it runs only related tests | Failures send it back; any later code change runs it again |
 | **Flow verification** · `/srun:verify-flow` | Sonnet, when UI is touched | Clicks through the flow in a real browser, checking it completes, throws nothing, and that the elements the spec names are present | A FAIL sends it back once reproduced |
 | **Spec gaps written back** | Main thread does this itself | Takes the rules the Coder hit that the spec never covered, writes them into the delta spec, and lists them for you | Nothing goes back; you decide case by case at acceptance |
 

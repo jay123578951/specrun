@@ -7,5 +7,5 @@
 - **修復派發 prompt 一律附**：失敗報告（依 gate 不同，分別是失敗測試名稱＋錯誤訊息／Review 報告／驗證報告含截圖或幾何描述）、**前一輪輸出摘要**（檔案清單＋設計決策，避免 context 斷裂）、明確修復指示、**同型位置清單**（finding 屬同一機制在本次改動多處出現的型態，如整批轉換時各處刪掉同款守衛；orchestrator 派修前先 grep 出本次 diff 內的同構位置，修復若涉及規範性文字（spec 條文、合規表、範例、摘要型 artifact）則連同該規則的其他載體一起列，附進 prompt 要求一次修完；非機制型寫「無」）
 - **Coder 修復回報必填「沒把握的註解」**：格式同首派輸出，只列本輪新寫的；沒有寫「無」
 - **重讀自行判斷**：修復派發已附前輪摘要與失敗報告，通常足以定位；是否回頭重讀 design.md／specs/／CLAUDE.md 由修復 agent 自行判斷
-- **修復 agent 交回結果前自跑三項檢查**（lint + typecheck + 專案 test script）：紅燈就地修不計輪；就地修不掉、或判斷失敗屬測試問題 → 回報主對話（計下一輪，或提出測試異議，見各 SKILL.md）
+- **修復 agent 交回結果前自跑三項檢查**（lint + typecheck + 測試；測試跑多少依各 pipeline：feat 只跑相關測試，全部測試由主對話跑；fix 跑專案 test script）：紅燈就地修不計輪；就地修不掉、或判斷失敗屬測試問題 → 回報主對話（計下一輪，或提出測試異議，見各 SKILL.md）
 - **升級模式（全 Pipeline 單一開關，開啟後不關閉）**：任一 gate counter 達 2（第 2 次 FAIL 派修，WARNING 修復批不算）即開啟——此後**所有修復派發升 Opus**（不論被派的是 Coder 或 Tester）。targeted re-check／re-run 是驗證派發，維持 Sonnet 不受影響

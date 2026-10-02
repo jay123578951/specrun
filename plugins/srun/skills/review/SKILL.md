@@ -230,4 +230,4 @@ Grounding rules：
 
 ## Targeted Check 模式
 
-`feat` WARNING re-check 專用的精簡 re-check：Sonnet subagent、只驗前一輪 WARNING 修復的 diff、不計 Reviewer retry counter。設計重點、派發參數與 prompt 模板見 `${CLAUDE_SKILL_DIR}/references/targeted-check.md`，執行 re-check 時再讀。
+Reviewer 之後的修復複查（WARNING、全部測試失敗、操作流程驗證 FAIL、勾選前實測未達的修復都用它）：Sonnet subagent、只驗前一輪修復的 diff、不計 Reviewer retry counter。設計重點、派發參數與 prompt 模板見 `${CLAUDE_SKILL_DIR}/references/targeted-check.md`，執行 re-check 時再讀。
