@@ -219,7 +219,7 @@ Grounding rules：
 
 ### 規格缺口（僅 change 模式；不影響 verdict 與計輪）
 
-（code 實作了 spec 未規定的商業規則：每條寫 capability／requirement、spec 沒寫什麼、code 怎麼做、檔案:行號。Coder 摘要已自報的條目也列，方便呼叫方合併；無則寫「無」。呼叫方消費方式見 `feat` Step 6.7）
+（code 實作了 spec 未規定的商業規則：每條寫 capability／requirement、spec 沒寫什麼、code 怎麼做、檔案:行號。Coder 摘要已自報的條目也列，方便呼叫方合併；無則寫「無」。呼叫方消費方式見 `feat` 的收環境與規格缺口回寫（Step 6.7））
 
 ### 摘要
 

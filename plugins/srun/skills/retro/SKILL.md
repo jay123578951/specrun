@@ -25,7 +25,7 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 
 ## 記錄模式（預設）
 
-**呼叫點**：`feat` Step 7 與 `fix` Step 7 的完成報告尾端內建一行呼叫（SSOT，開關表、事件表與條目格式只活在本 skill，feat/fix 不各抄一份）。手動呼叫 `/srun:retro` ＝ 臨時補記（如人工驗收後才發現的問題）。
+**呼叫點**：`feat` 的實測與報告（Step 7）與 `fix` 的報告結果（Step 7），完成報告尾端內建一行呼叫（SSOT，開關表、事件表與條目格式只活在本 skill，feat/fix 不各抄一份）。手動呼叫 `/srun:retro` ＝ 臨時補記（如人工驗收後才發現的問題）。
 
 ### 防錯規則開關（`guards`，每次 run 必記，快樂路徑也記）
 
@@ -33,11 +33,11 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 
 | 欄位 | 取值 | 對應哪條防錯規則 | 從哪拿 |
 |------|------|------------------|--------|
-| `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat Step 3／fix Model 策略的起跑升級判定 | 本 run **第一次**派發 Coder 的 `model` 參數與判定理由。升級模式改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
-| `adversarialFirst` | `true\|false` | feat Step 6 首派 Reviewer 的 adversarial 判定 | 首次派 Reviewer 時代入的 `{adversarial}`。`fix` 無此判定記 `null` |
+| `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat 分批與判定 Coder model（Step 3）／fix Model 策略的起跑升級判定 | 本 run **第一次**派發 Coder 的 `model` 參數與判定理由。升級模式改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
+| `adversarialFirst` | `true\|false` | feat 首派 Reviewer（Step 6）的 adversarial 判定 | 首次派 Reviewer 時代入的 `{adversarial}`。`fix` 無此判定記 `null` |
 | `escalation` | `{opened: bool, gate: test\|reviewer\|verify\|security-review\|null, round: N\|null, passedNextRound: bool\|null}` | retry-loop 升級模式（counter 達 2 全部修復派發升 Opus） | 開啟時記哪個 gate 在第幾輪觸發；`passedNextRound`＝開啟後該 gate 下一輪是否通過（達上限停下或中止記 `null`） |
 | `recheck` | `{runs: N, fail: M}` | review Targeted Check 用 Sonnet 不升 Opus | 本 run 派了幾次 targeted re-check、其中幾次判 FAIL |
-| `securityReview` | `{triggered: bool, verdict: PASS\|WARNING\|FAIL\|null}` | fix Step 5 安全 review 條件觸發 | `fix` 專用；`feat` 的安全訊號已由 `adversarialFirst` 覆蓋，記 `null` |
+| `securityReview` | `{triggered: bool, verdict: PASS\|WARNING\|FAIL\|null}` | fix 安全 review（Step 5）條件觸發 | `fix` 專用；`feat` 的安全訊號已由 `adversarialFirst` 覆蓋，記 `null` |
 | `stopLoss` | `{fired: bool, humanChoice: continue\|skip\|manual\|rerun\|null}` | retry-loop 各 gate 最多 3 輪停下問人 | 觸發時記人的裁決：`continue`＝再修一輪、`skip`＝跳過該 gate 交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑 |
 | `modelIds` | `{coder: "<id>", reviewer: "<id>\|null"}` | 分辨「規則過期」與「模型換代」 | Coder 與 Reviewer 報告首行自報的 model id（`Coder model: …`／`Reviewer model: …`）；缺自報時填派發 alias |
 
@@ -49,7 +49,7 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" [session-id] --since <pipeline 起跑的 ISO 時間>
 ```
 
-session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 Step 1 宣告的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
+session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 feat／fix 起跑宣告（兩者的 Step 1）的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
 
 腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，不阻斷（手動呼叫的回顯在用時那行註記原因）。
 
@@ -71,6 +71,7 @@ session-id 省略時取當前專案最近修改的 transcript（run 結束當下
 | `untestable_modules` | 無法測試清單非空（feat=Tester、fix=Coder 回報；記模組數與消費路徑：verify-flow OR 觸發／報告行） |
 | `verify_gap` | verify-flow 報告「待人確認」非空、或改動形態非瀏覽器可及（記落到人工的 spec 驗收點數與原因：示範資料缺情境／執行形態摸不到／工具能力不足） |
 | `artifact_drift` | tasks／design／proposal 記載與現場不符（指名檔案不存在、驗收判準與既有規格或測試衝突、驗證方法實測不可執行、量測數字失準）；記不符類型與處置（自行對正／回報問人／照字面硬做） |
+| `gate_route_miss` | feat 走錯關：少走一關、順序錯、修完沒走完「修完重走」。記錄時把本 run 的過關說明逐行對照 feat 流程總覽的順序與 Retry 迴路的「從全部測試往後重走」；使用者事後發現的走手動補記。記錯在哪、誰發現（自己對照／使用者）、當場有沒有改回 |
 | `guidance_miss` | 入口／交界引導漏接：意圖已浮現卻未宣告、未跳選項、該進流程卻就地處理，或 AI 越線動手（記漏在哪個交界、當時句式） |
 | `guidance_false_trigger` | 引導誤觸發：純討論或三錨全中的小改被宣告制帶進流程（使用者以 escape hatch 撤回＝行為實錘；撤回率是誤觸發的下界，因為容忍型不撤回，量不到）、被逼問模式（記觸發位置與當時語境） |
 | `guidance_hit` | 引導正確出現且被採用：宣告制進線未撤回，或選項被採納（記交界與去向，含帶入的 change 名或新題目）；它是漏接率的分母，沒有它只有分子，算不出率；掛錯 change 先記 observations，再犯升格 |

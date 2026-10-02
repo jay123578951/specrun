@@ -53,12 +53,12 @@ description: 輕量 Pipeline：決策已在對話收斂、不動模組邊界、�
 
 Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
 
-- **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發 Step 5 安全 review——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（本 skill 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 `fix`，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
+- **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發安全 review（Step 5）——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（本 skill 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 `fix`，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
 - **Retry 動態升級**：升級模式與 `/srun:feat` 同一套，見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`
 
 判定保守。一般小改動維持 sonnet。
 
-判定結果連同理由記進 Step 7 的 retro 條目（`guards.coderStart`）：`fix` 的理由只有 `security` 一種，維持 `sonnet` 記 `null`。記錄口徑見 `srun:retro`。
+判定結果連同理由記進報告結果（Step 7）的 retro 條目（`guards.coderStart`）：`fix` 的理由只有 `security` 一種，維持 `sonnet` 記 `null`。記錄口徑見 `srun:retro`。
 
 ---
 
@@ -71,11 +71,11 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 1. **問題描述**：什麼壞了 / 要改什麼
 2. **預期行為**：修好後應該怎樣
 3. **可能影響的檔案**：根據問題描述搜尋定位
-4. **場景判定**：獨立小功能／改動（場景 i），或進行中 change 的驗收修正（場景 ii——記下 change 名稱，供 Step 3 讀取該 change 的 artifacts）
+4. **場景判定**：獨立小功能／改動（場景 i），或進行中 change 的驗收修正（場景 ii——記下 change 名稱，供 Spec 影響判斷（Step 3）讀取該 change 的 artifacts）
 
 宣告：「srun:fix：{問題摘要}」
 
-### Step 2: 建立工作分支
+### Step 2: 開工作分支
 
 一律從所在分支開 `fix-<描述>`；場景 (ii) 已在該 change 的 `feat/` 分支上時沿用不另開。
 
@@ -89,18 +89,18 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
    - 場景 (ii)：openspec/changes/<name>/ 下的 specs/ 與 design.md
    - 專案 CLAUDE.md 中定義的其他設計文件位置
 2. 判斷：
-   ├─ 無影響（純實作問題：行為不變的 bug 修復、實作瑕疵）→ 直接進 Step 4 派發
+   ├─ 無影響（純實作問題：行為不變的 bug 修復、實作瑕疵）→ 直接進 Coder 實作（Step 4）派發
    ├─ 場景 (i) 有影響 → 先更新 openspec/specs/ 對應段落，再派發
    └─ 場景 (ii) 影響在 spec/design 層 → 先回寫 change artifact
       （與需求變更「先回寫 artifact 再續跑」同一原則），再派發
-3. 更新後的 spec 段落作為驗收依據注入 Coder 派發 prompt（見 Step 4）
+3. 更新後的 spec 段落作為驗收依據注入 Coder 派發 prompt（見 Coder 實作（Step 4））
 ```
 
 判斷中若發現其實需要**新的** spec（新增 API/元件、行為值得規格化）→ 這不是本 skill 該做的事，停下建議升 `/srun:feat`。
 
 Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 commit 交付（原則：規格與程式碼一起交付）。
 
-### Step 4: 派發 Coder Agent（含測試職責）
+### Step 4: Coder 實作（含測試職責）
 
 依「Model 策略」判定 `{coderModel}`（首次派發預設 sonnet，安全敏感路徑升 opus）。派發前把 `${CLAUDE_SKILL_DIR}/../feat/references/` 下 `command-conventions.md` 與 `tester-conventions.md` 的**絕對路徑**分別代入 `{commandConventionsPath}` 與 `{testerConventionsPath}`。使用 Agent tool 派發 subagent（model: {coderModel}）。模板語法：`{變數}` 代入實際值；`{若...：}` 區塊成立留內文、不成立整段刪。
 
@@ -118,7 +118,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 預期行為：
 {修復後的預期結果}
 
-{若 Step 3 有更新 spec：}
+{若 Spec 影響判斷（Step 3）有更新 spec：}
 驗收依據（spec 原文，權威版——實作與測試斷言以此為準）：
 {更新後的 spec 段落，含來源路徑}
 
@@ -160,26 +160,26 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 ### Step 6: Spec 輕量複核（commit 前）
 
-Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防**實作過程中的範圍外溢**（Coder 實際改動超出派發宣告範圍時，可能觸及 Step 3 未評估的規格）：
+Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一行輕量複核，防**實作過程中的範圍外溢**（Coder 實際改動超出派發宣告範圍時，可能觸及 Spec 影響判斷未評估的規格）：
 
-- 比對 Coder 實際修改的檔案清單與 Step 3 的判斷範圍：一致 → 不用標記；超出 → 對超出部分補跑一次 Step 3 的影響判斷，有影響即補更新 spec，並列進完成報告的「AI 自行裁決」（人沒同意過這段 spec 改動）
-- Coder 有回報「規格缺口」→ 每條視同 Step 3 的 spec 影響，補寫進對應 spec（場景 (i) 主規格、場景 (ii) 該 change 的 delta spec）；缺口條目同時列進完成報告供人確認
+- 比對 Coder 實際修改的檔案清單與 Spec 影響判斷的判斷範圍：一致 → 不用標記；超出 → 對超出部分補跑一次 Spec 影響判斷，有影響即補更新 spec，並列進完成報告的「AI 自行裁決」（人沒同意過這段 spec 改動）
+- Coder 有回報「規格缺口」→ 每條視同 Spec 影響判斷找到的 spec 影響，補寫進對應 spec（場景 (i) 主規格、場景 (ii) 該 change 的 delta spec）；缺口條目同時列進完成報告供人確認
 
 ### Step 7: 報告結果
 
 顯示完成報告（格式見「輸出格式」）。報告只放要人看或要人決定的事：開頭一行講結果，其餘各段有內容才出現，沒有就整段省略、不寫「無」。各段的來源：
 
 - **AI 自行裁決**：
-  - Step 6 發現 Coder 改超出範圍、自行補寫的 spec 段落
+  - Spec 輕量複核（Step 6）發現 Coder 改超出範圍、自行補寫的 spec 段落
   - Coder 缺套件、沒寫測試的模組（寫出套件名，問要不要裝）
-- **規格缺口**：Step 6 寫進 spec 的條目，註明寫進哪個 spec
-- **要你親手驗的**：Step 4 無法測試清單的受影響頁面
+- **規格缺口**：Spec 輕量複核（Step 6）寫進 spec 的條目，註明寫進哪個 spec
+- **要你親手驗的**：Coder 實作（Step 4）回報的無法測試清單的受影響頁面
 - **沒把握的註解**：Coder 各輪回報的條目；後來修復時已刪掉的不列
 - **順手看到的**：Coder 回報的順手觀察，原樣列入。它是情報不是待辦，不觸發任何 retry 或派發
 
 一般修復輪的過程不列，只在開頭那行寫退回修過幾次。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
 
-**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳 Step 1 宣告的時間作 `--since`）。append 失敗不阻斷報告。
+**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳整理需求與場景判定（Step 1）宣告的時間作 `--since`）。append 失敗不阻斷報告。
 
 ---
 
@@ -221,7 +221,7 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 
 - `{測試結果}`：`新增 M 個測試全過`｜`純樣式，沒有新測試`
 - `，安全 review 通過`：只在 `{securityReview}=true` 時出現
-- `，spec 更新 S 段`：Step 3 與 Step 6 實際改了 spec 才出現，括號內寫 spec 名與段落名
+- `，spec 更新 S 段`：Spec 影響判斷（Step 3）與 Spec 輕量複核（Step 6）實際改了 spec 才出現，括號內寫 spec 名與段落名
 - `；中間退回修過 K 次`：K ＝本 run 的修復派發次數，零次整句省略
 - 開頭以外各段有內容才出現，沒有就整段省略
 
@@ -234,6 +234,6 @@ Step 3 已做過 spec-first 影響判斷；此處只做一行輕量複核，防*
 ## Guardrails
 
 - Agent tool 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
-- Coder prompt 直接描述問題（含 Step 3 更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact；不在 prompt 中貼入檔案內容，讓 agent 自行讀取
+- Coder prompt 直接描述問題（含 Spec 影響判斷（Step 3）更新後的 spec 驗收依據），不要求 agent 自讀完整變更 artifact；不在 prompt 中貼入檔案內容，讓 agent 自行讀取
 - Coder（含 retry 派發）一律先載入 `guidelines` 行為守則再動手——從生成端約束過度設計與越界改動
 - Spec 影響判斷前移至派發前（spec-first）不可跳過
