@@ -61,5 +61,6 @@
 - 岔路跳選項、直路只宣告、pipeline／skill 流程內部靜默。
 - 選項只放主線（paved road）：AskUserQuestion 至多四格，偶用件不進選項。
 - 選項標籤說意圖不說指令名；選定後宣告實際指令再執行（透明＋可畢業）。
+- **選項底下只寫會做的事**（0.35.0，discuss 完的 decisions 選項被寫成「把決定整理成清單，效益不大」驅動）：選項說明每次都一樣；建議哪個、為什麼建議，在題目正文用一句具體到這次情況的話寫一次。判斷分散寫在各選項底下時，人要逐項比對才拼得出建議，判斷也容易寫得含糊或和選項用途矛盾。
 - matcher 不設限＝ startup／resume／clear／compact 四開；compact 重灌緩解長 session 衰減。
 - SessionStart 對 subagent 不生效（實測），pipeline subagent 不會讀到本規則。
