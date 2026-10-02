@@ -21,4 +21,4 @@ plugins/srun/skills/*/evals/results/
 .playwright-mcp/
 
 # kit repo 文件只放本機（決策紀錄、簡報、考卷、評測）
-docs/
+/docs/
