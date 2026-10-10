@@ -46,10 +46,10 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 回答「時間去哪了」「花了多少 token」「是 AI 慢還是在等人」。執行：
 
 ```
-node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" [session-id] --since <pipeline 起跑的 ISO 時間>
+node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" ${CLAUDE_SESSION_ID} --since <pipeline 起跑的 ISO 時間>
 ```
 
-session-id 省略時取當前專案最近修改的 transcript（run 結束當下呼叫即為本 session）；`--since` 傳 feat／fix 起跑宣告（兩者的 Step 1）的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
+session id 由 Claude Code 載入 skill 時代換，同專案有其他 session 並行也不會抓錯；`--since` 傳 feat／fix 起跑宣告（兩者的 Step 1）的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
 
 腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，不阻斷（手動呼叫的回顯在用時那行註記原因）。
 
@@ -112,11 +112,11 @@ retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
 
 補記條目沒有 `guards`／`usage`（如 `tier: "guidance"`）時，省略對應行。
 
-### 歸檔提醒（append 時順手檢查，符合的各加一行；30 只是提醒閾值，不是歸檔門檻）
+### 歸檔提醒（append 時順手檢查，符合的各加一行；50 只是提醒閾值，不是歸檔門檻）
 
 | 時機 | 檢查 | 提醒句 |
 |------|------|--------|
-| 累積夠多 | `wc -l` 收件匣 > 30 筆 | 「回饋收件匣已累積 N 筆，建議擇時執行 `/srun:retro --archive` 消化」 |
+| 累積夠多 | `wc -l` 收件匣 > 50 筆 | 「回饋收件匣已累積 N 筆，建議擇時執行 `/srun:retro --archive` 消化」 |
 | 拆除實驗到期 | `experiments.jsonl` 有 `status: active` 的實驗，數 `startedAt` 之後收件匣＋歸檔的 run 數 ≥ `targetRuns` | 「拆除實驗『{rule}』已滿 {targetRuns} 筆，可以判了」 |
 
 ---

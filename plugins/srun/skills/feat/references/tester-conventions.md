@@ -8,7 +8,7 @@
 - 使用 describe/it API 結構
 - 純邏輯函式應抽出為獨立模組，測試 import 實際模組（不複製邏輯）
 - spec 條文帶量詞（每個／全部／各自）時，fixture 至少含複數個體、且對每個個體斷言——單元素 fixture 驗不出 each 語意
-- 每個新增或修正的測試檔至少做一次反向驗證：挑它守的核心行為暫時改壞、確認測試轉紅後還原；改壞了仍全綠的測試不算覆蓋，回頭修斷言
+- 每個新增或修正的測試檔至少做一次反向驗證：挑它守的核心行為暫時改壞、確認測試轉紅後手動改回自己改壞的那幾行（工作樹上還有本 run 其他 agent 沒 commit 的改動，checkout、restore、stash 這類 git 指令會把它們一起洗掉）；改壞了仍全綠的測試不算覆蓋，回頭修斷言
 
 ## 測試環境能不能用（所有 stack）
 
@@ -32,7 +32,7 @@
 
 **執行節奏**：收斂階段只跑相關測試。相關測試是這次失敗的測試，加上改動檔對應的測試。要不要最後跑一次全部測試，照派發 prompt：prompt 叫你跑才跑。要跑的話，**全部測試必須在最後一次改動之後執行**：先跑全部再改 code，那次全部測試就作廢了。
 
-**交回結果前 lint 自查**：對自己新增／修改的測試檔跑 scoped lint（per-file——全量 lint 會被 pre-existing error 淹沒而漏報；指令選用依 `command-conventions.md`），紅燈自修後才交付。
+**交回結果前 lint 與 typecheck 自查**：對自己新增／修改的測試檔跑 scoped lint（per-file——全量 lint 會被 pre-existing error 淹沒而漏報），再跑 typecheck，只看自己測試檔的錯誤（指令選用依 `command-conventions.md`），紅燈自修後才交付。
 
 ## 輸出必含
 
