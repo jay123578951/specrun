@@ -9,7 +9,7 @@ Reviewer 之後每次修復（WARNING、全部測試失敗、操作流程驗證 
 - 只驗證這輪要修的問題是否已正確修復、是否引入新問題
 - 不重新掃描所有檔案
 - 輸出格式沿用通用模板的「依下方格式輸出最終報告」段，但 scope 描述標記為「targeted re-check」
-- **不計入 Reviewer retry counter**（targeted re-check 屬於修復驗證，與 FAIL retry 是不同性質）
+- **不算輪**（targeted re-check 屬於修復驗證，與 FAIL retry 是不同性質）
 
 ## 派發參數
 

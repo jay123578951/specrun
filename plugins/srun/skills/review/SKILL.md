@@ -48,7 +48,6 @@ description: Code review：檢查程式碼改動的品質、安全性，以及�
 - 安全敏感路徑（auth、payment、API key 處理、session 管理）
 - 資料庫 schema 變更或生產資料遷移
 - 使用者明確要求深度 review
-- `feat` 升級模式開啟後（任一 gate counter 達 2）重派 Reviewer 時升級
 
 被 `feat` 載入時，adversarial 與否由呼叫方指定。
 
@@ -230,4 +229,4 @@ Grounding rules：
 
 ## Targeted Check 模式
 
-Reviewer 之後的修復複查（WARNING、全部測試失敗、操作流程驗證 FAIL、勾選前實測未達的修復都用它）：Sonnet subagent、只驗前一輪修復的 diff、不計 Reviewer retry counter。設計重點、派發參數與 prompt 模板見 `${CLAUDE_SKILL_DIR}/references/targeted-check.md`，執行 re-check 時再讀。
+Reviewer 之後的修復複查（WARNING、全部測試失敗、操作流程驗證 FAIL、勾選前實測未達的修復都用它）：Sonnet subagent、只驗前一輪修復的 diff、不算輪。設計重點、派發參數與 prompt 模板見 `${CLAUDE_SKILL_DIR}/references/targeted-check.md`，執行 re-check 時再讀。

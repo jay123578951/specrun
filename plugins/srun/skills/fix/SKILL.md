@@ -54,7 +54,7 @@ description: 輕量 Pipeline：決策已在對話收斂、不動模組邊界、�
 Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat` 的「架構變更」「設計決策密集」升級條件在此不適用；僅保留下列兩條升級規則：
 
 - **首次派發**：改動觸及安全敏感路徑（auth、payment、API key 處理、session 管理）→ `{coderModel}` 設為 `opus`，並**聯動設 `{securityReview}=true`**（觸發安全 review（Step 5）——同一訊號同款待遇）。此升級改變使用者授權時預期的重量（本 skill 標籤是輕量），派發前的宣告必須加一行白話揭露：「觸及安全敏感路徑：Coder 升 Opus 並加跑 adversarial 安全 review，重量高於一般 `fix`，不要就喊停」；只揭露不阻斷，使用者未回應即繼續
-- **Retry 動態升級**：升級模式與 `/srun:feat` 同一套，見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`
+- **Retry 動態升級**：升級規則與 `/srun:feat` 同一套，見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`
 
 判定保守。一般小改動維持 sonnet。
 
@@ -157,7 +157,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder 交回結果後、Spec 輕量複核之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。
 
 - Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
-- **FAIL 的修復走完整靜態關卡**：Coder 修 → 交回結果前自跑三項檢查（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。計數與上限沿用下方 Retry 迴路（各 gate 最多 3 輪，達上限停下來問人）；嚴重安全問題 → 直接停下來問人
+- **FAIL 的修復走完整靜態關卡**：Coder 修 → 交回結果前自跑三項檢查（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。次數與停下問人的時機沿用下方 Retry 迴路；嚴重安全問題 → 直接停下來問人
 - Subagent 派發失敗 → 停下來問人（派發失敗也不改由主對話自己審）
 
 ### Step 6: Spec 輕量複核（commit 前）
@@ -182,13 +182,13 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 
 一般修復輪的過程不列，只在開頭那行寫退回修過幾輪。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
 
-**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級模式開在哪關第幾輪與下輪過沒過、targeted re-check 次數與 FAIL 數、達上限時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳整理需求與場景判定（Step 1）宣告的時間作 `--since`）。append 失敗不阻斷報告。
+**retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級在哪裡開與升級後過沒過、targeted re-check 次數與 FAIL 數、停下問人時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳整理需求與場景判定（Step 1）宣告的時間作 `--since`）。append 失敗不阻斷報告。
 
 ---
 
 ## Retry 迴路
 
-通用規格（一輪定義、不計輪、修復派發附帶物、交回結果前的三項檢查、升級模式）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 `/srun:feat` 同一套，任一 gate 首次失敗進入迴路時先讀。
+通用規格（什麼時候停下來問人、次數怎麼算、升級、修復派發；Reviewer 裁決不適用）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 `/srun:feat` 同一套，任一 gate 首次失敗進入迴路時先讀。
 
 本流程的 gate 迴路有二：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）。修復派發對象皆為 Coder（本流程無獨立 Tester，測試檔亦歸 Coder 修）。
 
@@ -227,7 +227,7 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 - `{測試結果}`：`新增 M 個測試全過`｜`純樣式，沒有新測試`
 - `，安全 review 通過`：只在 `{securityReview}=true` 時出現
 - `，spec 更新 S 段`：Spec 影響判斷（Step 3）與 Spec 輕量複核（Step 6）實際改了 spec 才出現，括號內寫 spec 名與段落名
-- `；中間退回修過 K 輪`：K ＝本 run 各 gate 的輪數加總（輪的定義見 Retry 迴路的共用檔），零輪整句省略
+- `；中間退回修過 K 輪`：K ＝本 run 測試與安全 review 退回的次數加總（定義見 Retry 迴路的共用檔），零輪整句省略
 - 規格缺口的「畫面上看到什麼」寫使用者操作時會看到的結果；看不出差別的條目不逐條列，收進下方那一行，沒有就省略那一行
 - 開頭以外各段有內容才出現，沒有就整段省略
 

@@ -39,4 +39,15 @@ if [ "$current" != "$VERSION" ]; then
   fi
 fi
 
-exec node "$CLI" --browser chrome "$@"
+# 驗證瀏覽器用專案共用的持久化設定檔，開著就占住它，同專案別的 session 開不了。
+# playwright 開的 Chrome 不隨結束訊號關，session 異常結束會留下來：
+# 開它的程序已經不在（父程序變成 1）的就是遺留的，先關掉。
+ps -axo pid=,ppid=,command= \
+  | awk '$2 == 1 && /--user-data-dir=[^ ]*ms-playwright-mcp\// { print $1 }' \
+  | while read -r pid; do
+      log "關掉上次遺留的驗證瀏覽器（PID ${pid}）"
+      kill "$pid" 2>/dev/null || true
+    done
+
+# 有視窗的瀏覽器預設不會閒置自動關；閒置 10 分鐘就關，下次操作自動重開，登入狀態留在設定檔
+exec node "$CLI" --browser chrome --idle-timeout 600000 "$@"

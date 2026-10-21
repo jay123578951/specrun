@@ -33,12 +33,12 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 
 | 欄位 | 取值 | 對應哪條防錯規則 | 從哪拿 |
 |------|------|------------------|--------|
-| `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat 分批與判定 Coder model（Step 3）／fix Model 策略的起跑升級判定 | 本 run **第一次**派發 Coder 的 `model` 參數與判定理由。升級模式改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
+| `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat 分批與判定 Coder model（Step 3）／fix Model 策略的起跑升級判定 | 本 run **第一次**派發 Coder 的 `model` 參數與判定理由。升級改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
 | `adversarialFirst` | `true\|false` | feat 首派 Reviewer（Step 6）的 adversarial 判定 | 首次派 Reviewer 時代入的 `{adversarial}`。`fix` 無此判定記 `null` |
-| `escalation` | `{opened: bool, gate: test\|reviewer\|verify\|security-review\|null, round: N\|null, passedNextRound: bool\|null}` | retry-loop 升級模式（counter 達 2 全部修復派發升 Opus） | 開啟時記哪個 gate 在第幾輪觸發；`passedNextRound`＝開啟後該 gate 下一輪是否通過（達上限停下或中止記 `null`） |
+| `escalation` | `{opened: bool, phase: dev\|final\|null, times: N, passedNextRound: bool\|null}` | retry-loop「升級」 | `phase`＝第一次升級發生在開發中（`dev`）或開發完（`final`）；`times`＝本 run 升級了幾次（開發中每件事、開發完每輪各算一次）；`passedNextRound`＝第一次升級後那次修復是否通過（停下問人或中止記 `null`）。舊條目的 `gate`／`round` 欄是舊算法，不與新欄位合併統計 |
 | `recheck` | `{runs: N, fail: M}` | review Targeted Check 用 Sonnet 不升 Opus | 本 run 派了幾次 targeted re-check、其中幾次判 FAIL |
 | `securityReview` | `{triggered: bool, verdict: PASS\|WARNING\|FAIL\|null}` | fix 安全 review（Step 5）條件觸發 | `fix` 專用；`feat` 的安全訊號已由 `adversarialFirst` 覆蓋，記 `null` |
-| `stopLoss` | `{fired: bool, humanChoice: continue\|skip\|manual\|rerun\|null}` | retry-loop 各 gate 最多 3 輪停下問人 | 觸發時記人的裁決：`continue`＝再修一輪、`skip`＝跳過該 gate 交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑 |
+| `stopLoss` | `{fired: bool, reason: third\|undecidable\|null, humanChoice: decided\|continue\|skip\|manual\|rerun\|null}` | retry-loop「什麼時候停下來問人」 | `reason`：`third`＝第 3 次、`undecidable`＝Reviewer 判斷不了；記人的裁決：`decided`＝人做了決定照做、`continue`＝再修一輪、`skip`＝跳過該關交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑。安全問題與環境卡住的問人不記在這欄 |
 | `modelIds` | `{coder: "<id>", reviewer: "<id>\|null"}` | 分辨「規則過期」與「模型換代」 | Coder 與 Reviewer 報告首行自報的 model id（`Coder model: …`／`Reviewer model: …`）；缺自報時填派發 alias |
 
 ### 用時與 token（`usage`，腳本算，不手填）
@@ -58,10 +58,11 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 | 事件類型（固定詞彙） | 觸發 |
 |---------------------|------|
 | `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review / comment-safety-net）；Reviewer 只有 FAIL 才算，PASS with WARNING 記下一列 |
-| `review_warning` | Reviewer 判 PASS with WARNING（記條數與歸屬 coder／tester／spec；不計 `counters.reviewer`，與 retry-loop「targeted re-check 不計輪」一致） |
-| `counter_2` / `counter_3` | 任一迴路 counter 達 2（升 Opus）／達 3（達上限停下問人）；開關細節記在 `guards.escalation`／`guards.stopLoss`，事件只留一行事實 |
-| `test_defect` | 測試異議被提出（記結果：測試改了／異議不成立） |
-| `review_defect` | review 異議被提出（記結果：finding 撤回／維持／升級問人） |
+| `review_warning` | Reviewer 判 PASS with WARNING（記條數與歸屬 coder／tester／spec；不算輪，不計入 `counters.final`） |
+| `counter_2` / `counter_3` | 次數達 2（升級）／達 3（停下問人），次數照 retry-loop「次數怎麼算」；開關細節記在 `guards.escalation`／`guards.stopLoss`，事件只留一行事實 |
+| `reviewer_ruling` | retry-loop「Reviewer 裁決」被派發（記哪件事、第幾次、裁決結果，判斷不了也記） |
+| `test_defect` | 測試異議被提出（記結果：測試改了／交 Reviewer 裁決） |
+| `review_defect` | review 異議被提出（記結果：finding 撤回／維持／判斷不了問人） |
 | `flaky` | verify-flow 標記 flaky |
 | `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆） |
 | `scope_exceeded` | G7 規模超標回報（路由誤判實錘；`docs/maintenance/routing-cases.md` 新題候選） |
@@ -83,13 +84,13 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 一行 JSON append；事實不寫解讀。append 前以本節格式為模板產生單行 JSON 序列化輸出，不自創欄位、不憑記憶拼格式：
 
 ```json
-{"ts":"<ISO 時間>","project":"<git 根目錄完整路徑>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","guards":{"coderStart":{"model":"sonnet","reason":null},"adversarialFirst":false,"escalation":{"opened":false,"gate":null,"round":null,"passedNextRound":null},"recheck":{"runs":0,"fail":0},"securityReview":{"triggered":false,"verdict":null},"stopLoss":{"fired":false,"humanChoice":null},"modelIds":{"coder":"<id>","reviewer":"<id>"}},"usage":<retro-usage.mjs 的輸出原樣，失敗記 null>,"events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"test":N,"reviewer":N,"verify":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
+{"ts":"<ISO 時間>","project":"<git 根目錄完整路徑>","tier":"feat|fix|guidance","subject":"<change 名或問題摘要>","session":"<session id 或 transcript 路徑（深挖指針）>","guards":{"coderStart":{"model":"sonnet","reason":null},"adversarialFirst":false,"escalation":{"opened":false,"phase":null,"times":0,"passedNextRound":null},"recheck":{"runs":0,"fail":0},"securityReview":{"triggered":false,"verdict":null},"stopLoss":{"fired":false,"reason":null,"humanChoice":null},"modelIds":{"coder":"<id>","reviewer":"<id>"}},"usage":<retro-usage.mjs 的輸出原樣，失敗記 null>,"events":[{"type":"<事件表固定詞彙>","fact":"<一行事實>","where":"<指路：哪關/第幾輪/哪個模組>"}],"stats":{"coderCalls":N,"testerCalls":N,"reviewerCalls":N,"counters":{"dev":N,"final":N}},"observations":[{"fact":"<事件表之外、值得 kit 注意的異常>","evidence":"<證據指路>"}]}
 ```
 
 - `guards`：七個欄位每次都要有值，沒開就記 `false`／`null`／`0`，不省略整個欄位
 - `usage`：只放腳本輸出，不手填、不改數字
 - `events`：只用事件表的固定詞彙；一行事實＋指路，**不寫解讀**（解讀是歸檔模式的事）。快樂路徑 events 為空陣列
-- `stats.counters`：只數 retry-loop 定義的「輪」（gate FAIL 回主對話派修再重驗），WARNING 修復與 targeted re-check／re-run 不算
+- `stats.counters`：照 retry-loop「次數怎麼算」，`dev`＝開發中各件事次數的加總，`final`＝開發完的輪數（`fix` 的 `dev` 記 0）
 - `tier: "guidance"`：未進 pipeline 的引導事件補記條目。`guards`、`usage` 與 `stats` 省略，`subject` 寫當時對話主題一句
 - `observations`（開放觀察欄）：模型判斷有事件表之外值得 kit 注意的異常時，以事實＋證據格式一併記，同樣不寫解讀。收集工具本身也是被優化的對象（反覆出現的觀察，消化時提案收進事件表）
 
@@ -106,7 +107,7 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 
 ```
 retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
-防錯規則：起跑 {model}｜adversarial {是/否}｜升級模式 {未開/第 N 輪開→下輪過/未過/中止}｜re-check {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜達上限 {未觸發/觸發→{humanChoice}}
+防錯規則：起跑 {model}｜adversarial {是/否}｜升級 {未開/開發中或開發完 N 次→第一次升級後過/未過/中止}｜re-check {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜停下問人 {未觸發/第 3 次或判斷不了→{humanChoice}}
 用時：{wallClockMin} 分（派發 {dispatchMin}、等人 {waitingHumanMin}）｜Opus 佔派發用時 {百分比}（usage 為 null 時此行寫「用時：未取得（{原因}）」）
 ```
 
