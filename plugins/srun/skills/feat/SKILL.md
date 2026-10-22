@@ -25,14 +25,14 @@ Step 4      Coder 實作（sonnet／opus）
 Step 5      Tester 補測試（sonnet）                  失敗 → Retry 迴路
             分批時每批跑 Coder 實作 → Tester 補測試，全部批次跑完才進 Reviewer
 Step 6      Reviewer（opus-reviewer）               有待修項 → Retry 迴路，直到這關修完
-Step 6.3    全部測試（主對話自跑）                    失敗 → Retry 迴路
+Step 6.3    全部測試（主對話自跑，只跑一次）          失敗 → Retry 迴路
 Step 6.5    操作流程驗證（sonnet，觸及 UI/流程才跑）  FAIL → Retry 迴路
 Step 6.7    收環境與規格缺口回寫（主對話自做）
 Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗收選項 → 交人工驗收
             實測發現實作未達 → Retry 迴路
 ```
 
-**測試分工**：派出去的 agent（Coder、Tester、修復）只跑自己任務的相關測試，全部測試只由主對話跑（Step 6.3）。Reviewer 之後任何一關改了 code，都要從全部測試往後重走，見 Retry 迴路的「從全部測試往後重走」。
+**測試分工**：派出去的 agent（Coder、Tester、修復）只跑自己任務的相關測試。全部測試一個 run 只跑一次，由主對話在 Reviewer 這關修完後跑（Step 6.3）。之後任何一關改了 code，修復 agent 只跑相關測試，再從操作流程驗證往後重走，見 Retry 迴路的「從操作流程驗證往後重走」。
 
 ### 過關說明（每過一關寫一行）
 
@@ -56,6 +56,8 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
     `  修完重走：修復複查 → 全部測試 → 操作流程驗證 → 收環境與規格缺口回寫 → 實測與報告`
   - `✓ 修復複查 PASS → 全部測試｜剩：操作流程驗證 → 收環境與規格缺口回寫 → 實測與報告`
   - `✓ 全部測試全綠 → 派操作流程驗證｜跑（改了表單頁）｜交接檔：.claude/debug/add-auth-交接.md`
+  - `✗ 操作流程驗證 FAIL（送出後沒跳轉）→ 派 Coder 修復｜開發完第 1 輪 → sonnet｜修送出後跳轉｜同型位置：無`
+    `  修完重走：修復複查 → 操作流程驗證（只重走受影響流程）→ 收環境與規格缺口回寫 → 實測與報告`
 
 使用者不會盯著跑的過程，回來時只需要知道做到哪。所以派出 agent 後這一輪結束時，在過關說明之外，用使用者看得懂的話寫兩行：現在做到哪、還剩哪幾關。要使用者驗收、判斷的內容留給完成報告。
 
@@ -255,10 +257,11 @@ Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後�
 
 ### Step 6.3: 全部測試（主對話自跑，不派 agent）
 
-Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 第一次跑全部測試：前面的 agent 只跑相關測試，跨模組的回歸在這裡才抓得到。
+Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在這裡跑全部測試：前面的 agent 只跑相關測試，跨模組的回歸在這裡才抓得到；之後的修改只跑相關測試，例外見 Retry 迴路的「從操作流程驗證往後重走」。
 
 - 指令選用依 `${CLAUDE_SKILL_DIR}/references/command-conventions.md`
-- 只輸出失敗項目，不把整份結果帶進對話
+- 用 Bash 的背景執行跑，輸出和 exit code 都寫進 `.claude/debug/full-test-{timestamp}.log`（指令結尾接 `; echo "exit=$?" >> 該檔`）：全部測試可能跑超過單次指令的等待上限，背景跑完會自動通知
+- 跑完只從檔案讀需要的部分：綠燈讀結尾摘要，紅燈抓失敗的測試名稱和錯誤訊息，不把整份結果帶進對話
 - 判斷全綠看 exit code：用例全過但 exit code 不是 0，也算失敗
 
 **下一步**：
@@ -276,8 +279,8 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 
 
 **先後順序**：本步驟永遠最後才跑，驗的必須是最終 code。
 
-- 本步驟要等 Reviewer 這關修完（含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check 通過）、全部測試全綠才派發
-- 本步驟 FAIL 的修復，以及本步驟 PASS 之後又改了 code，都照 Retry 迴路的「從全部測試往後重走」重驗；之前的 PASS 不算數
+- 本步驟要等 Reviewer 這關修完（含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check 通過）、全部測試這關過了（全綠，或失敗項已修好）才派發
+- 本步驟 FAIL 的修復，以及本步驟 PASS 之後又改了 code，都照 Retry 迴路的「從操作流程驗證往後重走」重驗；之前的 PASS 不算數
 
 **前置（固定流程）**：
 
@@ -337,7 +340,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 
   - 分批與判定 Coder model（Step 3）對應到 gate、由 orchestrator 代勾的項目
 - 實測與判準對不上時：
   - 判準本身寫錯，且正確值唯一明確 → 對正 artifact 後勾
-  - 判準沒錯，實作未達 → orchestrator 判斷要補什麼、派 Coder 修，修完照 Retry 迴路的「從全部測試往後重走」走回這裡重新實測
+  - 判準沒錯，實作未達 → orchestrator 判斷要補什麼、派 Coder 修，修完照 Retry 迴路的「從操作流程驗證往後重走」走回這裡重新實測
   - 落差會改變驗收語意 → 問人
 - 實作中途調整作法、判準沒跟著改的情況，也由這裡攔截
 
@@ -387,7 +390,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 
   - 先載入 `srun:guidelines` 行為守則再動手（同首派）
   - 不得修改測試檔（修復階段測試修改一律由 Tester 派發）
   - 判斷失敗屬測試問題 → 依「測試異議」回報並引驗收依據原文，不要自行改斷言
-- **修復 agent 交回前的三項檢查，測試只跑相關測試**（定義見測試守則檔），不跑全部測試：全部測試由主對話在下表「修完重驗什麼」排定的位置跑。修復 prompt 一律載明這點
+- **修復 agent 交回前的三項檢查，測試只跑相關測試**（定義見測試守則檔），不跑全部測試：全部測試由主對話跑。全部測試跑過之後的修復，prompt 另載明「本 run 已跑過全部測試」，修復 agent 改用守則檔「全部測試之後的相關測試」的挑法。修復 prompt 一律載明這點
 - **派給 Coder 的修復 prompt 附走法交接**：前一輪輸出摘要附上所有交接檔位置；回報必填一行「交接變動：無」或「交接變動：已重寫 {位置}」。修復改到走到起點的路（入口、身分、要用的資料）才算有變，有變就整份重寫該檔
 
 ### 各 gate 失敗誰修、重驗什麼
@@ -397,9 +400,9 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 
 | Tester 補測試（Step 5） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查全綠即修完，**不重派 Tester**：修復後防的是機械回歸，Tester 的獨立價值在首輪設計測試。不派 targeted re-check：Reviewer 接著會審到這次修改 |
 | Reviewer FAIL（有 CRITICAL） | 依歸屬：實作代碼 → Coder、測試代碼 → Tester；嚴重安全問題 → 直接停下來問人（認為 finding 不成立 → 提出 review 異議） | 重派 Opus Reviewer |
 | Reviewer PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（SUGGESTION 併入方式見下方處置；認為 finding 不成立 → 提出 review 異議） | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
-| 全部測試（Step 6.3） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查 → Sonnet targeted re-check → 從全部測試往後重走（見下方） |
-| 操作流程驗證 FAIL（Step 6.5） | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 三項檢查 → Sonnet targeted re-check → 從全部測試往後重走（見下方） |
-| 實測與報告（Step 7）實測未達 | Coder（orchestrator 判斷要補什麼後派發） | 三項檢查 → Sonnet targeted re-check → 從全部測試往後重走（見下方） |
+| 全部測試（Step 6.3） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查 → Sonnet targeted re-check → 從操作流程驗證往後重走（見下方） |
+| 操作流程驗證 FAIL（Step 6.5） | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 三項檢查 → Sonnet targeted re-check → 從操作流程驗證往後重走（見下方） |
+| 實測與報告（Step 7）實測未達 | Coder（orchestrator 判斷要補什麼後派發） | 三項檢查 → Sonnet targeted re-check → 從操作流程驗證往後重走（見下方） |
 
 歸屬 `spec`（規格 artifact 內容本身的問題，見 `review` 的歸屬定義）的 finding，FAIL 與 WARNING 同一路由：**決策級**（需推翻 design 決策或改變規格語意）屬 Reviewer 判斷不了的事 → 停下來問人，不進 Coder retry；**機械級**（殘留、漏掃、跨載體同步遺漏）→ 派 Coder 修 artifact 檔案。
 
@@ -407,14 +410,15 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。這是本 run 
 
 **修完之後**：修完、重驗通過，就照那一關自己的「下一步」走，跟一次就過一樣。
 
-### 從全部測試往後重走
+### 從操作流程驗證往後重走
 
-Reviewer 之後的關卡（全部測試、操作流程驗證、實測與報告）改了 code：修復 agent 交回、targeted re-check 通過後，從全部測試（Step 6.3）照正常順序往後走，一路走到實測與報告。
+Reviewer 之後的關卡（全部測試、操作流程驗證、實測與報告）改了 code：修復 agent 交回、targeted re-check 通過後，從操作流程驗證（Step 6.5）照正常順序往後走，一路走到實測與報告。
 
+- 全部測試不重跑，修復 agent 跑過的相關測試就算數。例外照 Retry 共用檔的「全部測試只跑一次」：判定要重跑時，先跑全部測試（Step 6.3）再往後走，「修完重走」寫成 `修復複查 → 全部測試（改到建置設定）→ …` 這樣附上原因
 - 操作流程驗證要不要跑，照它自己的觸發判斷
 - 這個 run 已經跑過操作流程驗證的，只重走受影響的流程（verify-flow targeted re-run）
 - 驗證環境已在收環境與規格缺口回寫（Step 6.7）收掉的，照操作流程驗證的前置重起，走到收環境那關再收
-- 只改了測試檔（如測試異議受理、Tester 改斷言）：只重跑全部測試，畫面沒變不重跑操作流程驗證。只改 artifact 文字：不重驗
+- 只改了測試檔（如測試異議受理、Tester 改斷言）：修復 agent 跑過相關測試即可，畫面沒變不重跑操作流程驗證。只改 artifact 文字：不重驗
 
 進修復時，把展開後的路線寫進過關說明的「修完重走」。
 

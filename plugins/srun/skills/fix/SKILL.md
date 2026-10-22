@@ -136,7 +136,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 - 邏輯／行為類修復 → 撰寫重現該問題的測試（先寫後修或修完補寫皆可），確保 bug 不再現；撰寫與排除規則依守則檔，無法以真實 import／掛載驗證 → 列入「無法測試的模組清單」，不硬寫
 - 純視覺／樣式類改動 → 不寫新測試
 
-完成後、交回結果前自跑三項檢查：lint + typecheck + 專案測試套件（指令選用一律依 {commandConventionsPath}，測試執行節奏依守則檔；紅燈就地修復不計 retry，就地修不掉 → 停下回報）
+完成後、交回結果前自跑三項檢查：lint + typecheck + 相關測試（不跑全部測試，全部測試由主對話跑；指令選用一律依 {commandConventionsPath}，測試執行節奏依守則檔；紅燈就地修復不計 retry，就地修不掉 → 停下回報）
 
 輸出（第一行自報你實際使用的 model，格式：`Coder model: <id>`；缺這行視為報告不完整）：
 1. 修改的檔案路徑與變更摘要
@@ -157,8 +157,15 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder 交回結果後、Spec 輕量複核之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。
 
 - Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
-- **FAIL 的修復走完整靜態關卡**：Coder 修 → 交回結果前自跑三項檢查（lint + typecheck + test）→ Sonnet targeted re-check（只審修復 diff）。次數與停下問人的時機沿用下方 Retry 迴路；嚴重安全問題 → 直接停下來問人
+- **FAIL 的修復走完整靜態關卡**：Coder 修 → 交回結果前自跑三項檢查（lint + typecheck + 相關測試）→ Sonnet targeted re-check（只審修復 diff）。次數與停下問人的時機沿用下方 Retry 迴路；嚴重安全問題 → 直接停下來問人
 - Subagent 派發失敗 → 停下來問人（派發失敗也不改由主對話自己審）
+
+### Step 5.5: 全部測試（主對話自跑，只跑一次）
+
+Coder 交回、安全 review 這關過了之後（沒觸發安全 review 就是 Coder 交回之後），主對話自己跑一次全部測試。跑法照 `/srun:feat` 的 Step 6.3（背景跑、輸出寫檔、只讀摘要和失敗項目、看 exit code 判斷全綠），見 `${CLAUDE_SKILL_DIR}/../feat/SKILL.md`。
+
+- 全綠 → Spec 輕量複核（Step 6）
+- 有失敗 → 進入 Retry 迴路（見下方）。修復 prompt 寫明「本 run 已跑過全部測試」；修完要不要再跑全部，照共用檔的「全部測試只跑一次」
 
 ### Step 6: Spec 輕量複核（commit 前）
 
@@ -190,7 +197,7 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 
 通用規格（什麼時候停下來問人、次數怎麼算、升級、修復派發；Reviewer 裁決不適用）見共用檔 `${CLAUDE_SKILL_DIR}/../feat/references/retry-loop.md`：與 `/srun:feat` 同一套，任一 gate 首次失敗進入迴路時先讀。
 
-本流程的 gate 迴路有二：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）。修復派發對象皆為 Coder（本流程無獨立 Tester，測試檔亦歸 Coder 修）。
+本流程的 gate 迴路有三：測試（Coder 就地修不掉、回報主對話）、條件性的安全 review（Step 5）、全部測試（Step 5.5）。修復派發對象皆為 Coder（本流程無獨立 Tester，測試檔亦歸 Coder 修）。
 
 ---
 
