@@ -76,7 +76,7 @@ for (const o of main) {
 }
 
 const role = d => /coder/i.test(d) ? 'coder' : /tester/i.test(d) ? 'tester' : /re-?check/i.test(d) ? 'recheck' : /review/i.test(d) ? 'reviewer' : /verify|驗證|流程/i.test(d) ? 'verify' : /comment|註解/i.test(d) ? 'comment' : 'other'
-const kind = d => /修復|修正|fix|retry|re-?check|re-?run|仲裁/i.test(d) ? 'fix' : 'first'
+const kind = d => /修復|修正|retry|re-?check|re-?run|仲裁/i.test(d) ? 'fix' : 'first'
 const batch = d => { const m = d.match(/第\s*(\d+)\s*批/); return m ? +m[1] : null }
 
 const subDir = join(transcript.slice(0, -6), 'subagents')

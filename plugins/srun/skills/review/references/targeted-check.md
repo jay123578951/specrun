@@ -16,6 +16,7 @@ Reviewer 之後每次修復（WARNING、全部測試失敗、操作流程驗證 
 - `subagent_type`: `general-purpose`
 - `model`: `sonnet`
 - `prompt`: 下方模板展開後的字串
+- `{baseBranch}`：呼叫方開工作分支前所在的分支
 
 ## Targeted Check Prompt 模板
 
@@ -29,6 +30,8 @@ Reviewer 之後每次修復（WARNING、全部測試失敗、操作流程驗證 
 
 修復涉及的檔案：
 {fixedFiles}
+
+基準分支：{baseBranch}
 
 ---
 
@@ -48,6 +51,7 @@ Reviewer 之後每次修復（WARNING、全部測試失敗、操作流程驗證 
 Grounding rules：
 
 - 每個結論必須指到「檔案:行號」
+- 判斷某段內容是這次新增還是原本就有之前，先用 `git show {baseBranch}:<檔案>` 對照基準分支；原本就有的內容，不算未修復，也不算修復引入的新問題
 - 如果該問題已修復且未引入新問題：標 `已修復`
 - 如果該問題未正確修復（修補不到位、改錯方向）：標 `未修復` + 簡述為何不到位
 - 如果修復引入新問題：標 `修復引入新問題` + 證據

@@ -64,6 +64,7 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 | `test_defect` | 測試異議被提出（記結果：測試改了／交 Reviewer 裁決） |
 | `review_defect` | review 異議被提出（記結果：finding 撤回／維持／判斷不了問人） |
 | `flaky` | verify-flow 標記 flaky |
+| `preexisting_fail` | 全部測試有失敗，比對後判為既有失敗或不穩定（記條數、檔數、判定方式）；這次弄壞的記 `gate_fail` |
 | `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆） |
 | `scope_exceeded` | G7 規模超標回報（路由誤判實錘；`docs/maintenance/routing-cases.md` 新題候選） |
 | `acceptance_fix` | `fix` 場景 (ii) 驗收修正 |

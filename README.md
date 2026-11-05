@@ -79,7 +79,7 @@ flowchart LR
 | **Coder** | Sonnet；架構／安全／決策密集或第 2 輪修復升 Opus | 照 tasks 寫 code，動手前載入 `guidelines` 行為守則，完成自跑 lint + typecheck | 下游任一關 FAIL 都退回這裡 |
 | **Tester** | Sonnet | 照 spec 自列「該驗什麼」再補寫，禁看既有測試檔，只跑相關測試 | 測試失敗退回，不算輪；談不攏或修不好交給 Reviewer 裁決 |
 | **Reviewer** · `/srun:review` | Opus，獨立、無寫入權 | 一次審完 code quality／安全／慣例／spec 對齊 | FAIL 退回，第 3 輪還不能判通過才問你；被指的一方可拿依據要求重審那一條 |
-| **全部測試** | 主對話自做 | Reviewer 通過後跑一次全部測試；前面的 agent 都只跑相關測試 | 失敗退回；一個 run 只跑這一次，之後修 code 只跑相關測試，改到設定檔才再跑全部 |
+| **全部測試** | 主對話自做 | Reviewer 通過後跑一次全部測試；前面的 agent 都只跑相關測試 | 這次弄壞的退回，既有失敗實跑基準版本比對後列進報告；一個 run 只跑這一次，之後修 code 只跑相關測試，改到設定檔才再跑全部 |
 | **操作流程驗證** · `/srun:verify-flow` | Sonnet，觸及 UI 時 | 真瀏覽器點完流程，驗走得完、不報錯、spec 明文寫的元件在不在 | FAIL 重現確認後退回 |
 | **規格缺口回寫** | 主對話自做 | 把 Coder 撞到的 spec 未交代規則寫進 delta spec，逐條列給你 | 不退回，驗收時你逐條決定收不收 |
 
