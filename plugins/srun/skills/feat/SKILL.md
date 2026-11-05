@@ -18,7 +18,7 @@ description: 完整 Pipeline：實作完整功能、改變模組邊界的重構�
 
 ```
 Step 1      選擇變更
-Step 2      確認 artifact 狀態
+Step 2      確認規格文件
 Step 2.5    開工作分支
 Step 3      分批與判定 Coder model
 Step 4      Coder 實作（sonnet／opus）
@@ -71,11 +71,11 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 2. 否則從對話推斷，或讀取 `openspec/changes/` 目錄列出進行中的變更讓使用者選擇
 3. 宣告：「Using change: <name>」
 
-### Step 2: 確認 artifact 狀態
+### Step 2: 確認規格文件
 
 確認變更目錄 `openspec/changes/<name>/` 存在，且 `tasks.md` 已產出：
 
-- 變更目錄不存在或缺少 `tasks.md` → 提示先用規格後端產出 artifact（如 `/opsx:propose` 或 `/spectra-propose`）
+- 變更目錄不存在或缺少 `tasks.md` → 提示先用規格後端產出規格文件（如 `/opsx:propose` 或 `/spectra-propose`）
 - `tasks.md` 必須存在才能繼續
 
 **起跑髒檢查（advisory，不硬擋）**：檢查 working tree——若 `openspec/` **以外**存在與本次變更無關的未 commit 修改，提醒使用者確認後再續跑（無關髒變更會混進 Coder 的 diff 與後續 gate 的檢查範圍）。`openspec/` artifacts 刻意不 commit，排除在判準外。
@@ -478,7 +478,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 ### 遇到阻塞
 
-依 `${CLAUDE_SKILL_DIR}/references/blocked-report.md` 的模板：先輸出 debug 檔 `.claude/debug/{changeName}-{timestamp}.md`（生命週期見確認 artifact 狀態（Step 2）的 lazy cleanup 與實測與報告（Step 7）的主動刪），再向使用者顯示阻塞摘要。
+依 `${CLAUDE_SKILL_DIR}/references/blocked-report.md` 的模板：先輸出 debug 檔 `.claude/debug/{changeName}-{timestamp}.md`（生命週期見確認規格文件（Step 2）的 lazy cleanup 與實測與報告（Step 7）的主動刪），再向使用者顯示阻塞摘要。
 
 ---
 
