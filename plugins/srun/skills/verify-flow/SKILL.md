@@ -99,8 +99,8 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 **流程層**——實際操作走到終點，途中盯這些「明顯撞牆」信號（命中才 FAIL）：
 - 走不到終點（點了沒反應、跳頁卡住、下一步元素不出現）
 - 卡死 / 白畫面 / 無限 loading
-- console `error` 或未捕捉 exception（走完流程後用 browser_console_messages 檢查）
-- 未預期的 network 4xx/5xx（用 browser_network_requests 檢查該成功卻失敗的請求）
+- console `error` 或未捕捉 exception（走完流程後用 browser_console_messages 帶 `all: true` 檢查，跳頁前的也要看）
+- 未預期的 network 4xx/5xx（走完流程後用 browser_network_requests 帶 `all: true` 檢查該成功卻失敗的請求，跳頁前的也要看）
 
 **判 FAIL 前必須重現一次**：命中失敗信號後，把同一步驟再走一遍——再次出現才正式 FAIL；重現不出 → 記進輸出的「flaky」段（不判 FAIL、也不當沒看見），交人工驗收確認。
 

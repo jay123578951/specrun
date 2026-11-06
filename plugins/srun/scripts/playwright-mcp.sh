@@ -7,7 +7,7 @@
 # 每次換版就要求一顆本機沒有的 chromium；系統 Chrome 不受這個綁定。
 set -euo pipefail
 
-VERSION="0.0.81"
+VERSION="0.0.84"
 DATA_DIR="${SRUN_PLAYWRIGHT_MCP_DATA:-}"
 if [ -z "$DATA_DIR" ] || [[ "$DATA_DIR" == *'${'* ]]; then
   DATA_DIR="${HOME}/.cache/srun-playwright-mcp"
