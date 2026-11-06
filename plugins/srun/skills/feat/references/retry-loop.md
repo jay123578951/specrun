@@ -21,7 +21,7 @@
   - 同一件事修了一次還是沒過
 - **開發完**（Reviewer 完整審查起，從 0 開始）：完整審查退回一次算一輪。Reviewer 之後的全部測試、操作流程驗證、實測與報告判有問題退回修，也算一輪。Reviewer 判 PASS with WARNING 修完就好，不算
 
-其他來回都不算次數：Coder 與 Tester 之間的修正與異議、agent 就地自修、targeted re-check／re-run、BLOCKED、flaky 標註。
+其他來回都不算次數：Coder 與 Tester 之間的修正與異議、agent 就地自修、修復複查／targeted re-run、BLOCKED、flaky 標註。
 
 問人後人做了決定 → 那件事（或完整審查）的次數歸 0，從第 1 次重新算；其他事不受影響。
 
@@ -37,7 +37,7 @@
 
 ## 升級
 
-同一件事第 2 次交到 Reviewer 手上之後，修這件事改派 Opus（不論被派的是 Coder 或 Tester）；開發完的第 2 輪起，該輪修復改派 Opus。其他事照舊 Sonnet。targeted re-check／re-run 是驗證派發，維持 Sonnet。
+同一件事第 2 次交到 Reviewer 手上之後，修這件事改派 Opus（不論被派的是 Coder 或 Tester）；開發完的第 2 輪起，該輪修復改派 Opus。其他事照舊 Sonnet。修復複查／targeted re-run 是驗證派發，維持 Sonnet。
 
 ## 修復派發
 

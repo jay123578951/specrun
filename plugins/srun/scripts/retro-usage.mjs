@@ -48,6 +48,7 @@ const emptyUsage = () => ({ inTok: 0, cacheWriteTok: 0, cacheReadTok: 0 })
 // 一次模型回應含多個 content block 時，transcript 拆成多行、每行附同一份 usage；同一個 message id 只算一次
 const usageOnce = () => { const seen = new Set(); return m => { if (!m.usage) return false; if (m.id) { if (seen.has(m.id)) return false; seen.add(m.id) } return true } }
 const toolCalls = lines => lines.reduce((n, o) => n + (o.type === 'assistant' && Array.isArray(o.message?.content) ? o.message.content.filter(c => c.type === 'tool_use').length : 0), 0)
+const skillsUsed = lines => [...new Set(lines.flatMap(o => o.type === 'assistant' && Array.isArray(o.message?.content) ? o.message.content.filter(c => c.type === 'tool_use' && c.name === 'Skill').map(c => c.input?.skill).filter(Boolean) : []))]
 const min = (a, b) => a && b ? +((b - a) / 60000).toFixed(1) : null
 
 const main = readJsonl(transcript).filter(inWindow)
@@ -75,7 +76,7 @@ for (const o of main) {
   if (r && typeof r === 'object' && r.agentId) dispatches.push({ ts: t, description: r.description || '', model: r.resolvedModel || null, agentId: r.agentId })
 }
 
-const role = d => /coder/i.test(d) ? 'coder' : /tester/i.test(d) ? 'tester' : /re-?check/i.test(d) ? 'recheck' : /review/i.test(d) ? 'reviewer' : /verify|驗證|流程/i.test(d) ? 'verify' : /comment|註解/i.test(d) ? 'comment' : 'other'
+const role = d => /coder/i.test(d) ? 'coder' : /tester/i.test(d) ? 'tester' : /re-?check|複查/i.test(d) ? 'recheck' : /review/i.test(d) ? 'reviewer' : /verify|驗證|流程/i.test(d) ? 'verify' : /comment|註解/i.test(d) ? 'comment' : 'other'
 const kind = d => /修復|修正|retry|re-?check|re-?run|仲裁/i.test(d) ? 'fix' : 'first'
 const batch = d => { const m = d.match(/第\s*(\d+)\s*批/); return m ? +m[1] : null }
 
@@ -85,11 +86,11 @@ const out = []
 const intervals = []
 for (const d of dispatches) {
   const p = join(subDir, `agent-${d.agentId}.jsonl`); seen.add(d.agentId)
-  const row = { role: role(d.description), batch: batch(d.description), kind: kind(d.description), model: d.model, min: null, toolCalls: null, ...emptyUsage(), description: d.description }
+  const row = { role: role(d.description), batch: batch(d.description), kind: kind(d.description), model: d.model, min: null, toolCalls: null, skills: [], ...emptyUsage(), description: d.description }
   if (existsSync(p)) {
     const lines = readJsonl(p); const u = emptyUsage(); const mc = {}; let a = null, b = null; const once = usageOnce()
     for (const o of lines) { const t = ts(o); if (!t) continue; a = a || t; b = t; const m = o.message || {}; if (once(m)) { sumUsage(u, m.usage); mc[m.model] = (mc[m.model] || 0) + 1 } }
-    Object.assign(row, u, { min: min(a, b), toolCalls: toolCalls(lines), model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || d.model })
+    Object.assign(row, u, { min: min(a, b), toolCalls: toolCalls(lines), skills: skillsUsed(lines), model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || d.model })
     if (a && b) intervals.push([a, b])
   }
   out.push(row)
@@ -99,7 +100,7 @@ if (existsSync(subDir)) for (const f of readdirSync(subDir)) {
   const lines = readJsonl(join(subDir, f)).filter(inWindow); if (!lines.length) continue
   const u = emptyUsage(); const mc = {}; let a = null, b = null; const once = usageOnce()
   for (const o of lines) { const t = ts(o); if (!t) continue; a = a || t; b = t; const m = o.message || {}; if (once(m)) { sumUsage(u, m.usage); mc[m.model] = (mc[m.model] || 0) + 1 } }
-  out.push({ role: 'other', batch: null, kind: 'first', model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || null, min: min(a, b), toolCalls: toolCalls(lines), ...u, description: '（未對應到派發紀錄）' })
+  out.push({ role: 'other', batch: null, kind: 'first', model: Object.entries(mc).sort((x, y) => y[1] - x[1])[0]?.[0] || null, min: min(a, b), toolCalls: toolCalls(lines), skills: skillsUsed(lines), ...u, description: '（未對應到派發紀錄）' })
 }
 
 // 等人時間：助理最後一筆到人下一則訊息的空檔，扣掉同時有 subagent 在跑的部分

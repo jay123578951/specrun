@@ -8,8 +8,8 @@ Reviewer 之後每次修復（WARNING、全部測試失敗、操作流程驗證 
 - 只讀取改動的檔案和對應行數
 - 只驗證這輪要修的問題是否已正確修復、是否引入新問題
 - 不重新掃描所有檔案
-- 輸出格式沿用通用模板的「依下方格式輸出最終報告」段，但 scope 描述標記為「targeted re-check」
-- **不算輪**（targeted re-check 屬於修復驗證，與 FAIL retry 是不同性質）
+- 輸出格式沿用通用模板的「依下方格式輸出最終報告」段，但 scope 描述標記為「修復複查」
+- **不算輪**（修復複查 屬於修復驗證，與 FAIL retry 是不同性質）
 
 ## 派發參數
 
@@ -23,7 +23,7 @@ Reviewer 之後每次修復（WARNING、全部測試失敗、操作流程驗證 
 模板語法同 SKILL.md 的 Reviewer Subagent Prompt 模板（`{變數}` 代入、`{若...：}` 區塊整段處理）。
 
 ```
-你是 Code Reviewer Targeted Check Agent，對前一輪修復做精簡 re-check。
+你是 Code Reviewer Targeted Check Agent，對前一輪修復做精簡複查。
 
 這輪要修的問題（Review 的 WARNING、失敗測試的名稱與錯誤訊息、驗證報告的 FAIL 項，或勾選前實測未達的判準）：
 {issueList}
@@ -61,7 +61,7 @@ Grounding rules：
 
 輸出格式：
 
-## Code Review：targeted re-check ({issueCount} 個要修的問題)
+## Code Review：修復複查 ({issueCount} 個要修的問題)
 
 ### 判定：PASS / FAIL
 

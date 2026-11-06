@@ -86,6 +86,8 @@ Subagent 自行讀檔、自行整合 findings、直接輸出本 skill 定義的�
 
 **模板語法**：`{變數}` 代入實際值（如 `{standard | adversarial}` → `adversarial`）；`{若...：}` 區塊成立留內文、不成立整段刪（至下一個 `---` 或 `{若...：}` 標頭）。
 
+`{webDesignLine}`：改動觸及網頁的畫面結構或樣式（純邏輯改動不算），或改動純樣式檔 → 代入「先用 Skill tool 載入 `web-design-guidelines`，補介面與無障礙檢查；載入或抓取規範失敗 → 略過，在報告開頭註明」；其餘情況代入空字串。
+
 通用 prompt 模板：
 
 ```
@@ -101,8 +103,8 @@ Scope：{auto | staged | branch:<name> | change:<changeName>}
 
 開始工作前：
 
-{若呼叫方指定追加 skills（如 web-design-guidelines）：}
-先用 Skill tool 載入：{reviewerAdditionalSkills}——補強對應領域的審查面向
+{webDesignLine}
+看過這次改動的內容後，從你 context 的 available-skills 挑選相關的知識型 skill 用 Skill tool 載入（該 stack 的慣例；改到畫面時含設計慣例與無障礙）。review 規範已在本 prompt，不用再載入 `srun:review`。載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 
 1. 讀取專案的 CLAUDE.md，理解專案慣例（特別注意：CLAUDE.md 定義的 UI 語言慣例、CSS 變數使用、設計系統慣例）
 2. 取得變更內容：

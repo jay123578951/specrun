@@ -41,15 +41,15 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 - 格式：`✓ 這關結果 → 下一關`，失敗用 `✗`。下一關照這關內文的「下一步」寫，關卡用本檔的名字
 - 派發參數只寫靠條件判斷決定的，每個附理由，理由要對應本檔的條件原文：
   - Coder 首派：model 與理由；本批 task 範圍
-  - Reviewer：adversarial 與理由；追加 skill 與理由
+  - Reviewer：adversarial 與理由；是否載入 `web-design-guidelines` 與理由
   - 操作流程驗證：跑或不跑與理由（含強制例外）；帶哪些走法交接檔。判定不跑也要寫
   - 修復派發：開發中寫這件事第幾次交到 Reviewer（Coder 與 Tester 之間的來回寫「不算次數」），開發完寫完整審查第幾輪，與因此決定的 model；誰修、修哪幾項；同型位置清單有無
   - Reviewer 裁決：裁哪件事、這件事第幾次交到 Reviewer
-  - Tester 首派、targeted re-check 的參數固定，不寫
+  - Tester 首派、修復複查 的參數固定，不寫
 - 進修復時，第一行底下再寫一行「修完重走：…」，列出修完要依序走的關卡：先是 Retry 表格裡這關的「修完重驗什麼」，再照正常順序走到實測與報告。之後每過一關改寫成「剩：…」，走完為止
 - 範例：
   - `→ 派 Coder｜model：sonnet（無架構變更、無安全敏感路徑、design 已定案）｜批 1：T1`
-  - `✓ Tester 補測試 PASS → 派 Reviewer｜adversarial：否（沒碰安全敏感路徑、無 schema 變更）｜追加 skill：web-design-guidelines、antfu-design（改了 UnoCSS 元件）`
+  - `✓ Tester 補測試 PASS → 派 Reviewer｜adversarial：否（沒碰安全敏感路徑、無 schema 變更）｜web-design-guidelines：載入（改了表單頁）`
   - `✗ Tester 補測試（批 4）：種子案 39 存不了 → 派 Coder 修復｜不算次數 → sonnet｜修種子案 39｜同型位置：種子案 38`
   - `✗ Tester 補測試（批 4）：種子案 39 修了還是存不了 → 派 Reviewer 裁決｜這件事第 1 次交到 Reviewer`
   - `✗ Reviewer PASS with WARNING（W1、W3）→ 派 Coder 修復｜WARNING 不算輪 → sonnet｜修 W1、W3｜同型位置：無`
@@ -162,6 +162,7 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 - 善用既有的共用模組與 utils
 - 每完成一個 task，更新 tasks.md 的 checkbox：`- [ ]` → `- [x]`
 - 允許順手撰寫自證用的測試（不強制）；正式的測試設計與稽核由 Tester 負責
+- 要跑測試時只跑相關測試（這次失敗的測試，加上改動檔對應的測試），不跑全部測試：全部測試由主對話跑
 
 完成後依序執行 lint 與 typecheck（指令選用一律依 {commandConventionsPath}；錯誤自行修復，不計 retry）
 
@@ -222,14 +223,6 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 
 ### Step 6: Reviewer（Opus subagent）
 
-**Reviewer Skills 預判**
-
-Orchestrator 根據 Coder 修改的檔案清單判斷 Reviewer 除了必載的 `review` 外，是否需要追加 skill，寫入 `{reviewerAdditionalSkills}` 變數：
-
-- 改動觸及 UI 元件的畫面結構或樣式（純邏輯改動不算），或改動純 `.css` / `.scss` / `.sass` / `.less` 檔 → 加 `web-design-guidelines`（覆蓋 UI/UX/a11y 檢查）
-- 改動以 UnoCSS 建構 UI（元件畫面結構／樣式用到 UnoCSS utility／shortcut，或改 `uno.config`）→ 加 `antfu-design`（審查 semantic token 使用、雙 light/dark 主題、不用 attributify 等設計慣例遵循；與 `web-design-guidelines` 互補，後者管 a11y／UX，前者管 UnoCSS 設計慣例）
-- 改動觸及 Nuxt/Nitro server 端（`server/` API routes／event handlers、`nitro.config`、`routeRules`、server 快取／tasks）→ 加 `nitro`（審查 route rules、快取策略、event handler 慣例）
-
 **Adversarial 模式判斷**
 
 **首次**派發 Reviewer 前，下列任一條件成立則設 `{adversarial}` 為 `true`，否則為 `false`：
@@ -243,8 +236,7 @@ Orchestrator 根據 Coder 修改的檔案清單判斷 Reviewer 除了必載的 `
 
 prompt 由 orchestrator 依 `srun:review` 的「Reviewer Subagent Prompt 模板」展開（展開規則與 context budget 守則皆見該 skill）——展開後的 prompt 已內含完整 review 標準與輸出格式，subagent 不需另行載入 `srun:review`：
 
-- Scope 代入 `change:{changeName}` 模式；`{adversarial}` 依上方判定代入
-- `{reviewerAdditionalSkills}` 依上方預判代入（如 `web-design-guidelines`），由模板的追加 skills 條件區塊指示 subagent 載入
+- Scope 代入 `change:{changeName}` 模式；`{adversarial}` 依上方判定代入；`{webDesignLine}` 依 `srun:review` 模板語法段的條件代入
 - 「{若 feat 載入：}」條件區塊成立：prompt 末段附上 Coder 產出摘要（檔案清單＋設計決策＋規格缺口）與 Tester 產出摘要（測試檔案＋測試結果）
 
 Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後續包裝或補檢；只負責呈現給使用者並依判定進入 retry 迴路或下一步。
@@ -295,7 +287,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 **先後順序**：本步驟永遠最後才跑，驗的必須是最終 code。
 
-- 本步驟要等 Reviewer 這關修完（含 WARNING 修復批、SUGGESTION 收尾批與其 targeted re-check 通過）、全部測試這關過了（全綠，或這次弄壞的失敗已修好）才派發
+- 本步驟要等 Reviewer 這關修完（含 WARNING 修復批、SUGGESTION 收尾批與其 修復複查 通過）、全部測試這關過了（全綠，或這次弄壞的失敗已修好）才派發
 - 本步驟 FAIL 的修復，以及本步驟 PASS 之後又改了 code，都照 Retry 迴路的「從操作流程驗證往後重走」重驗；之前的 PASS 不算數
 
 **前置（固定流程）**：
@@ -379,7 +371,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 **retro 記錄**：載入 `srun:retro` skill，依其記錄模式記錄本次 run。
 
-- 記錄內容：防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、首派 Reviewer 的 adversarial、升級在哪裡開與升級後過沒過、targeted re-check 次數與 FAIL 數、停下問人時人的裁決、Coder／Reviewer 自報的 model id）、事件與統計，append 進全域收件匣
+- 記錄內容：防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、首派 Reviewer 的 adversarial、升級在哪裡開與升級後過沒過、修復複查 次數與 FAIL 數、停下問人時人的裁決、Coder／Reviewer 自報的 model id）、事件與統計，append 進全域收件匣
 - 開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶
 - `usage` 欄跑該 skill 指定的統計腳本取得（傳選擇變更（Step 1）宣告的時間作 `--since`）
 - 報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則：只有歸檔提醒或記錄失敗時出現。開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製
@@ -387,9 +379,10 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔、走法交接檔）：檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
 
-**跳驗收選項**：刪完殘留檔，用 AskUserQuestion 問驗收結果。人還沒實際驗，三個選項都不標建議，正文也不寫建議。選項底下只寫選了之後會做的事：
+**跳驗收選項**：刪完殘留檔，用 AskUserQuestion 問驗收結果。人還沒實際驗，選項都不標建議，正文也不寫建議。選項底下只寫選了之後會做的事：
 
 - **驗收通過，跑收尾** → 照 SessionStart 交界圖「驗收通過」那行收尾
+- **評估順手看到的項目**（報告有「順手看到的」才出現）→ 主對話逐項讀相關程式碼，回報修或不修與理由，然後等人決定；處理完再跳一次驗收選項
 - **有地方要改**（人寫哪裡不對）→ 照交界圖「驗收發現問題」那行處理。規格缺口不接受也選這個：走 `/srun:fix` 驗收修正改程式，並從 delta spec 刪掉那條
 - **還沒驗完，晚點再說** → 不做任何事，等人回來說
 
@@ -413,22 +406,22 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 | Gate 失敗 | 誰修 | 修完重驗什麼 |
 |----------|------|-------------|
-| Tester 補測試（Step 5） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查全綠即修完，**不重派 Tester**：修復後防的是機械回歸，Tester 的獨立價值在首輪設計測試。不派 targeted re-check：Reviewer 接著會審到這次修改 |
+| Tester 補測試（Step 5） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查全綠即修完，**不重派 Tester**：修復後防的是機械回歸，Tester 的獨立價值在首輪設計測試。不派 修復複查：Reviewer 接著會審到這次修改 |
 | Reviewer FAIL（有 CRITICAL） | 依歸屬：實作代碼 → Coder、測試代碼 → Tester；嚴重安全問題 → 直接停下來問人（認為 finding 不成立 → 提出 review 異議） | 重派 Opus Reviewer |
-| Reviewer PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（SUGGESTION 併入方式見下方處置；認為 finding 不成立 → 提出 review 異議） | Sonnet targeted re-check（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
-| 全部測試（Step 6.3） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查 → Sonnet targeted re-check → 從操作流程驗證往後重走（見下方） |
-| 操作流程驗證 FAIL（Step 6.5） | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 三項檢查 → Sonnet targeted re-check → 從操作流程驗證往後重走（見下方） |
-| 實測與報告（Step 7）實測未達 | Coder（orchestrator 判斷要補什麼後派發） | 三項檢查 → Sonnet targeted re-check → 從操作流程驗證往後重走（見下方） |
+| Reviewer PASS with WARNING | WARNING 視為需修復；依歸屬修，**同一歸屬的所有 WARNING 合併為一個修復任務一次改完**（SUGGESTION 併入方式見下方處置；認為 finding 不成立 → 提出 review 異議） | Sonnet 修復複查（執行 `review` 的 Targeted Check 模式：只審修復 diff、驗證修復正確且未引入新問題；**不升級為 Opus 完整 review**） |
+| 全部測試（Step 6.3） | Coder（判斷屬測試問題 → 提出測試異議） | 三項檢查 → Sonnet 修復複查 → 從操作流程驗證往後重走（見下方） |
+| 操作流程驗證 FAIL（Step 6.5） | Coder（判 FAIL 前 agent 已依 `verify-flow` 做過重現確認） | 三項檢查 → Sonnet 修復複查 → 從操作流程驗證往後重走（見下方） |
+| 實測與報告（Step 7）實測未達 | Coder（orchestrator 判斷要補什麼後派發） | 三項檢查 → Sonnet 修復複查 → 從操作流程驗證往後重走（見下方） |
 
 歸屬 `spec`（規格 artifact 內容本身的問題，見 `review` 的歸屬定義）的 finding，FAIL 與 WARNING 同一路由：**決策級**（需推翻 design 決策或改變規格語意）屬 Reviewer 判斷不了的事 → 停下來問人，不進 Coder retry；**機械級**（殘留、漏掃、跨載體同步遺漏）→ 派 Coder 修 artifact 檔案。
 
-**SUGGESTION 處置**：只在 Reviewer **最終報告**處理一次。有 WARNING 修復批就併入同批，沒有（PASS 乾淨）則單獨派一次收尾批；同樣走 targeted re-check，不影響 verdict。Coder 對會擴 scope 或推翻既定取捨的項目回報不修並附理由，其餘修完。
+**SUGGESTION 處置**：只在 Reviewer **最終報告**處理一次。有 WARNING 修復批就併入同批，沒有（PASS 乾淨）則單獨派一次收尾批；同樣走 修復複查，不影響 verdict。Coder 對會擴 scope 或推翻既定取捨的項目回報不修並附理由，其餘修完。
 
 **修完之後**：修完、重驗通過，就照那一關自己的「下一步」走，跟一次就過一樣。
 
 ### 從操作流程驗證往後重走
 
-Reviewer 之後的關卡（全部測試、操作流程驗證、實測與報告）改了 code：修復 agent 交回、targeted re-check 通過後，從操作流程驗證（Step 6.5）照正常順序往後走，一路走到實測與報告。
+Reviewer 之後的關卡（全部測試、操作流程驗證、實測與報告）改了 code：修復 agent 交回、修復複查 通過後，從操作流程驗證（Step 6.5）照正常順序往後走，一路走到實測與報告。
 
 - 全部測試不重跑，修復 agent 跑過的相關測試就算數。例外照 Retry 共用檔的「全部測試只跑一次」：判定要重跑時，先跑全部測試（Step 6.3）再往後走，「修完重走」寫成 `修復複查 → 全部測試（改到建置設定）→ …` 這樣附上原因
 - 操作流程驗證要不要跑，照它自己的觸發判斷
@@ -451,17 +444,17 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 修復 agent（Coder 或 Tester）判斷被指派修復的 review finding 不成立時（Reviewer 誤讀程式碼、finding 與驗收依據或專案慣例衝突、建議修法會違反 spec），可提出 review 異議：**必須引用依據原文**（spec 段落／CLAUDE.md 條文，含來源路徑；或指出誤讀處的檔案:行號與實際行為），**引不出依據不受理**，乖乖修。CRITICAL 與 WARNING 的修復派發皆適用。受理後 Reviewer 裁決（見 Retry 迴路），裁「維持／撤回」：
 
-- **撤回** → 該 finding 自修復清單移除；該輪所有待修項皆被撤回 → 該輪視為通過，不需 re-check
+- **撤回** → 該 finding 自修復清單移除；該輪所有待修項皆被撤回 → 該輪視為通過，不需修復複查
 - **維持** → 照原 finding 修
 
 ---
 
 ## 輸出格式
 
-### Phase 2 完成
+### 完成
 
 ```
-## Phase 2 完成：{changeName}
+## srun:feat 完成：{changeName}
 改了 {N} 個檔案，{M} 個測試全過，Reviewer 通過，操作流程驗證{結果}{；中間退回修過 K 輪}。
 
 ### AI 自行裁決（驗收時確認你同不同意）
@@ -504,7 +497,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 ## Guardrails
 
-- Agent tool 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／re-check），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
+- Agent tool 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／修復複查），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
 - 每個 agent 的 prompt 只傳變更名稱和目錄，讓 agent 自行讀取 artifacts；不在 prompt 中貼入檔案內容
 - 獨立的修復任務可平行派發，**前提是修復檔案集不相交**（如 Coder 與 Tester 各修不同檔案的 WARNING）；檔案相交或無法確定 → 串行。平行派發時，在各 agent 的 prompt 註明另有哪個 agent 同時在改哪些檔
 - Coder / Tester 派發本身失敗或中途中斷 → 以 `git status` 對照 tasks.md checkbox **對帳實際完成度**後再重派（磁碟優先，不憑對話記憶推測進度）

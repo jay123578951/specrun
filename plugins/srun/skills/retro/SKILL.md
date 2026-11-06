@@ -36,7 +36,7 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 | `coderStart` | `{model: sonnet\|opus, reason: null\|architecture\|security\|design-open}` | feat 分批與判定 Coder model（Step 3）／fix Model 策略的起跑升級判定 | 本 run **第一次**派發 Coder 的 `model` 參數與判定理由。升級改的是修復派發，不影響此欄。`fix` 只有 `security` 一種理由 |
 | `adversarialFirst` | `true\|false` | feat 首派 Reviewer（Step 6）的 adversarial 判定 | 首次派 Reviewer 時代入的 `{adversarial}`。`fix` 無此判定記 `null` |
 | `escalation` | `{opened: bool, phase: dev\|final\|null, times: N, passedNextRound: bool\|null}` | retry-loop「升級」 | `phase`＝第一次升級發生在開發中（`dev`）或開發完（`final`）；`times`＝本 run 升級了幾次（開發中每件事、開發完每輪各算一次）；`passedNextRound`＝第一次升級後那次修復是否通過（停下問人或中止記 `null`）。舊條目的 `gate`／`round` 欄是舊算法，不與新欄位合併統計 |
-| `recheck` | `{runs: N, fail: M}` | review Targeted Check 用 Sonnet 不升 Opus | 本 run 派了幾次 targeted re-check、其中幾次判 FAIL |
+| `recheck` | `{runs: N, fail: M}` | review Targeted Check 用 Sonnet 不升 Opus | 本 run 派了幾次修復複查、其中幾次判 FAIL |
 | `securityReview` | `{triggered: bool, verdict: PASS\|WARNING\|FAIL\|null}` | fix 安全 review（Step 5）條件觸發 | `fix` 專用；`feat` 的安全訊號已由 `adversarialFirst` 覆蓋，記 `null` |
 | `stopLoss` | `{fired: bool, reason: third\|undecidable\|null, humanChoice: decided\|continue\|skip\|manual\|rerun\|null}` | retry-loop「什麼時候停下來問人」 | `reason`：`third`＝第 3 次、`undecidable`＝Reviewer 判斷不了；記人的裁決：`decided`＝人做了決定照做、`continue`＝再修一輪、`skip`＝跳過該關交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑。安全問題與環境卡住的問人不記在這欄 |
 | `modelIds` | `{coder: "<id>", reviewer: "<id>\|null"}` | 分辨「規則過期」與「模型換代」 | Coder 與 Reviewer 報告首行自報的 model id（`Coder model: …`／`Reviewer model: …`）；缺自報時填派發 alias |
@@ -49,15 +49,15 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 node "${CLAUDE_SKILL_DIR}/../../scripts/retro-usage.mjs" ${CLAUDE_SESSION_ID} --since <pipeline 起跑的 ISO 時間>
 ```
 
-session id 由 Claude Code 載入 skill 時代換，同專案有其他 session 並行也不會抓錯；`--since` 傳 feat／fix 起跑宣告（兩者的 Step 1）的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
+session id 由 Claude Code 載入 skill 時代換，同專案有其他 session 並行也不會抓錯；`--since` 傳 feat／fix 起跑宣告（兩者的 Step 1）的時間，排除 run 之前的討論，不知道就省略。輸出單行 JSON 原樣併進條目的 `usage` 欄：`wallClockMin`（起訖跨度）、`dispatchMin`（各 subagent 用時加總，平行時會大於跨度）、`waitingHumanMin`（助理停下到人回話的空檔，已扣掉同時有 agent 在跑的部分）、`mainThread`（orchestrator 自己的 model 與三種 token）、`byModel`（各 model 的派發數、用時、token）、`dispatches`（每次派發的角色、批次、首派或修復、model、分鐘、工具呼叫次數、載入的 skill、三種 token）。三種 token 是一般輸入、寫入快取、讀取快取；輸出不記，transcript 存的不是最終值。token 記數量不記金額，金額歸檔時用當時價目表算（cache 讀取與一般輸入價差大）。
 
-腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／re-check／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，不阻斷（手動呼叫的回顯在用時那行註記原因）。
+腳本靠派發時的 `description` 分辨角色與首派／修復：以角色開頭（Coder／Tester／Reviewer／驗證／修復複查／註解），修復派發含「修復」或「修正」。feat／fix 的派發一律照這個寫法。腳本失敗（找不到 transcript、node 不在）→ `usage` 記 `null`，不阻斷（手動呼叫的回顯在用時那行註記原因）。
 
 ### 事件（底線守門，對照事件表列舉，偏離快樂路徑全記）
 
 | 事件類型（固定詞彙） | 觸發 |
 |---------------------|------|
-| `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review / comment-safety-net）；Reviewer 只有 FAIL 才算，PASS with WARNING 記下一列 |
+| `gate_fail` | 任一 gate FAIL（記哪關、第幾輪：test / reviewer / verify / security-review）；Reviewer 只有 FAIL 才算，PASS with WARNING 記下一列 |
 | `review_warning` | Reviewer 判 PASS with WARNING（記條數與歸屬 coder／tester／spec；不算輪，不計入 `counters.final`） |
 | `counter_2` / `counter_3` | 次數達 2（升級）／達 3（停下問人），次數照 retry-loop「次數怎麼算」；開關細節記在 `guards.escalation`／`guards.stopLoss`，事件只留一行事實 |
 | `reviewer_ruling` | retry-loop「Reviewer 裁決」被派發（記哪件事、第幾次、裁決結果，判斷不了也記） |
@@ -66,9 +66,8 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 | `flaky` | verify-flow 標記 flaky |
 | `preexisting_fail` | 全部測試有失敗，比對後判為既有失敗或不穩定（記條數、檔數、判定方式）；這次弄壞的記 `gate_fail` |
 | `blocked` | 任何 BLOCKED（記子原因：工具未就緒／環境／登入牆） |
-| `scope_exceeded` | G7 規模超標回報（路由誤判實錘；`docs/maintenance/routing-cases.md` 新題候選） |
+| `scope_exceeded` | Coder 回報實際規模超出派發宣告（路由誤判實錘；`docs/maintenance/routing-cases.md` 新題候選） |
 | `acceptance_fix` | `fix` 場景 (ii) 驗收修正 |
-| `pragma_restored` | 註解整理保護清單計數攔到誤刪並補回 |
 | `security_review` | 安全 review 被觸發（記結果）；開關記在 `guards.securityReview`，事件留一行事實 |
 | `untestable_modules` | 無法測試清單非空（feat=Tester、fix=Coder 回報；記模組數與消費路徑：verify-flow OR 觸發／報告行） |
 | `verify_gap` | verify-flow 報告「待人確認」非空、或改動形態非瀏覽器可及（記落到人工的 spec 驗收點數與原因：示範資料缺情境／執行形態摸不到／工具能力不足） |
@@ -108,7 +107,7 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 
 ```
 retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
-防錯規則：起跑 {model}｜adversarial {是/否}｜升級 {未開/開發中或開發完 N 次→第一次升級後過/未過/中止}｜re-check {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜停下問人 {未觸發/第 3 次或判斷不了→{humanChoice}}
+防錯規則：起跑 {model}｜adversarial {是/否}｜升級 {未開/開發中或開發完 N 次→第一次升級後過/未過/中止}｜修復複查 {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜停下問人 {未觸發/第 3 次或判斷不了→{humanChoice}}
 用時：{wallClockMin} 分（派發 {dispatchMin}、等人 {waitingHumanMin}）｜Opus 佔派發用時 {百分比}（usage 為 null 時此行寫「用時：未取得（{原因}）」）
 ```
 
