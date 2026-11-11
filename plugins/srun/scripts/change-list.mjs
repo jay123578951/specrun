@@ -5,6 +5,7 @@
 //     記下起點：當下的 commit、當下已經有未 commit 改動的檔和它們的內容雜湊，
 //     以及被 gitignore 的敏感檔（.env、私鑰）的內容雜湊。
 //     起點檔已存在就沿用，中斷接手時起點才不會被蓋掉；--new 一律重記。
+//     起點檔所在目錄沒有 .gitignore 時，放一個只有 * 的，讓這個暫存目錄不進版控。
 //   node change-list.mjs list <起點檔> [--reported <路徑>...]
 //     列出起點之後改動的檔，一行一檔：「新增|修改|刪除|Coder 回報<TAB>路徑」，路徑相對 repo 根目錄。
 //     - 開工前就有的改動，內容沒再變就不列
@@ -55,6 +56,10 @@ if (cmd === 'start') {
   const before = hashes([...split0(gitAt('diff', '--name-only', '-z', 'HEAD')), ...untracked()])
   const sensitive = hashes(ignoredSensitive())
   mkdirSync(dirname(snapshotPath), { recursive: true })
+  // 起點檔所在的暫存目錄忽略自己：專案有沒有 gitignore .claude/ 都不會進版控
+  const ignoreFile = join(dirname(snapshotPath), '.gitignore')
+  if (!existsSync(ignoreFile))
+    writeFileSync(ignoreFile, '*\n')
   writeFileSync(snapshotPath, `${JSON.stringify({ commit, before, sensitive }, null, 2)}\n`)
   console.log(`已記下起點：commit ${commit.slice(0, 7)}，開工前已有改動的檔 ${Object.keys(before).length} 個，被 gitignore 的敏感檔 ${Object.keys(sensitive).length} 個`)
   process.exit(0)

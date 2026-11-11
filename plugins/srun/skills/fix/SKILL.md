@@ -180,6 +180,8 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 
 ### Step 7: 報告結果
 
+顯示完成報告前，用一條指令跑改動清單並刪掉起點檔：`node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" list .claude/debug/fix-起點.json --reported <路徑>... && rm .claude/debug/fix-起點.json`。報告開頭的「改了 N 個檔案」取這次輸出的行數。
+
 顯示完成報告（格式見「輸出格式」）。報告只放要人看或要人決定的事：開頭一行講結果，其餘各段有內容才出現，沒有就整段省略、不寫「無」。各段的來源：
 
 - **AI 自行裁決**：AI 自己下的、使用者知道後可能會要它改回來的判斷。照規範該做的事、做了沒差別的事不算。例如：
@@ -191,7 +193,7 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 - **沒把握的註解**：Coder 各輪回報的條目；後來修復時已刪掉的不列
 - **順手看到的**：Coder 回報的順手觀察，原樣列入。它是情報不是待辦，不觸發任何 retry 或派發
 
-一般修復輪的過程不列，只在開頭那行寫退回修過幾輪。報告輸出後刪掉 `.claude/debug/fix-起點.json`。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
+一般修復輪的過程不列，只在開頭那行寫退回修過幾輪。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
 
 **retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級在哪裡開與升級後過沒過、修復複查 次數與 FAIL 數、停下問人時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳整理需求與場景判定（Step 1）宣告的時間作 `--since`）。append 失敗不阻斷報告。
 
@@ -239,7 +241,7 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 {依 `srun:retro`「從 feat／fix 呼叫」的回顯規則}
 ```
 
-- `{N}`：報告前跑一次改動清單的行數
+- `{N}`：顯示報告前那次改動清單的行數（見報告結果（Step 7））
 - `{測試結果}`：`新增 M 個測試全過`｜`純樣式，沒有新測試`
 - `，安全 review 通過`：只在 `{securityReview}=true` 時出現
 - `，spec 更新 S 段`：Spec 影響判斷（Step 3）與 Spec 輕量複核（Step 6）實際改了 spec 才出現，括號內寫 spec 名與段落名

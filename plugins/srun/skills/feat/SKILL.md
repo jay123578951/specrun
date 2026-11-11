@@ -94,6 +94,7 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 - 腳本以 Git 算出起點之後的改動，開工前就有的改動不列；被 gitignore 的敏感檔（`.env`、私鑰）內容變了也列；`openspec/`、`.claude/debug/`、`.playwright-mcp/` 不列
 - 起點檔已存在就沿用（中斷接手時起點不變），所以不用先判斷是不是接手
 - `list` 結束碼 2 表示切過分支或改寫過歷史，清單算不準 → 停下來問人
+- 起點檔存在期間，srun 的 git hook 連主對話也會擋下會丟掉未 commit 改動的 git 指令（`git stash`、`git checkout -- .` 這類）。要看開工前的版本，照全部測試（Step 6.3）的做法另開 git worktree
 
 ### Step 3: 分批與判定 Coder model
 
@@ -148,7 +149,7 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 - `{handoffPath}`：代入 `.claude/debug/{changeName}-交接.md`
   - 串行各批共用這一個檔
   - 平行各批在檔名後加批次代號（如 `-交接-T1.md`），以免互相覆蓋
-- 本 run 第一次派發前，刪掉 `.claude/debug/{changeName}-交接*.md`：那是上次 run 依當時程式碼寫的，不能沿用
+- 本 run 第一次派發前，刪掉上次 run 的交接檔：`find .claude/debug -maxdepth 1 -name '{changeName}-交接*.md' -delete`。那是上次 run 依當時程式碼寫的，不能沿用。用 `find` 是因為 zsh 的萬用字元找不到檔案時會讓整條指令中斷
 
 使用 Agent tool 派發 subagent（model: {coderModel}）：
 
@@ -337,7 +338,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 ### Step 6.7: 收環境與規格缺口回寫（主對話自做，不派 agent）
 
-**進場先收驗證環境**：用操作流程驗證前置記下的 PID 關掉自己起的 dev server（不比對程序名），刪除 playwright 寫在專案根的 `.playwright-mcp/`；此後沒有步驟再驗畫面。
+**進場先收驗證環境**：用操作流程驗證前置記下的 PID 關掉自己起的 dev server（不比對程序名），刪除 playwright 的輸出資料夾 `.claude/debug/playwright-mcp/`（截圖、console log、頁面快照都在這裡）；此後沒有步驟再驗畫面。
 
 **規格缺口回寫**：彙整本次 run 所有批次 Coder 回報的「規格缺口」與 Reviewer 報告「規格缺口」段的條目（同一情境只留一份），寫進本 change 的 delta spec。
 
@@ -358,6 +359,8 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
   - 判準沒錯，實作未達 → orchestrator 判斷要補什麼、派 Coder 修，修完照 Retry 迴路的「從操作流程驗證往後重走」走回這裡重新實測
   - 落差會改變驗收語意 → 問人
 - 實作中途調整作法、判準沒跟著改的情況，也由這裡攔截
+
+顯示完成報告前，用一條指令跑改動清單並刪掉起點檔：`node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" list .claude/debug/{changeName}-起點.json --reported <路徑>... && rm .claude/debug/{changeName}-起點.json`。報告開頭的「改了 N 個檔案」取這次輸出的行數。
 
 顯示完成報告（格式見「輸出格式」）。報告只放要人看或要人決定的事：開頭一行講結果，其餘各段有內容才出現，沒有就整段省略、不寫「無」。各段的來源：
 
@@ -384,7 +387,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 - 報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則：只有歸檔提醒或記錄失敗時出現。開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製
 - append 失敗不阻斷報告
 
-報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔、走法交接檔、起點檔）：檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
+報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（除錯檔、走法交接檔、全部測試的 log；驗證截圖在 `.claude/debug/playwright-mcp/`，收環境時已刪）：檔案價值僅在執行中；`.claude/debug/` 有自己的 `.gitignore`，不進版控。以 `{changeName}-` 開頭的檔與全部測試的 log 用 `find .claude/debug -maxdepth 1 \( -name '{changeName}-*' -o -name 'full-test-*.log' \) -delete` 刪，理由同 Coder 實作（Step 4）刪交接檔。
 
 **跳驗收選項**：刪完殘留檔，用 AskUserQuestion 問驗收結果。人還沒實際驗，選項都不標建議，正文也不寫建議。選項底下只寫選了之後會做的事：
 
@@ -491,7 +494,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 {依 `srun:retro`「從 feat／fix 呼叫」的回顯規則}
 ```
 
-- 開頭那行的 `{N}`：報告前跑一次改動清單（見開工作分支（Step 2.5））的行數
+- 開頭那行的 `{N}`：顯示報告前那次改動清單的行數（見實測與報告（Step 7））
 - 開頭那行的 `{結果}`：`通過`｜`通過（N 個情境工具做不到）`｜`不需要（這次沒改到畫面）`｜`沒跑（瀏覽器工具沒就緒）`
 - `；中間退回修過 K 輪`：K ＝開發完完整審查退回的輪數（定義見 Retry 迴路），零輪整句省略
 - 規格缺口的「畫面上看到什麼」寫使用者操作時會看到的結果；看不出差別的條目不進表格，收進表格下方那一行，沒有就省略那一行

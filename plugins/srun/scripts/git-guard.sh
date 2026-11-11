@@ -1,11 +1,17 @@
 #!/bin/bash
-# subagent 的 git 攔截（PreToolUse，matcher: Bash）：拒絕會洗掉工作樹改動的 git 指令。
-# Claude Code 只在 subagent 內的工具呼叫帶非空的 agent_id，主對話一律放行。
-# 拒絕只回訊息給該 subagent，流程不會停下來等人。
+# git 攔截（PreToolUse，matcher: Bash）：拒絕會洗掉工作樹改動的 git 指令。
+# - subagent：一律攔。Claude Code 只在 subagent 內的工具呼叫帶非空的 agent_id
+# - 主對話：feat／fix 正在跑時才攔，以 .claude/debug/ 有改動清單的起點檔為準；其他時候放行
+# 拒絕只回訊息給下指令的那一方，流程不會停下來等人。
 
 input=$(cat)
 
-printf '%s' "$input" | grep -qE '"agent_id"[[:space:]]*:[[:space:]]*"[^"]' || exit 0
+reason='這個 git 指令會丟掉工作樹上還沒 commit 的改動，包括其他 agent 的。要還原時，只改回自己動過的那幾行；要看舊版時，用 git diff、git show 讀。'
+if ! printf '%s' "$input" | grep -qE '"agent_id"[[:space:]]*:[[:space:]]*"[^"]'; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+  compgen -G "$root/.claude/debug/*起點.json" >/dev/null || exit 0
+  reason='feat／fix 正在跑（.claude/debug/ 有改動清單的起點檔），這個 git 指令會丟掉工作樹上還沒 commit 的改動。要看開工前的版本，用 git worktree 另開臨時目錄跑，跑完刪掉；要讀舊版內容，用 git diff、git show。'
+fi
 
 cmd=$(printf '%s' "$input" \
   | grep -oE '"command"[[:space:]]*:[[:space:]]*"([^"\\]|\\.)*"' \
@@ -140,7 +146,7 @@ while IFS= read -r segment; do
     git|*/git)
       shift
       if discards_changes "$@"; then
-        printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"這個 git 指令會丟掉工作樹上還沒 commit 的改動，包括其他 agent 的。要還原時，只改回自己動過的那幾行；要看舊版時，用 git diff、git show 讀。"}}'
+        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$reason"
         exit 0
       fi
       ;;

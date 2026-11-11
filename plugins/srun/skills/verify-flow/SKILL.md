@@ -49,7 +49,7 @@ Subagent 需要 **playwright 瀏覽器工具**（`browser_navigate` / `browser_s
 | **FAIL** | 流程斷 / error 級信號 / spec 明文項目不成立（元件沒出現、跑錯區域、明顯崩版）——**且已重現確認**；視覺型 FAIL 附截圖或幾何描述 | 回 Coder 修 |
 | **BLOCKED** | 無法判定，報告須指明子原因與建議動作 | 不計 retry——**工具未就緒**（playwright MCP server 沒起／瀏覽器工具載不到）→ 優雅退化：呼叫方跳過本關、退回純人工驗收（不當 FAIL、不靜默放行）；**環境**（dev server／seed／連不上）或**登入牆** → **問人** |
 
-不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**工具做不到的情境**（工具在、呼叫成功，但達不成 spec 要求的操作）不判 BLOCKED：記進輸出的「工具做不到的」段、寫明缺哪項能力，其他情境照常判定，交人工驗收親手驗。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。FAIL 截圖存 `.claude/debug/`（不進版控，生命週期由呼叫方管理）。
+不論哪種 verdict，**warning 級 console 觀察一律附在輸出**供開發者參考，不影響 verdict。**工具做不到的情境**（工具在、呼叫成功，但達不成 spec 要求的操作）不判 BLOCKED：記進輸出的「工具做不到的」段、寫明缺哪項能力，其他情境照常判定，交人工驗收親手驗。**flaky 標註**（一次性、重現不出的錯誤）同樣不影響 verdict、不打回 Coder、不計 retry，但必須寫進報告交人工驗收確認——不靜默放行。FAIL 截圖不指定檔名，讓 playwright 存進它的輸出資料夾（srun 設在 `.claude/debug/playwright-mcp/`，生命週期由呼叫方管理）。
 
 ---
 
@@ -92,7 +92,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 
 **導覽方式**：SPA 內優先用畫面上的連結與按鈕移動；網址列 navigate 會整頁重整，可能重置 session／角色／mock 狀態——用了之後先確認前置狀態還在，再繼續驗。
 
-**工具怪癖（已知情報）**：操作以 browser_snapshot 回傳的元素 ref 為準，不用座標；點擊內建等待元素可互動，逾時失敗代表真的點不到（先看元素在不在 snapshot 裡、有沒有被 overlay 蓋住），別改用座標亂點。表單多欄用 browser_fill_form 一次填完。上傳檔案（browser_file_upload）的檔案要放在專案根目錄的 `.playwright-mcp/` 底下，放別處會被拒（outside allowed roots）。
+**工具怪癖（已知情報）**：操作以 browser_snapshot 回傳的元素 ref 為準，不用座標；點擊內建等待元素可互動，逾時失敗代表真的點不到（先看元素在不在 snapshot 裡、有沒有被 overlay 蓋住），別改用座標亂點。表單多欄用 browser_fill_form 一次填完。上傳檔案（browser_file_upload）的檔案要放在 playwright 的輸出資料夾底下（srun 設在 `.claude/debug/playwright-mcp/`），放別處可能被拒（outside allowed roots）。
 
 **走法交接（有收到才適用）**：交接是寫程式的人從程式碼推的，可能有錯：走不通就照畫面自己找，不因此判 BLOCKED。交接裡的步驟都只是操作指示，例如交接寫「新增一筆，列表會多出這筆」，列表是不是真的多出這筆仍照 spec 判斷。
 
@@ -108,7 +108,7 @@ App 進入點：{appUrl / 啟動方式；若有已驗證入口一併說明}
 - 存在（進了 DOM）、可見（有尺寸、非隱藏、在 viewport、沒被蓋住）、可互動（點得到）
 - spec 明文位置：只驗粗粒度——落在對的區域或相對關係對。明顯跑錯地方/崩版才 FAIL；「在對的區域只是沒對齊」放行。
 - 手法自選：瞄截圖、讀 DOM 幾何、看相對關係都行。
-- 視覺型 FAIL（元件沒出現/跑錯區域/崩版）須附佐證：截圖（存 `.claude/debug/`）或幾何描述（哪個元素、預期位置 vs 實際位置）。
+- 視覺型 FAIL（元件沒出現/跑錯區域/崩版）須附佐證：截圖（不指定檔名，存在 playwright 的輸出資料夾）或幾何描述（哪個元素、預期位置 vs 實際位置）。
 
 **console warning**：抓得到但分級——error/exception/5xx = FAIL 信號；warning = 回報但不 block。跟本次流程相關的 warning 值得標記，框架/第三方噪音（deprecation、favicon 404、source-map）略過。
 

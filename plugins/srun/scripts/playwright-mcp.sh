@@ -49,5 +49,19 @@ ps -axo pid=,ppid=,command= \
       kill "$pid" 2>/dev/null || true
     done
 
+# 截圖、console log、頁面快照預設寫在專案根的 .playwright-mcp/，要靠每個專案自己 gitignore。
+# 改寫進 .claude/debug/playwright-mcp/，並讓 .claude/debug/ 放一個只有 * 的 .gitignore 忽略自己：
+# 專案有沒有 gitignore .claude/ 都不會進版控。在家目錄或不能寫的目錄啟動時照 playwright 預設。
+output_args=()
+project="${CLAUDE_PROJECT_DIR:-$PWD}"
+if [ "$project" != "$HOME" ] && [ -w "$project" ]; then
+  debug_dir="${project}/.claude/debug"
+  if mkdir -p "$debug_dir" 2>/dev/null; then
+    [ -e "${debug_dir}/.gitignore" ] || printf '*\n' > "${debug_dir}/.gitignore"
+    output_args=(--output-dir "${debug_dir}/playwright-mcp")
+  fi
+fi
+
 # 有視窗的瀏覽器預設不會閒置自動關；閒置 10 分鐘就關，下次操作自動重開，登入狀態留在設定檔
-exec node "$CLI" --browser chrome --idle-timeout 600000 "$@"
+# macOS 內建 bash 3.2 在 set -u 下展開空陣列會報 unbound variable，空的時候不展開
+exec node "$CLI" --browser chrome --idle-timeout 600000 ${output_args[@]+"${output_args[@]}"} "$@"
