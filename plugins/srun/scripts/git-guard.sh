@@ -1,17 +1,38 @@
 #!/bin/bash
-# git 攔截（PreToolUse，matcher: Bash）：拒絕會洗掉工作樹改動的 git 指令。
-# - subagent：一律攔。Claude Code 只在 subagent 內的工具呼叫帶非空的 agent_id
-# - 主對話：feat／fix 正在跑時才攔，以 .claude/debug/ 有改動清單的起點檔為準；其他時候放行
+# 防止丟掉 Git 救不回來的東西（PreToolUse，matcher: Bash）。
+# - 會洗掉工作樹改動的 git 指令：subagent 一律攔；主對話只在 feat／fix 正在跑時攔
+# - rm、find -delete：只在 feat／fix 正在跑時攔 subagent，判斷交給 delete-guard.mjs
+# feat／fix 正在跑＝.claude/debug/ 有改動清單的起點檔。Claude Code 只在 subagent 內的工具呼叫帶非空的 agent_id。
 # 拒絕只回訊息給下指令的那一方，流程不會停下來等人。
 
 input=$(cat)
 
+is_agent=0
+printf '%s' "$input" | grep -qE '"agent_id"[[:space:]]*:[[:space:]]*"[^"]' && is_agent=1
+root=$(git rev-parse --show-toplevel 2>/dev/null)
+running=0
+[ -n "$root" ] && compgen -G "$root/.claude/debug/*起點.json" >/dev/null && running=1
+[ "$is_agent" = 1 ] || [ "$running" = 1 ] || exit 0
+check_delete=0
+[ "$is_agent" = 1 ] && [ "$running" = 1 ] && check_delete=1
+
 reason='這個 git 指令會丟掉工作樹上還沒 commit 的改動，包括其他 agent 的。要還原時，只改回自己動過的那幾行；要看舊版時，用 git diff、git show 讀。'
-if ! printf '%s' "$input" | grep -qE '"agent_id"[[:space:]]*:[[:space:]]*"[^"]'; then
-  root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
-  compgen -G "$root/.claude/debug/*起點.json" >/dev/null || exit 0
+if [ "$is_agent" = 0 ]; then
   reason='feat／fix 正在跑（.claude/debug/ 有改動清單的起點檔），這個 git 指令會丟掉工作樹上還沒 commit 的改動。要看開工前的版本，用 git worktree 另開臨時目錄跑，跑完刪掉；要讀舊版內容，用 git diff、git show。'
 fi
+
+deny() {
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+  exit 0
+}
+
+# 要刪的東西裡有 Git 救不回來、又不是這次 run 建的內容就擋
+check_targets() {
+  [ $# -gt 0 ] || return 0
+  hit=$(node "$(dirname "$0")/delete-guard.mjs" "$root" "$wd" "$@" 2>/dev/null)
+  [ -z "$hit" ] && return 0
+  deny "這個刪除會丟掉 Git 救不回來的東西：${hit}。這類檔案可能是使用者的，或是流程與其他 agent 的檔案，由主對話在收尾時清理，你不用刪。你自己的臨時檔請放在 \$TMPDIR。這不是指令寫錯，不要換別的方法刪。"
+}
 
 cmd=$(printf '%s' "$input" \
   | grep -oE '"command"[[:space:]]*:[[:space:]]*"([^"\\]|\\.)*"' \
@@ -20,6 +41,7 @@ cmd=$(printf '%s' "$input" \
 
 case "$cmd" in
   *git*) ;;
+  *rm*|*find*) [ "$check_delete" = 1 ] || exit 0 ;;
   *) exit 0 ;;
 esac
 
@@ -133,6 +155,8 @@ discards_changes() {
 }
 
 set -f
+wd=$PWD
+stripped=$(strip_text "$cmd")
 while IFS= read -r segment; do
   # shellcheck disable=SC2086
   set -- $segment
@@ -145,12 +169,51 @@ while IFS= read -r segment; do
   case "${1:-}" in
     git|*/git)
       shift
-      if discards_changes "$@"; then
-        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$reason"
-        exit 0
-      fi
+      discards_changes "$@" && deny "$reason"
+      ;;
+    cd)
+      # 記下 cd 之後的目錄，後面 rm 的相對路徑才算得對
+      case "${2:-}" in
+        ''|Q|-) ;;
+        /*) wd=$2 ;;
+        *) wd="$wd/$2" ;;
+      esac
+      ;;
+    rm|*/rm)
+      [ "$check_delete" = 1 ] || continue
+      shift
+      targets=()
+      after_dashdash=0
+      for arg in "$@"; do
+        if [ "$after_dashdash" = 0 ] && [ "$arg" = -- ]; then
+          after_dashdash=1
+        elif [ "$after_dashdash" = 0 ] && [ "${arg#-}" != "$arg" ]; then
+          :
+        else
+          targets+=("$arg")
+        fi
+      done
+      check_targets ${targets[@]+"${targets[@]}"}
+      ;;
+    find|*/find)
+      [ "$check_delete" = 1 ] || continue
+      # 括號會把 find 拆成好幾段，-delete 要在整條指令裡找
+      case "$stripped " in
+        *' -delete '*|*' -delete'$'\001'*) ;;
+        *) continue ;;
+      esac
+      shift
+      targets=()
+      for arg in "$@"; do
+        case "$arg" in
+          -*|'!'|'\('|'(') break ;;
+          *) targets+=("$arg") ;;
+        esac
+      done
+      [ ${#targets[@]} -gt 0 ] || targets=(.)
+      check_targets "${targets[@]}"
       ;;
   esac
-done < <(strip_text "$cmd" | tr '\001;|&(){}' '\n')
+done < <(printf '%s' "$stripped" | tr '\001;|&(){}' '\n')
 
 exit 0
