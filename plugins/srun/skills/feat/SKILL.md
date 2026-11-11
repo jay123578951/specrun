@@ -88,6 +88,13 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 
 一律從所在分支開 `feat/{changeName}`；唯一不另開的情況是當下已在本 change 自己的 `feat/{changeName}` 上（中斷接手）。
 
+**記下起點**：分支就位後跑 `node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" start .claude/debug/{changeName}-起點.json`。之後要「這次改了哪些檔」時，一律跑同一支腳本的 `list .claude/debug/{changeName}-起點.json --reported <路徑>...` 取得改動清單，不直接用 agent 自己報的檔案清單：agent 會漏報、會報沒改成的檔。
+
+- `--reported` 接本 run 到目前為止所有 Coder、Tester 回報改過的檔案路徑（含各批、各修復輪）。Git 看得到的檔以 Git 為準；被 gitignore、Git 看不到的檔才採信回報，清單上標「Coder 回報」
+- 腳本以 Git 算出起點之後的改動，開工前就有的改動不列；被 gitignore 的敏感檔（`.env`、私鑰）內容變了也列；`openspec/`、`.claude/debug/`、`.playwright-mcp/` 不列
+- 起點檔已存在就沿用（中斷接手時起點不變），所以不用先判斷是不是接手
+- `list` 結束碼 2 表示切過分支或改寫過歷史，清單算不準 → 停下來問人
+
 ### Step 3: 分批與判定 Coder model
 
 讀取 tasks.md，以 **Task 大項（T1、T2、T3…）** 為單位評估：
@@ -104,7 +111,7 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 **跨批 Context 注意事項**
 
 串行執行時，後續批次的 Coder prompt 須額外包含：
-- 前批產出的檔案清單
+- 前批產出的檔案清單：派發前跑一次改動清單（見開工作分支（Step 2.5））
 - 前批 Coder 的關鍵設計決策摘要（Coder 實作輸出的第 2 項）
 - 前批 Coder 回報的規格缺口（後批遇到同一情境沿用同一選擇，不各批各選）
 - 前批 Tester 抓到的 Coder 錯誤類型，一行一型，沒有就不帶。只給 Coder：Tester 要獨立從 spec 推導
@@ -237,7 +244,7 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 prompt 由 orchestrator 依 `srun:review` 的「Reviewer Subagent Prompt 模板」展開（展開規則與 context budget 守則皆見該 skill）——展開後的 prompt 已內含完整 review 標準與輸出格式，subagent 不需另行載入 `srun:review`：
 
 - Scope 代入 `change:{changeName}` 模式；`{adversarial}` 依上方判定代入；`{webDesignLine}` 依 `srun:review` 模板語法段的條件代入
-- 「{若 feat 載入：}」條件區塊成立：prompt 末段附上 Coder 產出摘要（檔案清單＋設計決策＋規格缺口）與 Tester 產出摘要（測試檔案＋測試結果）
+- 「{若 feat 載入：}」條件區塊成立：prompt 末段附上改動清單（派發前跑一次，見開工作分支（Step 2.5））、Coder 產出摘要（設計決策＋規格缺口）與 Tester 產出摘要（測試檔案＋測試結果）
 
 Subagent 直接輸出最終格式的 review 報告，orchestrator 不再做後續包裝或補檢；只負責呈現給使用者並依判定進入 retry 迴路或下一步。
 
@@ -377,7 +384,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 - 報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則：只有歸檔提醒或記錄失敗時出現。開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製
 - append 失敗不阻斷報告
 
-報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔、走法交接檔）：檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
+報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（驗證截圖、除錯檔、走法交接檔、起點檔）：檔案價值僅在執行中；`.claude/` 應由專案 gitignore 蓋掉，不進版控。
 
 **跳驗收選項**：刪完殘留檔，用 AskUserQuestion 問驗收結果。人還沒實際驗，選項都不標建議，正文也不寫建議。選項底下只寫選了之後會做的事：
 
@@ -484,6 +491,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 {依 `srun:retro`「從 feat／fix 呼叫」的回顯規則}
 ```
 
+- 開頭那行的 `{N}`：報告前跑一次改動清單（見開工作分支（Step 2.5））的行數
 - 開頭那行的 `{結果}`：`通過`｜`通過（N 個情境工具做不到）`｜`不需要（這次沒改到畫面）`｜`沒跑（瀏覽器工具沒就緒）`
 - `；中間退回修過 K 輪`：K ＝開發完完整審查退回的輪數（定義見 Retry 迴路），零輪整句省略
 - 規格缺口的「畫面上看到什麼」寫使用者操作時會看到的結果；看不出差別的條目不進表格，收進表格下方那一行，沒有就省略那一行

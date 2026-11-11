@@ -116,6 +116,8 @@ Scope：{auto | staged | branch:<name> | change:<changeName>}
    - 預設：所有改動檔案讀完整內容（不只看 diff，需要 context 才能判斷重複邏輯、過度抽象、結構性問題）
    - 改動大到一次讀不下時，優先完整讀結構性改動最大的檔案，其餘只看 diff 與函式定義列表（自行拿捏，見 context budget 守則）
    - 執行中若仍發現 context 不足，於報告開頭以 `open question` 標記受影響的檔案，不要中斷
+{若呼叫方附上改動清單：}
+   - 這次改了哪些檔，以本 prompt 末段的改動清單為準（Git 算出的實際改動）。git diff 裡不在清單上的檔，是開工前就有的改動，不審
 {若 feat 載入：}
 4. 讀取本 prompt 末段附帶的 Coder/Tester 產出摘要
 

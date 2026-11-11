@@ -81,6 +81,8 @@ Coder 預設 sonnet。本 skill 為決策已收斂的小改動，故 `/srun:feat
 
 一律從所在分支開 `fix-<描述>`；場景 (ii) 已在該 change 的 `feat/` 分支上時沿用不另開。
 
+**記下起點**：分支就位後跑 `node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" start .claude/debug/fix-起點.json --new`（fix 沒有中斷接手，一律重記）。之後要「這次改了哪些檔」時，一律跑 `list .claude/debug/fix-起點.json --reported <路徑>...` 取得改動清單，`--reported` 接本 run 各輪 Coder 回報改過的檔案路徑。腳本的行為與結束碼見 `/srun:feat` 的開工作分支（Step 2.5）。
+
 ### Step 3: Spec 影響判斷（spec-first，派發前）
 
 派發前先判斷本次改動是否影響規格——讓 Coder 拿到**權威版驗收依據**（spec 原文而非對話轉述），實作與測試斷言都有 ground truth：
@@ -158,7 +160,7 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 
 改動觸及安全敏感路徑時（與 Coder 升 Opus 同一訊號），Coder 交回結果後、Spec 輕量複核之前，自動補派一次 **adversarial Opus review**——與 `/srun:feat` 同款訊號同款待遇。
 
-- Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff
+- Orchestrator 載入 `srun:review` skill，依其 Reviewer Subagent Prompt 模板展開後派發 subagent（`subagent_type: opus-reviewer`——plugin agent 已鎖 model 與工具白名單；展開後 prompt 已內含完整規範，subagent 不另行載入 `srun:review`），`{adversarial}=true`、scope 為本次修改檔案的 diff，prompt 末段附上改動清單（派發前跑一次）
 - **FAIL 的修復走完整靜態關卡**：Coder 修 → 交回結果前自跑三項檢查（lint + typecheck + 相關測試）→ Sonnet 修復複查（只審修復 diff）。次數與停下問人的時機沿用下方 Retry 迴路；嚴重安全問題 → 直接停下來問人
 - Subagent 派發失敗 → 停下來問人（派發失敗也不改由主對話自己審）
 
@@ -173,7 +175,7 @@ Coder 交回、安全 review 這關過了之後（沒觸發安全 review 就是 
 
 Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一行輕量複核，防**實作過程中的範圍外溢**（Coder 實際改動超出派發宣告範圍時，可能觸及 Spec 影響判斷未評估的規格）：
 
-- 比對 Coder 實際修改的檔案清單與 Spec 影響判斷的判斷範圍：一致 → 不用標記；超出 → 對超出部分補跑一次 Spec 影響判斷，有影響即補更新 spec，並列進完成報告的「AI 自行裁決」（人沒同意過這段 spec 改動）
+- 跑一次改動清單，比對清單上的檔案與 Spec 影響判斷的判斷範圍：一致 → 不用標記；超出 → 對超出部分補跑一次 Spec 影響判斷，有影響即補更新 spec，並列進完成報告的「AI 自行裁決」（人沒同意過這段 spec 改動）
 - Coder 有回報「規格缺口」→ 每條視同 Spec 影響判斷找到的 spec 影響，補寫進對應 spec（場景 (i) 主規格、場景 (ii) 該 change 的 delta spec）；缺口條目同時列進完成報告供人確認
 
 ### Step 7: 報告結果
@@ -189,7 +191,7 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 - **沒把握的註解**：Coder 各輪回報的條目；後來修復時已刪掉的不列
 - **順手看到的**：Coder 回報的順手觀察，原樣列入。它是情報不是待辦，不觸發任何 retry 或派發
 
-一般修復輪的過程不列，只在開頭那行寫退回修過幾輪。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
+一般修復輪的過程不列，只在開頭那行寫退回修過幾輪。報告輸出後刪掉 `.claude/debug/fix-起點.json`。報告後不跳選項：fix 的後續（繼續驗收、commit、回到 feat 的驗收）依情境不同，由人接著說。
 
 **retro 記錄**：載入 `srun:retro` skill，依其記錄模式把本次 run 的防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、安全 review 有無觸發與判定、升級在哪裡開與升級後過沒過、修復複查 次數與 FAIL 數、停下問人時人的裁決、Coder／Reviewer 自報的 model id；`adversarialFirst` 在 fix 記 `null`）、事件與統計 append 進全域收件匣；報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則，只有歸檔提醒或記錄失敗時出現（開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製）。開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶；`usage` 欄跑該 skill 指定的統計腳本取得（傳整理需求與場景判定（Step 1）宣告的時間作 `--since`）。append 失敗不阻斷報告。
 
@@ -237,6 +239,7 @@ Spec 影響判斷（Step 3）已做過 spec-first 影響判斷；此處只做一
 {依 `srun:retro`「從 feat／fix 呼叫」的回顯規則}
 ```
 
+- `{N}`：報告前跑一次改動清單的行數
 - `{測試結果}`：`新增 M 個測試全過`｜`純樣式，沒有新測試`
 - `，安全 review 通過`：只在 `{securityReview}=true` 時出現
 - `，spec 更新 S 段`：Spec 影響判斷（Step 3）與 Spec 輕量複核（Step 6）實際改了 spec 才出現，括號內寫 spec 名與段落名
