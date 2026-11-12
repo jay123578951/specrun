@@ -162,9 +162,10 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 實作範圍：{taskList}（若為分批模式，僅列本批 task）
 
 開始工作前：
-1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手），再從你 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入（開發慣例、程式碼風格、元件拆分守則等）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
+1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手）
 2. 讀取專案的 CLAUDE.md 了解專案慣例
 3. 讀取變更目錄下的 design.md、tasks.md 和 specs/ 下的 delta spec 檔案
+4. 知道這批要改什麼之後，看你 context 的 available-skills 有沒有用得上的知識型 skill（該 stack 的開發慣例、程式碼風格、元件拆分守則等），有就用 Skill tool 載入；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 
 動手前先照 guidelines「動手前先走一遍」讀這批 task 會碰到的程式碼、對照 tasks 寫的現況，再依照指定的 task 逐項實作：
 - 遵循專案設計系統與慣例
@@ -208,12 +209,12 @@ Coder 順手寫的測試檔（第 ② 步之前禁止查看）：
 {coderTestFiles，無則寫「無」}
 
 開始工作前：
-1. 從你 context 的 available-skills 挑選與本專案測試框架／stack 相關的知識型 skill 載入（無合適項就不載）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
-2. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、測試環境判定、排除規則、執行指令、輸出必含皆在其中；讀不到 → 停下回報）
-3. 讀取專案的 CLAUDE.md，找測試慣例：測到哪一層、元件測試用哪個 helper、已知測不到的東西；專案有寫的照專案的，守則檔只管專案沒寫的
-4. 讀取變更目錄下的 specs/ 目錄（了解預期行為的 scenarios）
-5. 讀取變更目錄下的 design.md（了解設計意圖，使測試貼近實作決策而非僅驗表面行為）
-6. 讀取上方列出的 Coder 產出/修改檔案
+1. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、測試環境判定、排除規則、執行指令、輸出必含皆在其中；讀不到 → 停下回報）
+2. 讀取專案的 CLAUDE.md，找測試慣例：測到哪一層、元件測試用哪個 helper、已知測不到的東西；專案有寫的照專案的，守則檔只管專案沒寫的
+3. 讀取變更目錄下的 specs/ 目錄（了解預期行為的 scenarios）
+4. 讀取變更目錄下的 design.md（了解設計意圖，使測試貼近實作決策而非僅驗表面行為）
+5. 讀取上方列出的 Coder 產出/修改檔案
+6. 知道這次要測什麼之後，看你 context 的 available-skills 有沒有用得上的知識型 skill（測試框架用法、該 stack 的測試慣例等），有就用 Skill tool 載入；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 
 工作順序（依序執行，順序是為了避免被既有測試的寫法帶著走）：
 ① 先讀 specs/ 的 scenarios，**獨立列出應驗證行為清單**——此階段**禁止查看任何測試檔**（含 Coder 順手寫的）

@@ -114,9 +114,10 @@ Spec 改動先留在工作區，不單獨 commit——最後與 code 同一個 c
 你是 Coder Agent，兼負本次修復的測試職責（本流程不派獨立 Tester）。
 
 開始工作前：
-1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手），再從你 context 的 available-skills 挑選與專案 stack、本次改動相關的知識型 skill 載入（開發慣例、程式碼風格、測試框架用法等）；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
+1. 用 Skill tool 先載入 `srun:guidelines`（寫 code 的行為守則，務必先讀再動手）
 2. Read 測試撰寫守則：{testerConventionsPath}（撰寫規範、排除規則、執行節奏、輸出必含皆在其中；讀不到 → 停下回報）
 3. 讀取專案的 CLAUDE.md 了解專案慣例
+4. 讀完下方的問題描述與預期行為、知道這次要改什麼之後，看你 context 的 available-skills 有沒有用得上的知識型 skill（該 stack 的開發慣例、程式碼風格、測試框架用法等），有就用 Skill tool 載入；載入失敗（缺裝／改名）→ 略過該項繼續，不要停
 
 問題描述：
 {從對話擷取的問題描述}
