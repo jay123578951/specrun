@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.41.0 — 2026-11-12
+
+這一版有兩條線。第一條是改動清單：原本 Reviewer 和報告要審哪些檔，靠 agent 自己回報，常漏列或混進開工前就有的改動。現在開工時記下起點，之後由 Git 算出這次改了哪些檔。第二條是保護還沒 commit 的檔案：0.39.0 只攔 subagent 的 git 還原指令，試跑時發現 rm 刪掉被 gitignore 的檔也救不回來，現在流程進行中一併擋下。另外，Coder 動手前會先讀程式碼對照 tasks，知識型 skill 改在讀完改動內容後才挑。
+
+### Added
+
+- **Git 算出的改動清單**：新增 `change-list.mjs`。開工時記下起點，之後用 Git 算出這次改了哪些檔，排除開工前就有的改動。被 gitignore 的敏感檔（.env、私鑰）記內容雜湊，內容變了就列入。agent 回報的檔只在 Git 看不到時採信。Reviewer prompt、跨批清單、fix 範圍檢查、報告的檔案數都改用這份清單。
+- **流程進行中擋下刪除救不回來的檔案**：新增 `delete-guard.mjs`。subagent 用 rm 或 find -delete 刪到被 gitignore 的檔，或開工前就在的未追蹤檔、未 commit 改動時，hook 會擋下。這次 run 新建的檔照常可刪。
+- **Coder 動手前先走一遍**：`guidelines` 新增一步。改檔前先讀會碰到的程式碼，對照 tasks 和 design 寫的現況，要改或刪的東西先查引用處。tasks 對現況寫錯時，以程式碼為準改正後繼續；只有會改變使用者看得到的行為或 spec 意思才停下。feat Coder 回報新增必填「改正的 tasks」，完成報告列在 AI 自行裁決。
+
+### Changed
+
+- **feat／fix 進行中，主對話也擋 git 還原指令**：有起點檔時，`git-guard` 連主對話的 stash、restore 等指令也擋，要比對舊版改用 worktree。
+- **知識型 skill 改在讀完改動內容後才挑**：feat Coder、feat Tester、fix Coder 的挑選從第 1 步移到讀完 spec 或改動內容之後。實測在第 1 步挑時幾乎都跳過，795 次派工只有 28 次載入。
+- **playwright 輸出改寫進 `.claude/debug/playwright-mcp/`**：驗證截圖由收驗證環境的步驟一併清掉。收環境的順序改為先關驗證瀏覽器，再關 dev server，最後刪輸出資料夾。
+- **`.claude/debug/` 自帶 `.gitignore`**：playwright 啟動和記起點時放入只有 `*` 的 `.gitignore`，不再依賴專案自己 gitignore `.claude/`。
+- **retro 的 `artifact_drift` 多記發現時機**：記下改正是動手前還是途中發現，歸檔時比較成效。
+
+### Fixed
+
+- **報告的檔案數一律取最新清單**：報告前用同一條指令跑改動清單並刪起點檔。
+- **交接檔與暫存檔改用 find 刪除**：zsh 萬用字元找不到檔案時，整條指令不再中斷。
+
 ## 0.40.0 — 2026-11-06
 
 這一版依實跑紀錄調整 feat 流程，主要解決三件事。Reviewer 原本由主對話預判要載入哪些 skill，現在改由 Reviewer 自己挑，因為專案不一定用同一套框架。feat 的 Coder 原本沒有規定不跑全部測試，這是流程裡唯一查到的時間漏洞，現在補上。報告列出「順手看到的」項目後，使用者常要另外請主對話評估，現在驗收選項可以直接選。
