@@ -71,7 +71,7 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 | `security_review` | 安全 review 被觸發（記結果）；開關記在 `guards.securityReview`，事件留一行事實 |
 | `untestable_modules` | 無法測試清單非空（feat=Tester、fix=Coder 回報；記模組數與消費路徑：verify-flow OR 觸發／報告行） |
 | `verify_gap` | verify-flow 報告「待人確認」非空、或改動形態非瀏覽器可及（記落到人工的 spec 驗收點數與原因：示範資料缺情境／執行形態摸不到／工具能力不足） |
-| `artifact_drift` | tasks／design／proposal 記載與現場不符（指名檔案不存在、驗收判準與既有規格或測試衝突、驗證方法實測不可執行、量測數字失準）；記不符類型與處置（自行對正／回報問人／照字面硬做） |
+| `artifact_drift` | tasks／design／proposal 記載與現場不符（指名檔案不存在、驗收判準與既有規格或測試衝突、驗證方法實測不可執行、量測數字失準）；記不符類型與處置（自行對正／回報問人／照字面硬做）。Coder 回報「改正的 tasks」的每一條也記一筆，`where` 寫「Coder 動手前」或「Coder 途中」：歸檔時比兩者與後面各關才發現的筆數，看動手前先走一遍有沒有效 |
 | `gate_route_miss` | feat 走錯關：少走一關、順序錯、修完沒走完「修完重走」。記錄時把本 run 的過關說明逐行對照 feat 流程總覽的順序與 Retry 迴路的「從操作流程驗證往後重走」；使用者事後發現的走手動補記。記錯在哪、誰發現（自己對照／使用者）、當場有沒有改回 |
 | `guidance_miss` | 入口／交界引導漏接：意圖已浮現卻未宣告、未跳選項、該進流程卻就地處理，或 AI 越線動手（記漏在哪個交界、當時句式） |
 | `guidance_false_trigger` | 引導誤觸發：純討論或三錨全中的小改被宣告制帶進流程（使用者以 escape hatch 撤回＝行為實錘；撤回率是誤觸發的下界，因為容忍型不撤回，量不到）、被逼問模式（記觸發位置與當時語境） |
