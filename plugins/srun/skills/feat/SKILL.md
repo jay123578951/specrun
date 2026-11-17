@@ -305,8 +305,9 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 1. orchestrator 自己起一個驗證專用 dev server：
    - 不接手使用者既有的實例：長跑中的舊實例會報假 PASS
-   - 埠每個專案固定一個、跨 run 沿用（記在專案 CLAUDE.md 或 openspec 設定）：playwright 持久化設定檔的登入狀態綁 origin，換埠登入就掉
-   - 起完以啟動 log 或 lsof 確認實際監聽埠：get-port 類工具在埠被占時會靜默改聽他埠
+   - 起法每個專案固定一套、跨 run 沿用，記在 `openspec/config.yaml`：port、啟動指令、要帶的環境變數、接哪個資料來源、怎麼登入。port 要固定是因為 playwright 記住的登入狀態跟著網址走，換 port 登入就掉
+   - 檔案裡沒記、或照著起卻失敗：起成功之後把實際用的起法寫回去
+   - 起完以啟動 log 或 lsof 確認實際監聽的 port：get-port 類工具在 port 被占時會靜默改聽別的 port
    - 記下 PID
 2. 用 playwright 開入口頁看落點：browser_navigate 到入口路徑、browser_snapshot。落在登入頁即有登入牆。
 3. 有登入牆時停下來只說一句「已開好登入頁，請在這個 playwright 視窗登入，好了跟我說」，不索取帳密；使用者回覆後再開一次入口頁確認已進到 app 內部。登入本身是被測流程時才需要測試帳號。
@@ -413,7 +414,8 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
   - 先載入 `srun:guidelines` 行為守則再動手（同首派）
   - 不得修改測試檔（修復階段測試修改一律由 Tester 派發）
   - 判斷失敗屬測試問題 → 依「測試異議」回報並引驗收依據原文，不要自行改斷言
-- **修復 agent 交回前的三項檢查，測試只跑相關測試**（定義見測試守則檔），不跑全部測試：全部測試由主對話跑。全部測試跑過之後的修復，prompt 另載明「本 run 已跑過全部測試」，修復 agent 改用守則檔「全部測試之後的相關測試」的挑法。修復 prompt 一律載明這點
+- **修復 prompt 一律附測試守則檔的絕對路徑**（`{testerConventionsPath}`，同 Tester 首派），Coder 與 Tester 都附。派給 Tester 的修復 prompt 另載明先 Read 它再動手（同首派）
+- **修復 agent 交回前的三項檢查，測試只跑相關測試**（挑法見測試守則檔「相關測試怎麼挑」），不跑全部測試：全部測試由主對話跑。修復 prompt 一律載明這點
 - **派給 Coder 的修復 prompt 附走法交接**：前一輪輸出摘要附上所有交接檔位置；回報必填一行「交接變動：無」或「交接變動：已重寫 {位置}」。修復改到走到起點的路（入口、身分、要用的資料）才算有變，有變就整份重寫該檔
 
 ### 各 gate 失敗誰修、重驗什麼
@@ -514,5 +516,5 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 
 - Agent tool 派發的 `description` 一律以角色開頭（Coder／Tester／Reviewer／驗證／修復複查），修復派發含「修復」或「修正」——retro 的用時統計靠它分辨每次派發是誰、首派還是修復
 - 每個 agent 的 prompt 只傳變更名稱和目錄，讓 agent 自行讀取 artifacts；不在 prompt 中貼入檔案內容
-- 獨立的修復任務可平行派發，**前提是修復檔案集不相交**（如 Coder 與 Tester 各修不同檔案的 WARNING）；檔案相交或無法確定 → 串行。平行派發時，在各 agent 的 prompt 註明另有哪個 agent 同時在改哪些檔
+- 獨立的修復任務可平行派發，**前提是修復檔案集不相交**（如 Coder 與 Tester 各修不同檔案的 WARNING）；檔案相交或無法確定 → 串行。Tester 做反向驗證會暫時改壞它測的產品檔，所以 Tester 的檔案集要算進那些產品檔；Tester 在跑時也不派操作流程驗證。平行派發時，在各 agent 的 prompt 註明另有哪個 agent 同時在改哪些檔
 - Coder / Tester 派發本身失敗或中途中斷 → 以 `git status` 對照 tasks.md checkbox **對帳實際完成度**後再重派（磁碟優先，不憑對話記憶推測進度）

@@ -38,7 +38,7 @@ retro 追蹤 kit 裡每條**防錯規則**（為了防模型犯錯而寫的規�
 | `escalation` | `{opened: bool, phase: dev\|final\|null, times: N, passedNextRound: bool\|null}` | retry-loop「升級」 | `phase`＝第一次升級發生在開發中（`dev`）或開發完（`final`）；`times`＝本 run 升級了幾次（開發中每件事、開發完每輪各算一次）；`passedNextRound`＝第一次升級後那次修復是否通過（停下問人或中止記 `null`）。舊條目的 `gate`／`round` 欄是舊算法，不與新欄位合併統計 |
 | `recheck` | `{runs: N, fail: M}` | review Targeted Check 用 Sonnet 不升 Opus | 本 run 派了幾次修復複查、其中幾次判 FAIL |
 | `securityReview` | `{triggered: bool, verdict: PASS\|WARNING\|FAIL\|null}` | fix 安全 review（Step 5）條件觸發 | `fix` 專用；`feat` 的安全訊號已由 `adversarialFirst` 覆蓋，記 `null` |
-| `stopLoss` | `{fired: bool, reason: third\|undecidable\|null, humanChoice: decided\|continue\|skip\|manual\|rerun\|null}` | retry-loop「什麼時候停下來問人」 | `reason`：`third`＝第 3 次、`undecidable`＝Reviewer 判斷不了；記人的裁決：`decided`＝人做了決定照做、`continue`＝再修一輪、`skip`＝跳過該關交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑。安全問題與環境卡住的問人不記在這欄 |
+| `stopLoss` | `{fired: bool, reason: third\|undecidable\|direct\|null, humanChoice: decided\|continue\|skip\|manual\|rerun\|null}` | retry-loop「什麼時候停下來問人」 | `reason`：`third`＝第 3 次、`undecidable`＝Reviewer 判斷不了、`direct`＝開發中 Coder 或 Tester 停下回報後沒經 Reviewer 裁決就直接問人；記人的裁決：`decided`＝人做了決定照做、`continue`＝再修一輪、`skip`＝跳過該關交驗收、`manual`＝人工接手、`rerun`＝調 spec 重跑。安全問題與環境卡住的問人不記在這欄 |
 | `modelIds` | `{coder: "<id>", reviewer: "<id>\|null"}` | 分辨「規則過期」與「模型換代」 | Coder 與 Reviewer 報告首行自報的 model id（`Coder model: …`／`Reviewer model: …`）；缺自報時填派發 alias |
 
 ### 用時與 token（`usage`，腳本算，不手填）
@@ -107,7 +107,7 @@ session id 由 Claude Code 載入 skill 時代換，同專案有其他 session �
 
 ```
 retro 已記：事件 {N} 筆（{型別列舉，無則「無」}）
-防錯規則：起跑 {model}｜adversarial {是/否}｜升級 {未開/開發中或開發完 N 次→第一次升級後過/未過/中止}｜修復複查 {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜停下問人 {未觸發/第 3 次或判斷不了→{humanChoice}}
+防錯規則：起跑 {model}｜adversarial {是/否}｜升級 {未開/開發中或開發完 N 次→第一次升級後過/未過/中止}｜修復複查 {N 次 M FAIL}｜安全 review {無/PASS/WARNING/FAIL}｜停下問人 {未觸發/第 3 次、判斷不了或直接問人→{humanChoice}}
 用時：{wallClockMin} 分（派發 {dispatchMin}、等人 {waitingHumanMin}）｜Opus 佔派發用時 {百分比}（usage 為 null 時此行寫「用時：未取得（{原因}）」）
 ```
 
