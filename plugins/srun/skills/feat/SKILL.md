@@ -384,7 +384,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 
 一般修復輪的過程（哪關擋下、怎麼修好）不列，只在開頭那行寫退回修過幾輪：修復是讓程式照規格做，修的時候補上的規則已經進規格缺口，經過由 retro 記錄。
 
-**retro 記錄**：載入 `srun:retro` skill，依其記錄模式記錄本次 run。
+**retro 記錄**：先看開關檔 `~/.claude/specrun-feedback/enabled` 在不在（`test -f`）。不在就跳過這整段：不載入 `srun:retro`，報告不出現「retro」節。在才載入 `srun:retro` skill，依其記錄模式記錄本次 run。
 
 - 記錄內容：防錯規則開關（`guards` 七欄，分別是起跑 model 與理由、首派 Reviewer 的 adversarial、升級在哪裡開與升級後過沒過、修復複查 次數與 FAIL 數、停下問人時人的裁決、Coder／Reviewer 自報的 model id）、事件與統計，append 進全域收件匣
 - 開關取值回頭看本 run 的實際派發參數與 gate 結果，不憑記憶
