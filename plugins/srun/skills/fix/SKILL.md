@@ -9,7 +9,7 @@ description: 輕量 Pipeline：決策已在對話收斂、不動模組邊界、�
 與 `/srun:feat`（完整版）的差異：
 - 不建立新的變更 artifact — 需求從對話定案取得（場景 (ii) 可回寫**既有** change artifact，見下方）
 - 只派發 Coder（測試由 Coder 自寫，不派獨立 Tester 與 Reviewer）
-- Spec 同步走「派發前 Spec 影響判斷＋commit 前輕量複核」（非完整 change 歸檔流程，如 /opsx:sync / archive）
+- Spec 同步走「派發前 Spec 影響判斷＋commit 前輕量複核」（非完整 change 歸檔流程，如 /openspec-sync-specs、/openspec-archive-change）
 
 **Input**: 對話中已描述問題或需求。未描述清楚時，先釐清再啟動。
 

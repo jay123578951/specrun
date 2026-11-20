@@ -1,12 +1,12 @@
 ---
 name: decisions
 argument-hint: "[任務摘要或需求描述]"
-description: 動手前的決策收斂：在 opsx:explore 之後、opsx:propose 之前，找出「Coder 動手時必須有答案、目前未定、且選哪種會改變使用者看到的行為或資料結構」的分支並逐一收斂成決策清單。存在這種分支時使用（一個就算）；答案能從 explore 結論／既有慣例／程式碼讀出，或屬不影響行為的實作選擇（排版方式、內部寫法）時不需使用。
+description: 動手前的決策收斂：在 openspec-explore 之後、openspec-propose 之前，找出「Coder 動手時必須有答案、目前未定、且選哪種會改變使用者看到的行為或資料結構」的分支並逐一收斂成決策清單。存在這種分支時使用（一個就算）；答案能從 explore 結論／既有慣例／程式碼讀出，或屬不影響行為的實作選擇（排版方式、內部寫法）時不需使用。
 ---
 
 動手前的決策收斂閘門。沿著設計的決策樹走，只挑出「未定且必須定」的分支問使用者。
 
-定位：`opsx:explore` 之後、`opsx:propose` 之前。**只收斂決策、不產 spec、不寫 code。**
+定位：`openspec-explore` 之後、`openspec-propose` 之前。**只收斂決策、不產 spec、不寫 code。**
 
 **Input**：對話中已有 explore 結論或一段需求描述。
 
@@ -23,7 +23,7 @@ description: 動手前的決策收斂：在 opsx:explore 之後、opsx:propose �
 | 既有功能的調整、需求已明確 | | ✓ |
 | 純樣式微調、文案、單行修正（主對話直改） | | ✓ |
 
-一句話自問：**「這任務有沒有『使用者還沒定、但 Coder 動手時必須有答案』的分支？」** 有就跑，沒有就直接 `opsx:propose`。
+一句話自問：**「這任務有沒有『使用者還沒定、但 Coder 動手時必須有答案』的分支？」** 有就跑，沒有就直接 `openspec-propose`。
 
 ---
 
@@ -81,7 +81,7 @@ description: 動手前的決策收斂：在 opsx:explore 之後、opsx:propose �
 
 ### Step 3：輸出決策清單
 
-所有待決策分支都有答案後，輸出一份結構化決策清單（格式見下），供使用者接著跑 `opsx:propose`。
+所有待決策分支都有答案後，輸出一份結構化決策清單（格式見下），供使用者接著跑 `openspec-propose`。
 
 **不執行 propose、不產 spec、不寫 code。** 收斂到此為止。
 
@@ -105,14 +105,14 @@ description: 動手前的決策收斂：在 opsx:explore 之後、opsx:propose �
 - {分支}（原因：{使用者說由 Coder 決定 / 待 propose 細化}）
 
 ### 下一步
-決策已收斂，可執行 `opsx:propose`。執行 propose 時，將本清單「依據 / 理由」欄寫入 design.md 的決策記錄；「仍開放」項目在 design.md 標示為**刻意留給 Coder 的留白**（非遺漏），避免下游誤補或誤刪。
+決策已收斂，可執行 `openspec-propose`。執行 propose 時，將本清單「依據 / 理由」欄寫入 design.md 的決策記錄；「仍開放」項目在 design.md 標示為**刻意留給 Coder 的留白**（非遺漏），避免下游誤補或誤刪。
 ```
 
 無待決策分支時，只輸出：
 
 ```
 ## srun:decisions：{任務摘要}
-無未定決策（依據：explore 結論已明確 / 可由既有慣例推得）。可直接執行 `opsx:propose`。
+無未定決策（依據：explore 結論已明確 / 可由既有慣例推得）。可直接執行 `openspec-propose`。
 ```
 
 ---

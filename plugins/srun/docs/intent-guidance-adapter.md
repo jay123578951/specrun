@@ -16,16 +16,16 @@
 
 | 意圖（交界） | openspec CLI | spectra | none |
 |--------------|--------------|---------|------|
-| 進規格討論流程（入口，宣告制預設） | `/opsx:explore`（吻合的 change 名寫進話題） | `/spectra-discuss`［`<change 名>`］ | 跳降級選項（先問偏好工具、協助初始化） |
+| 進規格討論流程（入口，宣告制預設） | `/openspec-explore`（吻合的 change 名寫進話題） | `/spectra-discuss`［`<change 名>`］ | 跳降級選項（先問偏好工具、協助初始化） |
 | change 掃描（進場前置，一個指令） | `ls openspec/changes/` | `spectra list` | — |
 | 純知識查詢（直答豁免，可順路提） | 直答 | `/spectra-ask` | 直答 |
 | 先診斷（入口） | 宣告唯讀調查 | 宣告唯讀調查 | 宣告唯讀調查 |
 | 先收斂設計決策（交界 1，岔路） | `/srun:decisions` | `/srun:decisions` | — |
-| 直接產出規格（交界 1） | `/opsx:propose` | `/spectra-propose` | — |
+| 直接產出規格（交界 1） | `/openspec-propose` | `/spectra-propose` | — |
 | 實作（交界 3，前置：人工審過 spec） | `/srun:feat` | `/srun:feat` | — |
 | 規格層問題（交界 4b，岔路） | 先更新 spec 再處理 | `/spectra-ingest` | — |
 | 實作層小問題（交界 4b） | `/srun:fix` | `/srun:fix` | — |
-| 收尾（驗收通過） | `/opsx:sync` → `/opsx:archive`（打包宣告一次） | `/spectra-archive`（一步） | — |
+| 收尾（驗收通過） | `/openspec-sync-specs` → `/openspec-archive-change`（打包宣告一次） | `/spectra-archive`（一步） | — |
 | 回顧（archive 完，順帶一句） | `/srun:retro` | `/srun:retro` | — |
 
 分級支援：openspec CLI 是行為主線一級公民（考卷與 dogfood 全覆蓋），README 只介紹這條路，搭配的桌面畫面是 specrun（GUI 唯讀顯示同一批檔案，不產生偵測訊號、不進交界圖）；spectra 退為相容保留，行 best-effort（措辭保證正確、不主動驗證），README 不再介紹，僅偵測與交界圖續存，既有專案照跑。`spectra-debug`／`spectra-apply` 原則性不進選項（前者繞過診斷停點、後者被 `/srun:feat` 取代），escape hatch 手動可用。
@@ -43,7 +43,7 @@
 
 | guard 攔截（皆 PostToolUse；無 roadmap/ 目錄靜默 exit 0） | 行為 |
 |------|------|
-| Skill 名中 `(spectra-propose\|opsx:propose)` | 提醒遷出＋填 change 名（skill 指令剛載入、尚未寫檔，等同事前備料；PreToolUse 不支援 additionalContext 故不可用） |
+| Skill 名中 `(spectra-propose\|openspec-propose\|opsx:propose)` | 提醒遷出＋填 change 名（skill 指令剛載入、尚未寫檔，等同事前備料；PreToolUse 不支援 additionalContext 故不可用） |
 | Bash 中 `(spectra\|openspec) archive` | 抽 change 名 grep roadmap：命中指名檔案提醒打勾／全交付確認後 rm；未命中一行短提醒 |
 | Bash 中 `spectra new` | 保險：流程外手動建 change 時提醒填名 |
 | Bash 中 `rm` 且路徑含 `openspec/roadmap/` | 三層分組出口鏈保底：提醒回上層檔（`屬於` 欄位）打勾、更新 N/M；上層全勾則確認後一併 rm |

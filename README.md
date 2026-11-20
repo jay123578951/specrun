@@ -109,7 +109,7 @@ flowchart LR
 
 `feat` 的報告之後會跳驗收選項：
 
-- **驗收通過，跑收尾**：接著跑 `/opsx:sync` → `/opsx:archive`
+- **驗收通過，跑收尾**：接著跑 `/openspec-sync-specs` → `/openspec-archive-change`
 - **評估順手看到的項目**：報告有「順手看到的」才出現。主對話逐項讀相關程式碼，回報建議修或不修，等你決定
 - **有地方要改**：你說哪裡不對，規格層的問題先改 spec，實作層的小問題走 `/srun:fix`
 - **還沒驗完，晚點再說**：不做任何事，等你回來
@@ -148,7 +148,7 @@ flowchart LR
 
 | 工具                                                        | 必裝 | 用途                                                    |
 | ------------------------------------------------------------ | ------ | ------------------------------------------------------- |
-| **[OpenSpec CLI](https://github.com/Fission-AI/OpenSpec)**  | 是    | 把「這次要改什麼」寫成規格與任務清單。整套流程的引擎，`/opsx:*` 指令都靠它 |
+| **[OpenSpec CLI](https://github.com/Fission-AI/OpenSpec)**  | 是    | 把「這次要改什麼」寫成規格與任務清單。整套流程的引擎，`/openspec-*` 技能都靠它 |
 | [Node.js](https://nodejs.org/)（含 npm）                    | 是    | srun 隨附的腳本用它跑：算這次改了哪些檔、啟動驗證用的瀏覽器工具。裝 OpenSpec CLI 也要用到 npm |
 | [specrun 桌面 App](https://github.com/jay123578951/specrun-app) | 否    | 看規格的桌面畫面，讀的是 OpenSpec CLI 寫出來的同一批檔案。不裝就用文字編輯器看，流程不受影響 |
 | [Google Chrome](https://www.google.com/chrome/)             | 否    | 操作流程驗證（verify-flow）實際開的瀏覽器。srun 隨附的 playwright MCP 走系統 Chrome，不用另裝 Playwright 的 Chromium；MCP 套件本身第一次啟動會自動裝進 plugin 資料目錄，之後啟動不上網。沒有 Chrome 的話該關會跳過、退回人工驗證，不擋交付 |
@@ -200,13 +200,13 @@ xattr -d com.apple.quarantine /Applications/specrun.app
 ## 最小範例
 
 ```bash
-/opsx:explore dark-mode       # 討論設計（可選）
-/opsx:propose dark-mode       # 產出 proposal / design / tasks / specs
+/openspec-explore dark-mode       # 討論設計（可選）
+/openspec-propose dark-mode       # 產出 proposal / design / tasks / specs
 
 /srun:feat dark-mode          # Coder → Tester → Reviewer → 全部測試 → 操作流程驗證，一次跑完
 ```
 
-跑完人工驗收，最後 `/opsx:sync` → `/opsx:archive` → commit → merge。
+跑完人工驗收，最後 `/openspec-sync-specs` → `/openspec-archive-change` → commit → merge。
 
 ## 專案慣例
 

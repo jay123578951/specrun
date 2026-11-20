@@ -75,7 +75,7 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 
 確認變更目錄 `openspec/changes/<name>/` 存在，且 `tasks.md` 已產出：
 
-- 變更目錄不存在或缺少 `tasks.md` → 提示先用規格後端產出規格文件（如 `/opsx:propose` 或 `/spectra-propose`）
+- 變更目錄不存在或缺少 `tasks.md` → 提示先用規格後端產出規格文件（如 `/openspec-propose` 或 `/spectra-propose`）
 - `tasks.md` 必須存在才能繼續
 
 **起跑髒檢查（advisory，不硬擋）**：檢查 working tree——若 `openspec/` **以外**存在與本次變更無關的未 commit 修改，提醒使用者確認後再續跑（無關髒變更會混進 Coder 的 diff 與後續 gate 的檢查範圍）。`openspec/` artifacts 刻意不 commit，排除在判準外。

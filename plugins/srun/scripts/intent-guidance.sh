@@ -63,13 +63,13 @@ case "$backend" in
     cat << 'MAP'
 
 本專案交界圖（後端：openspec CLI；「跳選項」= AskUserQuestion，寫法照規則 8）：
-- 入口·專案相關話題浮現（開發／修改／提問／評估討論；含調查後才浮現）→ 預設宣告進 /opsx:explore；進場前 `ls openspec/changes/` 掃進行中 change：零個＝新題目直接進；唯一且與話題吻合＝把 change 名寫進 explore 話題帶 context；多個或不確定＝跳選項一次（候選 change＋「都不是，新題目」）；豁免（規則 3）才直改／直答
-- explore 完 → 跳選項：先把還沒定的細節挑出來問（/srun:decisions；選項底下寫它會有系統地翻一遍寫 code 時必須有答案的地方，挑出討論中漏掉的，一題一題問，問完再產出規格；功能牽涉多個模組、是全新流程、或某題的答案會改變另一題時建議）｜直接產出規格（/opsx:propose）｜再討論一下
-- decisions 完 → 宣告一句，跑 /opsx:propose
+- 入口·專案相關話題浮現（開發／修改／提問／評估討論；含調查後才浮現）→ 預設宣告進 /openspec-explore；進場前 `ls openspec/changes/` 掃進行中 change：零個＝新題目直接進；唯一且與話題吻合＝把 change 名寫進 explore 話題帶 context；多個或不確定＝跳選項一次（候選 change＋「都不是，新題目」）；豁免（規則 3）才直改／直答
+- explore 完 → 跳選項：先把還沒定的細節挑出來問（/srun:decisions；選項底下寫它會有系統地翻一遍寫 code 時必須有答案的地方，挑出討論中漏掉的，一題一題問，問完再產出規格；功能牽涉多個模組、是全新流程、或某題的答案會改變另一題時建議）｜直接產出規格（/openspec-propose）｜再討論一下
+- decisions 完 → 宣告一句，跑 /openspec-propose
 - propose 完 → 確認使用者已人工審過 proposal，再跑 /srun:feat
 - feat 完 → feat 報告後已跳驗收選項（通過，跑收尾｜評估順手看到的項目（報告有這段才出現）｜有地方要改｜還沒驗完），照使用者選的接下面兩行；不另外攤清單
 - 驗收發現問題、或診斷根因確認 → 跳選項：規格層問題（先更新 spec 再處理）｜實作層小問題（/srun:fix）｜瑣碎（對話直改）
-- 驗收通過 → 打包宣告一次，依序 /opsx:sync → /opsx:archive
+- 驗收通過 → 打包宣告一次，依序 /openspec-sync-specs → /openspec-archive-change
 - pipeline／skill 流程內部 → 靜默，流程自身紀律優先
 MAP
     ;;

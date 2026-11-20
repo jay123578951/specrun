@@ -37,7 +37,7 @@ tool=$(printf '%s' "$input" | grep -oE '"tool_name"[[:space:]]*:[[:space:]]*"[A-
 case "$tool" in
   Skill)
     case "$(json_str skill)" in
-      spectra-propose|opsx:propose)
+      spectra-propose|openspec-propose|opsx:propose)
         emit "roadmap 提醒：本題若屬某 roadmap 開發項，propose 時把該段「動工前必知」整組遷入 design.md 並自 roadmap 刪除，change 名填進拆分表該列（操作見 srun:roadmap skill）；不屬任何開發項則忽略本提醒。"
         ;;
     esac
