@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.43.0 — 2026-11-23
+
+這一版有三件事。第一件是 OpenSpec 指令改用 2.0 的技能名。第二件是 retro 的自動記錄改為預設關閉：這些紀錄只有會跑歸檔、拿結果去改 kit 的人用得到。第三件是意圖引導問題目的寫法收成一條：原本要不要附建議，得把兩條規則合起來讀才有答案。
+
+升級後要留意兩件事。專案還在用 `/opsx:` 指令的，請跑 `openspec update`，流程會改宣告 `/openspec-*` 技能名。想繼續自動記錄 retro 的，每台電腦要各跑一次 `/srun:retro --on`。
+
+### Added
+
+- **retro 自動記錄的開關**：新增 `/srun:retro --on` 和 `/srun:retro --off`。開關是空檔 `~/.claude/specrun-feedback/enabled`，關閉時既有紀錄保留。
+
+### Changed
+
+- **OpenSpec 指令改用 2.0 的技能名**：`/opsx:explore`、`/opsx:propose`、`/opsx:sync`、`/opsx:archive` 改為 `/openspec-explore`、`/openspec-propose`、`/openspec-sync-specs`、`/openspec-archive-change`。roadmap 提醒的 hook 同時認新舊兩種 propose 名稱。
+- **retro 自動記錄預設關閉**：feat 和 fix 完成時先看開關檔，不在就不載入 retro，報告也不出現 retro 節。手動補記和 `--archive` 不看開關；關閉時手動補記會提示怎麼打開。
+- **問使用者題目的寫法收成一條**：意圖引導的規則 8（跳選項的寫法）和規則 9（一次談一題）合併為規則 8。每一題都先講建議和理由，只問一題或沒有選項時也一樣。答案只有使用者自己知道的題目不講建議，例如驗收結果、要不要開始動工。
+- **README 與 pipeline.md 對齊 0.39.0 到 0.42.0 的現況**：新增「跑完會看到什麼」和「流程進行中會擋下的指令」，前置依賴補上 Node.js，並修正過時的說明。
+
 ## 0.42.0 — 2026-11-17
 
 這一版有兩條線。第一條是問問題的方式：沒有規格後端的專案和舊版 explore，會在第一則回覆一次問完 6 題以上，現在意圖引導規定一次談一題。第二條是依 retro 第九輪歸檔的紀錄調整 feat 和 fix：相關測試原本有兩種挑法，看這次 run 跑過全部測試沒有來切換，現在只留一種。主對話自己改的檔，現在也派修復複查。
