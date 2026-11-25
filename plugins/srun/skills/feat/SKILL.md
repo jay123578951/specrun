@@ -80,7 +80,7 @@ Step 7      實測與報告：勾選前實測、報告、retro 記錄、跳驗�
 
 **起跑髒檢查（advisory，不硬擋）**：檢查 working tree——若 `openspec/` **以外**存在與本次變更無關的未 commit 修改，提醒使用者確認後再續跑（無關髒變更會混進 Coder 的 diff 與後續 gate 的檢查範圍）。`openspec/` artifacts 刻意不 commit，排除在判準外。
 
-**`.claude/debug/` lazy cleanup（備援）**：掃 `.claude/debug/` 目錄，凡對應的 `openspec/changes/<name>/` 已不存在者（change 已歸檔或放棄）刪除其殘留檔；change 仍在者不刪——那可能是上次中斷要接手的線索。
+**`.claude/debug/` lazy cleanup（備援）**：掃 `.claude/debug/` 目錄，凡對應的 `openspec/changes/<name>/` 已不存在者（change 已歸檔或放棄）刪除其殘留檔與驗收頁資料夾；change 仍在者不刪——那可能是上次中斷要接手的線索。
 
 ### Step 2.5: 開工作分支
 
@@ -129,6 +129,7 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 - 對應方式：畫面走查 → 操作流程驗證；完整性／review 類 → Reviewer；測試類 → Tester
 - 該 gate 綠燈後，由 orchestrator 代為勾選，並在該行註記「由 gate 覆蓋」
 - 對應不到任何 gate 的驗證型 task，列入實測與報告（Step 7）的「要你親手驗的」
+- 驗證型 task 就是驗收頁的驗收項目，記下編號並分兩種：對應到操作流程驗證的是「看畫面的」，其餘是「跑指令的」。驗收頁見 `srun:verify-flow` 的「驗收頁」
 
 **Coder Model 升級判定**
 
@@ -150,7 +151,7 @@ tasks.md 中的驗證型 task（畫面走查、完整性複查、review 類項�
 - `{handoffPath}`：代入 `.claude/debug/{changeName}-交接.md`
   - 串行各批共用這一個檔
   - 平行各批在檔名後加批次代號（如 `-交接-T1.md`），以免互相覆蓋
-- 本 run 第一次派發前，刪掉上次 run 的交接檔：`find .claude/debug -maxdepth 1 -name '{changeName}-交接*.md' -delete`。那是上次 run 依當時程式碼寫的，不能沿用
+- 本 run 第一次派發前，刪掉上次 run 的交接檔：`find .claude/debug -maxdepth 1 -name '{changeName}-交接*.md' -delete`。那是上次 run 依當時程式碼寫的，不能沿用。上次 run 的驗收頁同理，一併刪：`rm -rf .claude/debug/{changeName}-驗收`
 
 使用 Agent tool 派發 subagent（model: {coderModel}）：
 
@@ -326,6 +327,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 - 驗收依據：`openspec/changes/{changeName}/specs/`
 - 已知的重點元件／位置
 - 走法交接：Coder 回報的所有交接檔位置；都是「無」就不給
+- 驗收證據：證據資料夾 `.claude/debug/{changeName}-驗收`、驗收頁腳本 `${CLAUDE_SKILL_DIR}/../../scripts/evidence-page.mjs` 的絕對路徑、看畫面的驗收項目（編號與 tasks.md 原文，沒有寫「無」）。重走時只給要重走的那幾項
 - 必要時的已驗證入口或測試帳密
 
 判準、輸出格式、preflight、登入牆與反 rabbit-hole 規則皆見 `verify-flow` skill，此處不重複。
@@ -375,6 +377,17 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
   - 判準沒錯，實作未達 → orchestrator 判斷要補什麼、派 Coder 修，修完照 Retry 迴路的「從操作流程驗證往後重走」走回這裡重新實測
   - 落差會改變驗收語意 → 問人
 - 實作中途調整作法、判準沒跟著改的情況，也由這裡攔截
+- 跑指令的驗收項目，實測後各記一筆：`node "${CLAUDE_SKILL_DIR}/../../scripts/evidence-page.mjs" cmd .claude/debug/{changeName}-驗收 --items <編號> --cmd "<實際跑的指令>" --result "<結果那一行>"`
+
+**產生驗收頁**（這次有跑操作流程驗證才做，在刪起點檔之前）：
+
+```
+node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" list .claude/debug/{changeName}-起點.json --reported <路徑>... \
+  | node "${CLAUDE_SKILL_DIR}/../../scripts/evidence-page.mjs" build .claude/debug/{changeName}-驗收 --title {changeName} \
+      --tasks openspec/changes/{changeName}/tasks.md --items <全部驗收項目編號> --human <有事列進「要你親手驗的」的編號> --changed-from -
+```
+
+只驗到一部分的項目也放進 `--human`，頁面會標成部分要人驗。腳本不產生頁面時，照它列的補：缺紀錄的補驗或確認已列進「要你親手驗的」；截圖比最後一次改程式還早的，操作流程驗證只重走那幾項。補完再產生。
 
 顯示完成報告前，用一條指令跑改動清單並刪掉起點檔：`node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" list .claude/debug/{changeName}-起點.json --reported <路徑>... && rm .claude/debug/{changeName}-起點.json`。報告開頭的「改了 N 個檔案」取這次輸出的行數。
 
@@ -404,11 +417,11 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
 - 報告的「retro」節照該 skill「從 feat／fix 呼叫」的回顯規則：只有歸檔提醒或記錄失敗時出現。開關表、事件表、條目格式、回顯與提醒以該 skill 為單一來源，此處不複製
 - append 失敗不阻斷報告
 
-報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（除錯檔、走法交接檔、全部測試的 log；驗證截圖在 `.claude/debug/playwright-mcp/`，收環境時已刪）：檔案價值僅在執行中；`.claude/debug/` 有自己的 `.gitignore`，不進版控。以 `{changeName}-` 開頭的檔與全部測試的 log 用 `find .claude/debug -maxdepth 1 \( -name '{changeName}-*' -o -name 'full-test-*.log' \) -delete` 刪。
+報告輸出後，**主動刪除**本次 change 在 `.claude/debug/` 的殘留檔（除錯檔、走法交接檔、全部測試的 log；驗證過程的截圖在 `.claude/debug/playwright-mcp/`，收環境時已刪）：檔案價值僅在執行中；`.claude/debug/` 有自己的 `.gitignore`，不進版控。以 `{changeName}-` 開頭的檔與全部測試的 log 用 `find .claude/debug -maxdepth 1 -type f \( -name '{changeName}-*' -o -name 'full-test-*.log' \) -delete` 刪。驗收頁資料夾 `{changeName}-驗收/` 留著，人驗收時要看。
 
 **跳驗收選項**：刪完殘留檔，用 AskUserQuestion 問驗收結果。人還沒實際驗，選項都不標建議，正文也不寫建議。選項底下只寫選了之後會做的事：
 
-- **驗收通過，跑收尾** → 照 SessionStart 交界圖「驗收通過」那行收尾
+- **驗收通過，跑收尾** → 刪掉驗收頁資料夾 `.claude/debug/{changeName}-驗收`，再照 SessionStart 交界圖「驗收通過」那行收尾
 - **評估順手看到的項目**（報告有「順手看到的」才出現）→ 主對話逐項讀相關程式碼，回報修或不修與理由，然後等人決定；處理完再跳一次驗收選項
 - **有地方要改**（人寫哪裡不對）→ 照交界圖「驗收發現問題」那行處理。規格缺口不接受也選這個：走 `/srun:fix` 驗收修正改程式，並從 delta spec 刪掉那條
 - **還沒驗完，晚點再說** → 不做任何事，等人回來說
@@ -484,6 +497,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 ```
 ## srun:feat 完成：{changeName}
 改了 {N} 個檔案，{M} 個測試全過，Reviewer 通過，操作流程驗證{結果}{；中間退回修過 K 輪}。
+驗收頁：{index.html 的絕對路徑}（{腳本印的那一行，如「6 項驗收：✓ 4、◐ 1、○ 1」}）
 
 ### AI 自行裁決（驗收時確認你同不同意）
 - {做了什麼判斷、依據或理由，一條一行}
@@ -516,6 +530,7 @@ Coder 判斷測試失敗原因是「測試與驗收依據不符」時（不論�
 - 開頭那行的 `{結果}`：`通過`｜`通過（N 個情境沒驗到）`｜`不需要（這次沒改到畫面）`｜`沒跑（瀏覽器工具沒就緒）`。N 只算接手後仍列進「要你親手驗的」的情境
 - `；中間退回修過 K 輪`：K ＝開發完完整審查退回的輪數（定義見 Retry 迴路），零輪整句省略
 - 規格缺口的「畫面上看到什麼」寫使用者操作時會看到的結果；看不出差別的條目不進表格，收進表格下方那一行，沒有就省略那一行
+- 「驗收頁」那行有產生頁面才出現
 - 開頭以外各段有內容才出現，沒有就整段省略
 
 ### 遇到阻塞
