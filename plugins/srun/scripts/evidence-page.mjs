@@ -2,8 +2,8 @@
 // 驗收頁：把 tasks 的驗收項目和它的證據（截圖、指令結果）排成一頁本機 HTML，給人驗收時看。
 // 項目原文由本腳本從 tasks.md 讀，不收 agent 的轉述；缺證據時不產生頁面。
 // 用法：
-//   node evidence-page.mjs shot <資料夾> [--items 4.1,4.2] [--role <身分>]
-//        --shot <圖檔> --path <路徑> --state <狀態> [--shot <圖檔> --path … --state …]...
+//   node evidence-page.mjs shot <資料夾> [--items 4.1,4.2] [--role '<身分>']
+//        --shot '<圖檔>' --path '<路徑>' --state '<狀態>' [--shot '<圖檔>' --path '…' --state '…']...
 //     記一筆截圖證據，可以一次交好幾張，每張各帶自己的路徑與狀態。
 //     --path   截圖當下的網址，人要靠它回到同一頁；給完整網址會自動只留網域後面那段
 //     --state  一句話：這張是在什麼狀態下拍的（同一頁拍兩張時靠它分辨）
@@ -72,7 +72,7 @@ function pathOnly(p) {
 }
 
 if (cmd === 'shot') {
-  if (!shotArgs.length) fail('shot 要給至少一組 --shot <圖檔> --path <路徑> --state <狀態>')
+  if (!shotArgs.length) fail('shot 要給至少一組 --shot <圖檔> --path <路徑> --state <狀態>，值用單引號包起來')
   const shots = shotArgs.map((s) => {
     if (!s.path) fail(`${s.file}：要給 --path，寫截圖當下的網址，人要靠它回到同一頁`)
     if (!s.state) fail(`${s.file}：要給 --state，一句話寫這張是在什麼狀態下拍的`)
