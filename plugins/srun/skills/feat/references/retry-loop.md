@@ -21,7 +21,7 @@
   - 同一件事修了一次還是沒過
 - **開發完**（Reviewer 完整審查起，從 0 開始）：完整審查退回一次算一輪。Reviewer 之後的全部測試、操作流程驗證、實測與報告判有問題退回修，也算一輪。Reviewer 判 PASS with WARNING 修完就好，不算
 
-其他來回都不算次數：Coder 與 Tester 之間的修正與異議、agent 就地自修、修復複查／targeted re-run、BLOCKED、flaky 標註。
+其他來回都不算次數：Coder 與 Tester 之間的修正與異議、agent 就地自修、修復複查／targeted re-run、BLOCKED、flaky 標註、操作流程驗證沒驗到的情境的接手（補示範資料、補測試）。
 
 問人後人做了決定 → 那件事（或完整審查）的次數歸 0，從第 1 次重新算；其他事不受影響。
 
