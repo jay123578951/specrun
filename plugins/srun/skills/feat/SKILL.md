@@ -316,6 +316,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
    - 檔案裡沒記、或照著起卻失敗：起成功之後把實際用的起法寫回去
    - 起完以啟動 log 或 lsof 確認實際監聽的 port：get-port 類工具在 port 被占時會靜默改聽別的 port
    - 記下 PID
+   - 這次要留驗收證據時，把實際網址記一筆，驗收頁會列在最上面給人複測用：`node "${CLAUDE_SKILL_DIR}/../../scripts/evidence-page.mjs" env .claude/debug/{changeName}-驗收 --url '<實際網址>'`
 2. 用 playwright 開入口頁看落點：browser_navigate 到入口路徑、browser_snapshot。落在登入頁即有登入牆。
 3. 有登入牆時停下來只說一句「已開好登入頁，請在這個 playwright 視窗登入，好了跟我說」，不索取帳密；使用者回覆後再開一次入口頁確認已進到 app 內部。登入本身是被測流程時才需要測試帳號。
 4. 派發 subagent，注入實際 URL。server 留到收環境與規格缺口回寫（Step 6.7）進場才收，FAIL 修復後的 re-run 直接沿用；瀏覽器閒置 10 分鐘會自己關，下次操作自動重開。
@@ -378,6 +379,7 @@ Reviewer 這關修完後，主對話自己跑一次全部測試。本 run 只在
   - 落差會改變驗收語意 → 問人
 - 實作中途調整作法、判準沒跟著改的情況，也由這裡攔截
 - 跑指令的驗收項目，實測後各記一筆：`node "${CLAUDE_SKILL_DIR}/../../scripts/evidence-page.mjs" cmd .claude/debug/{changeName}-驗收 --items <編號> --cmd "<實際跑的指令>" --result "<結果那一行>"`
+- 有事列進「要你親手驗的」的驗收項目，各記一筆：`node "${CLAUDE_SKILL_DIR}/../../scripts/evidence-page.mjs" human .claude/debug/{changeName}-驗收 --items <編號> --check '<要人驗什麼、怎麼補驗>' --why '<為什麼自動檢查接不住>'`。頁面把這兩句印在那一項的區塊裡，人不用回頭翻完成報告
 
 **產生驗收頁**（這次有跑操作流程驗證才做，在刪起點檔之前）：
 
@@ -387,7 +389,7 @@ node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" list .claude/debug/{cha
       --tasks openspec/changes/{changeName}/tasks.md --items <全部驗收項目編號> --human <有事列進「要你親手驗的」的編號> --changed-from -
 ```
 
-只驗到一部分的項目也放進 `--human`，頁面會標成部分要人驗。腳本不產生頁面時，照它列的補：缺紀錄的補驗或確認已列進「要你親手驗的」；截圖比最後一次改程式還早的，操作流程驗證只重走那幾項。補完再產生。
+只驗到一部分的項目也放進 `--human`，頁面會標成部分要人驗。腳本不產生頁面時，照它列的補：缺紀錄的補驗或確認已列進「要你親手驗的」；列進 `--human` 卻沒記原因的用 `human` 補記；沒記網址的用 `env` 補記；截圖比最後一次改程式還早的，操作流程驗證只重走那幾項。補完再產生。
 
 顯示完成報告前，用一條指令跑改動清單並刪掉起點檔：`node "${CLAUDE_SKILL_DIR}/../../scripts/change-list.mjs" list .claude/debug/{changeName}-起點.json --reported <路徑>... && rm .claude/debug/{changeName}-起點.json`。報告開頭的「改了 N 個檔案」取這次輸出的行數。
 

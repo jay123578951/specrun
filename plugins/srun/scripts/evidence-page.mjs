@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 驗收頁：把 tasks 的驗收項目和它的證據（截圖、指令結果）排成一頁本機 HTML，給人驗收時看。
+// 驗收頁：把 tasks 的驗收項目、每一項驗完了沒、截圖排成一頁本機 HTML，給人驗收時看。
 // 項目原文由本腳本從 tasks.md 讀，不收 agent 的轉述；缺證據時不產生頁面。
 // 用法：
 //   node evidence-page.mjs shot <資料夾> [--items 4.1,4.2] [--role '<身分>']
@@ -11,31 +11,37 @@
 //     圖檔要已經存在 <資料夾> 裡。一張圖能說明好幾項就把編號都列上；
 //     沒有對應的驗收項目時省略 --items，頁面會列在「改到的畫面」。
 //   node evidence-page.mjs cmd <資料夾> --items 4.4 --cmd "<指令>" --result "<結果那一行>"
-//     記一筆指令證據：實際跑的指令和它的結果。
+//     記一筆指令證據：實際跑的指令和它的結果。有這一筆，那一項才算已驗完；指令與結果只留在紀錄檔，不印在頁面上。
+//   node evidence-page.mjs env <資料夾> --url '<驗證時 app 的網址>'
+//     記這次驗證時 app 的網址。頁面列在最上面，連同截圖時登入過的身分，人要複測時照著用。
+//   node evidence-page.mjs human <資料夾> --items 4.6 --check '<要人驗什麼>' --why '<為什麼自動檢查接不住>'
+//     記一筆要人親手驗的事，頁面會印在那一項的區塊裡。build 的 --human 列到的編號都要先記這一筆。
 //   node evidence-page.mjs build <資料夾> --title <change 名>
 //        [--tasks <tasks.md> --items 4.1,4.2,...] [--human 4.6,...] [--changed-from <檔案|->]
 //     產生 <資料夾>/index.html，印出路徑與各狀態的項目數。
 //     --items  列為驗收項目的 task 編號
-//     --human  其中有事要人親手驗的編號。頁面只多一個記號，原因寫在完成報告：
+//     --human  其中有事要人親手驗的編號，每個都要先用 human 記過要驗什麼與原因：
 //              有證據又在 --human ＝部分要人驗；沒有證據只在 --human ＝整項要人驗
 //     --changed-from  這次改動的檔案清單，一行一檔，可直接接 change-list.mjs list 的輸出；
 //                     給了才檢查截圖有沒有比最後一次改程式還早（測試檔不算）
-//     同一個項目有好幾筆紀錄時取最後一筆，重驗後再記一次就會取代舊的。
-//     有項目沒有證據也沒標進 --human、圖檔不在、截圖過期：列出每一條該怎麼補，以結束碼 1 結束，不產生頁面。
+//     同一個項目的紀錄，身分相同的截圖、指令相同的結果、要人驗的事，各取最後一筆，重驗後再記一次就會取代舊的。
+//     不同身分的截圖都留下，頁面照身分分組。
+//     有項目沒有證據也沒標進 --human、標進 --human 卻沒記原因、有截圖卻沒記環境、圖檔不在、截圖過期：
+//     列出每一條該怎麼補，以結束碼 1 結束，不產生頁面。
 import { execFileSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { basename, isAbsolute, join, relative, resolve } from 'node:path'
 
-const USAGE = '用法：evidence-page.mjs shot|cmd|build <資料夾> …（細節見檔頭）'
+const USAGE = '用法：evidence-page.mjs shot|cmd|env|human|build <資料夾> …（細節見檔頭）'
 const [cmd, dirArg, ...rest] = process.argv.slice(2)
-if (!['shot', 'cmd', 'build'].includes(cmd) || !dirArg) {
+if (!['shot', 'cmd', 'env', 'human', 'build'].includes(cmd) || !dirArg) {
   console.error(USAGE)
   process.exit(1)
 }
 
 const dir = resolve(dirArg)
 const LOG = join(dir, '紀錄.jsonl')
-const VALUE_FLAGS = ['--items', '--role', '--cmd', '--result', '--title', '--tasks', '--human', '--changed-from']
+const VALUE_FLAGS = ['--items', '--role', '--cmd', '--result', '--check', '--why', '--url', '--title', '--tasks', '--human', '--changed-from']
 const SHOT_FLAGS = ['--path', '--state']
 const opts = {}
 const shotArgs = []
@@ -93,6 +99,20 @@ if (cmd === 'cmd') {
   process.exit(0)
 }
 
+if (cmd === 'env') {
+  if (!opts.url) fail('env 要給 --url，寫驗證時 app 的網址')
+  append({ env: { url: opts.url } })
+  console.log(`已記環境：${opts.url}`)
+  process.exit(0)
+}
+
+if (cmd === 'human') {
+  if (!opts.items || !opts.check || !opts.why) fail('human 要給 --items、--check（要人驗什麼）、--why（為什麼自動檢查接不住）')
+  append({ items: list(opts.items), check: opts.check, why: opts.why })
+  console.log(`已記：${list(opts.items).join('、')} 要人驗 ${opts.check}`)
+  process.exit(0)
+}
+
 // ---- build ----
 const itemIds = list(opts.items)
 const human = new Set(list(opts.human))
@@ -126,21 +146,35 @@ else if (itemIds.length) {
 const records = existsSync(LOG)
   ? readFileSync(LOG, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
   : []
+// 每一項的證據：身分相同的截圖、指令相同的結果，後記的取代先記的；不同身分的都留
 const byItem = new Map()
+const humanNote = new Map()
 const byScreen = new Map()
+let env = null
 for (const r of records) {
-  if (r.items?.length) for (const id of r.items) byItem.set(id, r)
+  if (r.env) env = r.env
+  else if (r.check) for (const id of r.items) humanNote.set(id, r)
+  else if (r.items?.length) {
+    const key = r.shots ? `shot:${r.role ?? ''}` : `cmd:${r.cmd}`
+    for (const id of r.items) {
+      if (!byItem.has(id)) byItem.set(id, new Map())
+      byItem.get(id).delete(key)
+      byItem.get(id).set(key, r)
+    }
+  }
   else for (const s of r.shots ?? []) byScreen.set(s.file, { ...r, shots: [s] })
 }
+const evidenceOf = id => [...(byItem.get(id)?.values() ?? [])]
 
 const problems = []
 for (const id of itemIds) {
   if (!taskText.has(id)) problems.push(`${id}：tasks.md 裡找不到這個編號，確認編號後重跑`)
-  else if (!human.has(id) && !byItem.has(id)) problems.push(`${id}：沒有任何紀錄。補驗後用 shot 或 cmd 記一筆；流程裡接不住就加進 --human，並在完成報告寫明原因`)
+  else if (!human.has(id) && !byItem.has(id)) problems.push(`${id}：沒有任何紀錄。補驗後用 shot 或 cmd 記一筆；流程裡接不住就用 human 記要人驗什麼與原因，再加進 --human`)
+  else if (human.has(id) && !humanNote.has(id)) problems.push(`${id}：列在 --human 但沒記原因。用 human 記一筆：--items ${id} --check '<要人驗什麼>' --why '<為什麼自動檢查接不住>'`)
 }
 
 const listed = itemIds.filter(id => taskText.has(id))
-const used = [...new Set(listed.filter(id => byItem.has(id)).map(id => byItem.get(id))), ...byScreen.values()]
+const used = [...new Set(listed.flatMap(evidenceOf)), ...byScreen.values()]
 
 // 截圖要比最後一次改程式晚；測試檔改了不影響畫面，不算
 const isTest = p => /(^|\/)(tests?|__tests__|e2e)\//i.test(p) || /\.(test|spec)\.[^./]+$/.test(p)
@@ -169,6 +203,7 @@ for (const r of used) {
     else if (newest && statSync(abs).mtimeMs < newest.t) problems.push(`${s.file}：截圖比 ${newest.p} 的最後修改還早。${redo}、重拍後再記一次`)
   }
 }
+if (!env && used.some(r => r.shots)) problems.push("有截圖但沒記網址。用 env 記一筆：--url '<驗證時 app 的網址>'")
 if (problems.length) fail('驗收頁沒有產生，先補齊：', ...problems.map(p => `- ${p}`))
 if (!listed.length && !used.length) {
   console.log('沒有證據可放，未產生驗收頁')
@@ -182,36 +217,53 @@ const stamp = (d) => {
   const t = new Date(d)
   return `${pad(t.getMonth() + 1)}-${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}`
 }
-const figure = (r, s) => `<figure><a href="${esc(encodeURI(s.file))}"><img src="${esc(encodeURI(s.file))}" alt="${esc(s.state)}"></a><figcaption><code>${esc(s.path)}</code><span>${r.role ? `${esc(r.role)}｜` : ''}${esc(s.state)}</span><time>${stamp(statSync(join(dir, s.file)).mtime)}</time></figcaption></figure>`
-const evidence = r => r.shots
-  ? `<div class="shots${r.shots.length > 1 ? ' many' : ''}">${r.shots.map(s => figure(r, s)).join('\n')}</div>`
-  : `<p class="cmd"><code>${esc(r.cmd)}</code><span>→ ${esc(r.result)}</span><time>${stamp(r.at)}</time></p>`
+const figure = (s, role) => `<figure><a href="${esc(encodeURI(s.file))}"><img src="${esc(encodeURI(s.file))}" alt="${esc(s.state)}"></a><figcaption><code>${esc(s.path)}</code><span>${role ? `${esc(role)}｜` : ''}${esc(s.state)}</span><time>${stamp(statSync(join(dir, s.file)).mtime)}</time></figcaption></figure>`
+const shots = figures => `<div class="shots${figures.length > 1 ? ' many' : ''}">${figures.join('\n')}</div>`
 
-// 每一項的狀態：有證據／有證據但部分要人驗／整項要人驗
+// 每一項的狀態：已驗完／有證據但部分要人驗／整項要人驗
 const STATE = {
-  ok: { mark: '✓', text: '有證據' },
-  part: { mark: '◐', text: '有證據，部分要你驗' },
-  todo: { mark: '○', text: '要你驗' },
+  ok: { mark: '✓', text: '已驗完' },
+  part: { mark: '◐', text: '部分要你驗' },
+  todo: { mark: '○', text: '整項要你驗' },
 }
 const stateOf = id => !byItem.has(id) ? 'todo' : human.has(id) ? 'part' : 'ok'
 const tally = { ok: 0, part: 0, todo: 0 }
 for (const id of listed) tally[stateOf(id)]++
-const item = id => `<li><i class="${stateOf(id)}" title="${STATE[stateOf(id)].text}"></i><b>${esc(id)}</b><span>${rich(taskText.get(id))}</span></li>`
 
-// 共用同一筆證據的項目排在一起，順序照 --items
-const groups = []
-for (const id of listed) {
-  const r = byItem.get(id)
-  const g = r && groups.find(x => x.r === r)
-  if (g) g.ids.push(id)
-  else groups.push({ r, ids: [id] })
+// 每個項目一塊：狀態、原文、拍了幾張截圖、要人驗什麼與原因，最後是截圖（照身分分組）。指令結果不印
+function block(id) {
+  const state = stateOf(id)
+  const ev = evidenceOf(id)
+  const shotRecs = ev.filter(r => r.shots)
+  const total = shotRecs.reduce((n, r) => n + r.shots.length, 0)
+  const byRole = shotRecs.some(r => r.role)
+  const done = []
+  if (total) done.push(`<dd>${total} 張截圖${byRole ? `：${shotRecs.map(r => `${esc(r.role ?? '沒標身分')} ${r.shots.length} 張`).join('、')}` : ''}</dd>`)
+  const note = human.has(id) ? humanNote.get(id) : null
+  const rows = [
+    done.length ? `<dt>已驗到</dt>${done.join('')}` : '',
+    note ? `<dt class="ask">要你驗</dt><dd>${rich(note.check)}</dd><dt class="ask">原因</dt><dd>${rich(note.why)}</dd>` : '',
+  ].join('')
+  const pics = shotRecs.map(r => `${byRole ? `<h3>${esc(r.role ?? '沒標身分')}</h3>\n` : ''}${shots(r.shots.map(s => figure(s)))}`).join('\n')
+  return `<section>
+<h2><i class="${state}"></i><b>${esc(id)}</b><span>${STATE[state].text}</span></h2>
+<p class="task">${rich(taskText.get(id))}</p>
+<dl>${rows}</dl>
+${pics}
+</section>`
 }
-const groupHtml = groups.map(g => `<section>
-<ul>${g.ids.map(item).join('')}</ul>
-${g.r ? evidence(g.r) : ''}
-</section>`).join('\n')
+const groupHtml = listed.map(block).join('\n')
 const screenHtml = byScreen.size
-  ? `<h2>改到的畫面</h2>\n<section><div class="shots${byScreen.size > 1 ? ' many' : ''}">${[...byScreen.values()].map(r => figure(r, r.shots[0])).join('\n')}</div></section>`
+  ? `<h2 class="more">改到的畫面</h2>\n<section>${shots([...byScreen.values()].map(r => figure(r.shots[0], r.role)))}</section>`
+  : ''
+
+// 複測環境：網址、截圖時登入過的身分
+const roles = [...new Set(used.filter(r => r.shots && r.role).map(r => r.role))]
+const envHtml = env
+  ? `<section class="env">
+<h2>複測環境</h2>
+<dl><dt>網址</dt><dd><code>${esc(env.url)}</code></dd>${roles.length ? `<dt>登入的帳號</dt><dd>${roles.map(esc).join('<br>')}</dd>` : ''}</dl>
+</section>`
   : ''
 
 const present = Object.keys(STATE).filter(k => tally[k])
@@ -219,7 +271,7 @@ const count = listed.length
   ? `${listed.length} 項驗收：${present.map(k => `${STATE[k].mark} ${tally[k]}`).join('、')}`
   : `改到的畫面 ${byScreen.size} 個`
 const legend = listed.length
-  ? `<p class="legend">${present.map(k => `<span><i class="${k}"></i>${STATE[k].text} ${tally[k]}</span>`).join('')}${tally.part || tally.todo ? '<span>要你驗的原因寫在完成報告</span>' : ''}</p>`
+  ? `<p class="legend">${present.map(k => `<span><i class="${k}"></i>${STATE[k].text} ${tally[k]}</span>`).join('')}</p>`
   : ''
 const footer = listed.length ? `<footer>tasks 共 ${taskTotal} 項，其中 ${listed.length} 項列為驗收項目</footer>` : ''
 
@@ -235,13 +287,21 @@ body { margin: 0 auto; padding: 32px 20px 64px; max-width: 960px; background: va
 header { margin-bottom: 24px; }
 h1 { margin: 0; font-size: 20px; }
 header p { margin: 4px 0 0; color: var(--dim); }
-h2 { margin: 40px 0 0; font-size: 15px; color: var(--dim); font-weight: 500; }
-section { padding: 20px 0; border-top: 1px solid var(--line); }
-ul { margin: 0; padding: 0; list-style: none; }
-ul + * { margin-top: 12px; }
-li { display: flex; gap: 10px; }
-li b { flex: none; min-width: 2.2em; color: var(--dim); font-weight: 500; font-variant-numeric: tabular-nums; }
-i { flex: none; box-sizing: border-box; display: inline-block; width: 16px; height: 16px; margin-top: 5px; border-radius: 50%; }
+section { padding: 24px 0; border-top: 1px solid var(--line); }
+h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 600; }
+h2 b { font-variant-numeric: tabular-nums; }
+h2 span { font-weight: 500; }
+h2.more { margin-top: 40px; font-size: 15px; color: var(--dim); font-weight: 500; }
+h3 { margin: 20px 0 8px; font-size: 14px; font-weight: 600; }
+.task { margin: 6px 0 0; color: var(--dim); }
+dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 12px 0 0; }
+dl:empty { display: none; }
+.env code { user-select: all; }
+dt { color: var(--dim); }
+dt.ask { color: var(--warn); font-weight: 600; }
+dd { grid-column: 2; margin: 0; }
+dl + .shots { margin-top: 16px; }
+i { flex: none; box-sizing: border-box; display: inline-block; width: 16px; height: 16px; border-radius: 50%; }
 i.ok { background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.3 8.3l2.5 2.5 5-5.4' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat; }
 i.part { border: 2px solid var(--warn); background: linear-gradient(90deg, var(--warn) 50%, transparent 50%); }
 i.todo { border: 2px solid var(--warn); }
@@ -254,11 +314,10 @@ code { padding: 1px 5px; border-radius: 4px; background: var(--soft); font: 13px
 @media (max-width: 640px) { .shots.many { grid-template-columns: 1fr; } }
 figure { margin: 0; min-width: 0; }
 img { display: block; width: 100%; border: 1px solid var(--line); border-radius: 6px; }
-figcaption, .cmd, footer { color: var(--dim); font-size: 13px; }
+figcaption, footer { color: var(--dim); font-size: 13px; }
 figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-top: 6px; }
 figcaption code { user-select: all; }
-figcaption span, .cmd span { color: var(--fg); }
-.cmd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-bottom: 0; }
+figcaption span { color: var(--fg); }
 time { font-variant-numeric: tabular-nums; }
 header time { margin-left: 10px; }
 footer { margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -268,6 +327,7 @@ footer { margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--line);
 <p>${listed.length ? `${listed.length} 項驗收` : count}<time>${stamp(new Date())} 產生</time></p>
 ${legend}
 </header>
+${envHtml}
 ${groupHtml}
 ${screenHtml}
 ${footer}
